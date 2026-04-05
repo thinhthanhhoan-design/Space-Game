@@ -10,15 +10,15 @@ export const CONFIG = {
   // ===============================
   ASSETS: {
     MODELS: {
-      UET_LOGO: "/models/uet_logo.glb",
+      UET_LOGO: "PROCEDURAL", // Dùng hạt (particles) thay cho model logo
       PLAYER_V1: "/models/uete_3637.glb",
-      PLAYER_V2: "/models/captured_ship.glb",
-      PLAYER_V3: "/models/advanced_ship.glb",
-      ENEMY_1: "/models/drone_enemy.glb",
-      BOSS_1: "/models/boss_level1.glb",
-      BOSS_2: "/models/boss_level2.glb",
-      BOSS_3: "/models/boss_level3.glb",
-      ASTEROID: "/models/asteroid.glb",
+      PLAYER_V2: "PROCEDURAL",
+      PLAYER_V3: "PROCEDURAL",
+      ENEMY_1: "PROCEDURAL",
+      BOSS_1: "PROCEDURAL",
+      BOSS_2: "PROCEDURAL",
+      BOSS_3: "PROCEDURAL",
+      ASTEROID: "PROCEDURAL",
     },
     TEXTURES: {
       SPACE_BG: "/textures/nebula_dark.jpg",
@@ -53,13 +53,19 @@ export const CONFIG = {
   // ===============================
   ENGINE: {
     TYPE: "FORWARD_PROGRESSION",
-    FORWARD_SPEED: 0.5, 
+    FORWARD_SPEED: 0.175, // Tăng tốc độ bay cho phù hợp không gian rộng
     FLIGHT_ENVELOPE: {
-      X: 4.5, 
-      Y: 2.5, 
+      X: 12, // Mở rộng không gian bay ngang
+      Y: 7,  // Mở rộng không gian bay dọc
+    },
+    // Thông số cho hiệu ứng nghiêng thế giới
+    DYNAMIC_BANKING: {
+      WORLD_ROLL_LIMIT: Math.PI / 10, // Thế giới nghiêng tối đa ~18 độ
+      SMOOTHNESS: 0.05,               // Độ mượt khi xoay (Lerp factor)
+      HORIZON_SHIFT: 0.2              // Camera lệch nhẹ sang ngang khi rẽ
     },
     ROTATION_LIMITS: {
-      ROLL: Math.PI / 6,   
+      ROLL: Math.PI / 4,   // Tàu nghiêng hẳn 45 độ cho máu!
       PITCH: Math.PI / 12, 
       LERP: 0.1            
     }
@@ -129,7 +135,7 @@ export const CONFIG = {
     
     LEVEL_1: { 
       asteroid_speed: 0.015, 
-      asteroid_density: 10,
+      asteroid_density: 0, // Xóa hết thiên thạch (Mật độ = 0)
       FINAL_DASH: {
         trigger: "boss_1_retreat", 
         duration: 8,              

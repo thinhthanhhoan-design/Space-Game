@@ -3,6 +3,7 @@ import * as THREE from 'three';
 export class Background {
     constructor() {
         this.scene = null;
+        this.group = null;
         this.starsGlow = null;
         this.cloudsGroup = null;
     }
@@ -10,6 +11,9 @@ export class Background {
     init(scene, texturePath = '/textures/background.png') {
         this.scene = scene;
         scene.background = new THREE.Color(0x020205); 
+
+        this.group = new THREE.Group();
+        scene.add(this.group); 
 
         const textureLoader = new THREE.TextureLoader();
         textureLoader.load(texturePath, (texture) => {
@@ -27,7 +31,7 @@ export class Background {
             });
             
             const bgMesh = new THREE.Mesh(bgGeometry, bgMaterial);
-            scene.add(bgMesh);
+            this.group.add(bgMesh);
         });
 
         const createGlowPoint = () => {
@@ -63,7 +67,7 @@ export class Background {
         }
         pointsGeometry.setAttribute('position', new THREE.BufferAttribute(pointsPosition, 3));
         this.starsGlow = new THREE.Points(pointsGeometry, pointsMaterial);
-        scene.add(this.starsGlow);
+        this.group.add(this.starsGlow);
 
         const createCloudTexture = () => {
             const canvas = document.createElement('canvas');
@@ -93,7 +97,7 @@ export class Background {
         });
 
         this.cloudsGroup = new THREE.Group();
-        scene.add(this.cloudsGroup);
+        this.group.add(this.cloudsGroup);
 
         for(let i = 0; i < 80; i++) {
             const cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
@@ -124,6 +128,12 @@ export class Background {
             this.cloudsGroup.children.forEach(cloud => {
                 cloud.rotation.z += 0.00015;
             });
+        }
+    }
+
+    setRoll(targetRoll, smoothness) {
+        if (this.group) {
+            this.group.rotation.z = THREE.MathUtils.lerp(this.group.rotation.z, targetRoll, smoothness);
         }
     }
 }

@@ -5,6 +5,8 @@ import { Intro } from '../ui/Intro.js';
 import { Player } from '../player/Player.js';
 import { Background } from '../environment/Background.js';
 
+import { CONFIG } from '../../utils/CONFIG.JS';
+
 export class GameManager {
     constructor() {
         this.sceneController = new SceneController();
@@ -14,17 +16,16 @@ export class GameManager {
         this.intro = new Intro(this.sceneController);
         this.player = new Player(this.sceneController.scene);
         this.background = new Background();
+        // AsteroidSystem đã bị gỡ bỏ theo yêu cầu
     }
 
     init() {
-        // Init Background
-        const bgUrl = new URL('../../public/textures/background.png', import.meta.url).href;
+        const bgUrl = CONFIG.ASSETS.TEXTURES.SPACE_BG;
         this.background.init(this.sceneController.scene, bgUrl);
         
-        // Init Intro và chờ Player load xong để bắt đầu Transition
         this.intro.init((logoPoints) => {
             const checkModel = setInterval(() => {
-                if (this.player.mesh) { // Kiểm tra player model đã load chưa
+                if (this.player.mesh) {
                     clearInterval(checkModel);
                     this.intro.startTransition(logoPoints, this.player.mesh, this.sceneController.camera, () => {
                         this.stateManager.setGameStarted(true);
@@ -33,21 +34,33 @@ export class GameManager {
             }, 100);
         });
 
-        // Bắt đầu vòng lặp game
         this.gameLoop.start();
     }
 
-    update(elapsedTime) {
-        // Xử lý game theo trạng thái
+    update(elapsedTime, delta) {
         if (!this.stateManager.isGameStarted) {
             this.intro.update(elapsedTime);
-            if (this.player.mesh) this.player.mesh.visible = false; 
+            if (this.player.mesh) this.player.mesh.visible = false;
         } else {
-            if (this.player.mesh) this.player.mesh.visible = true;
-            if (this.player.update) this.player.update();
+            if (this.player.mesh) {
+                this.player.mesh.visible = true;
+                this.player.update();
+
+                // --- HORIZON BANKING (WORLD ROLL) ---
+                const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
+                let xRatio = this.player.mesh.position.x / envX;
+                xRatio = Math.max(-1.8, Math.min(1.8, xRatio));
+                
+                const targetBgRoll = -xRatio * CONFIG.ENGINE.DYNAMIC_BANKING.WORLD_ROLL_LIMIT;
+                this.background.setRoll(targetBgRoll, CONFIG.ENGINE.DYNAMIC_BANKING.SMOOTHNESS);
+            }
+        }
+
+        // --- CAMERA UPDATE ---
+        if (this.stateManager.isGameStarted) {
+            this.sceneController.update(delta, this.player.mesh);
         }
         
-        // Luôn luôn update background
         this.background.update();
     }
 }

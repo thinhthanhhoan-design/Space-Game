@@ -10,10 +10,11 @@ export class GameLoop {
     start() {
         const animate = () => {
             requestAnimationFrame(animate);
+            const delta = this.clock.getDelta();
             const elapsedTime = this.clock.getElapsedTime();
             
             // Central update logic
-            this.gameManager.update(elapsedTime);
+            this.gameManager.update(elapsedTime, delta);
             
             this.sceneController.render();
         };
