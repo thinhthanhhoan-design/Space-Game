@@ -135,7 +135,7 @@ export const CONFIG = {
     
     LEVEL_1: { 
       asteroid_speed: 0.015, 
-      asteroid_density: 0, // Xóa hết thiên thạch (Mật độ = 0)
+      asteroid_density: 5, // Xóa hết thiên thạch (Mật độ = 0)
       FINAL_DASH: {
         trigger: "boss_1_retreat", 
         duration: 8,              
