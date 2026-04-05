@@ -55,8 +55,8 @@ export const CONFIG = {
     TYPE: "FORWARD_PROGRESSION",
     FORWARD_SPEED: 0.175, // Tăng tốc độ bay cho phù hợp không gian rộng
     FLIGHT_ENVELOPE: {
-      X: 12, // Mở rộng không gian bay ngang
-      Y: 7,  // Mở rộng không gian bay dọc
+      X: 24, // Mở rộng không gian bay ngang
+      Y: 14,  // Mở rộng không gian bay dọc
     },
     // Thông số cho hiệu ứng nghiêng thế giới
     DYNAMIC_BANKING: {
@@ -66,7 +66,7 @@ export const CONFIG = {
     },
     ROTATION_LIMITS: {
       ROLL: Math.PI / 4,   // Tàu nghiêng hẳn 45 độ cho máu!
-      PITCH: Math.PI / 12, 
+      PITCH: Math.PI / 8,  // Tăng góc ngóc/chúi lên 22.5 độ (cũ: 15 độ) để nhìn rõ rệt hơn
       LERP: 0.1            
     }
   },
