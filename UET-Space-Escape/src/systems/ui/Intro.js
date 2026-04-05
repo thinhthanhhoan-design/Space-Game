@@ -35,9 +35,9 @@ export class Intro {
         const particleTexture = createCircleTexture();
 
         const loader = new THREE.TextureLoader();
-        // Load từ public/textures/Logo.webp khi dùng Vite (đường dẫn /textures/Logo.webp)
-        // Hoặc load theo đường dẫn tương đối trực tiếp
-        loader.load('./public/textures/Logo.webp', (texture) => {
+        // Load từ public/textures/Logo.webp linh hoạt bằng import.meta.url
+        const logoUrl = new URL('../../../public/textures/Logo.webp', import.meta.url).href;
+        loader.load(logoUrl, (texture) => {
             const image = texture.image;
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d', { willReadFrequently: true });

@@ -8,9 +8,10 @@ export class Player {
 
         const loader = new GLTFLoader();
         
-        // Cập nhật đường dẫn tuyệt đối cho Vite từ public folder
+        // Cập nhật đường dẫn tuyệt đối cho Vite từ public folder an toàn với cả thẻ Script gốc
+        const modelUrl = new URL('../../../public/models/plane_1.glb', import.meta.url).href;
         loader.load(
-            '/models/plane_1.glb', 
+            modelUrl, 
             (glb) => {
                 this.mesh = glb.scene;
                 this.mesh.scale.set(0.02, 0.02, 0.02); 

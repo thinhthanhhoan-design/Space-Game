@@ -18,7 +18,8 @@ export class GameManager {
 
     init() {
         // Init Background
-        this.background.init(this.sceneController.scene, '/textures/background.png');
+        const bgUrl = new URL('../../public/textures/background.png', import.meta.url).href;
+        this.background.init(this.sceneController.scene, bgUrl);
         
         // Init Intro và chờ Player load xong để bắt đầu Transition
         this.intro.init((logoPoints) => {
