@@ -67,7 +67,7 @@ export const CONFIG = {
     ROTATION_LIMITS: {
       ROLL: Math.PI / 4,   // Tàu nghiêng hẳn 45 độ cho máu!
       PITCH: Math.PI / 8,  // Tăng góc ngóc/chúi lên 22.5 độ (cũ: 15 độ) để nhìn rõ rệt hơn
-      LERP: 0.1            
+      LERP: 0.1
     }
   },
 
@@ -85,7 +85,7 @@ export const CONFIG = {
   // 👤 PLAYER STATS (Đã xử lý cơ chế thoái hóa & tiêu tốn đạn)
   // ===============================
   PLAYER: {
-    INITIAL_HP: 250, 
+    INITIAL_HP: 250,
     MODELS: {
       V1: { hp_limit: 250, name: "UETE-3637", next_model: null },
       V2: { hp_limit: 300, name: "Asterum-Enemy-Mod", next_model: "V1", REVERT_AT: 0.7 },
@@ -93,8 +93,8 @@ export const CONFIG = {
     },
     WEAPONS: {
       GUN_1: { damage: 25, ammo: 100, fireRate: 0.4, ammo_per_shot: 1 },
-      GUN_2: { damage: 50, ammo: 50,  fireRate: 0.3, ammo_per_shot: 2 }, 
-      GUN_3: { damage: 45, ammo: 120, fireRate: 0.2, ammo_per_shot: 3 }, 
+      GUN_2: { damage: 50, ammo: 50, fireRate: 0.3, ammo_per_shot: 2 },
+      GUN_3: { damage: 45, ammo: 120, fireRate: 0.2, ammo_per_shot: 3 },
     }
   },
 
@@ -103,26 +103,26 @@ export const CONFIG = {
   // ===============================
   ENEMIES: {
     QUAI_1: { HP: 50, DAMAGE: 10 },
-    BOSS_1: { 
-      HP: 500, 
-      ATTACK_INTERVAL: 5, 
-      DAMAGE: 30, 
-      LIMIT: 3, 
-      RETREAT_Z: -50 
+    BOSS_1: {
+      HP: 500,
+      ATTACK_INTERVAL: 5,
+      DAMAGE: 30,
+      LIMIT: 3,
+      RETREAT_Z: -50
     },
-    BOSS_2: { 
-      HP: 500, 
-      LASER_DAMAGE: 15, 
-      REINFORCE_HP: 250, 
-      REINFORCE_DAMAGE: 25, 
-      SPAWN_QUAI_COUNT: 3 
+    BOSS_2: {
+      HP: 500,
+      LASER_DAMAGE: 15,
+      REINFORCE_HP: 250,
+      REINFORCE_DAMAGE: 25,
+      SPAWN_QUAI_COUNT: 3
     },
-    BOSS_3: { 
-      HP: 600, 
-      DODGE: 0.4, 
-      SHOCK_TRIGGER: 300, 
-      SLOW: 0.5, 
-      DAMAGE_PER_HIT: 45 
+    BOSS_3: {
+      HP: 600,
+      DODGE: 0.4,
+      SHOCK_TRIGGER: 300,
+      SLOW: 0.5,
+      DAMAGE_PER_HIT: 45
     }
   },
 
@@ -130,27 +130,27 @@ export const CONFIG = {
   // ☄️ WORLD & ENVIRONMENT
   // ===============================
   WORLD: {
-    SPAWN_DISTANCE_Z: -150, 
-    DESPAWN_DISTANCE_Z: 20,  
-    
-    LEVEL_1: { 
-      asteroid_speed: 0.015, 
+    SPAWN_DISTANCE_Z: -150,
+    DESPAWN_DISTANCE_Z: 20,
+
+    LEVEL_1: {
+      asteroid_speed: 0.015,
       asteroid_density: 5, // Xóa hết thiên thạch (Mật độ = 0)
       FINAL_DASH: {
-        trigger: "boss_1_retreat", 
-        duration: 8,              
-        density: 25,              
+        trigger: "boss_1_retreat",
+        duration: 8,
+        density: 25,
         text: "Hệ thống AI: Đang tiến vào đai thiên thạch vành khổng lồ!"
       }
     },
-    LEVEL_2: { 
-      asteroid_speed: 0.03, 
-      asteroid_density: 15, 
-      bubble_dmg: 5 
+    LEVEL_2: {
+      asteroid_speed: 0.03,
+      asteroid_density: 15,
+      bubble_dmg: 5
     },
-    LEVEL_3: { 
-      asteroid_speed: 0.05, 
-      asteroid_density: 25 
+    LEVEL_3: {
+      asteroid_speed: 0.05,
+      asteroid_density: 25
     }
   },
 
