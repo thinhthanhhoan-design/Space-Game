@@ -1,31 +1,39 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
+import { GSA } from '../effects/GSA.js';
 
 export class Intro {
     constructor(sceneController) {
+        // Lưu trữ bộ điều khiển bối cảnh (chứa scene, camera, renderer gốc)
         this.sceneController = sceneController;
         
-        this.logoMesh = null;
-        this.particleSystem = null;
+        // Khởi tạo các biến chứa đối tượng 3D sẽ dùng trong Màn hình chờ
+        this.logoMesh = null;        // Lưới 2D hiển thị ảnh Logo lúc chưa bấm Play
+        this.particleSystem = null;  // Hệ thống hạt Particle (điểm sáng điểm ảnh)
         
-        this.originalPositions = null;
-        this.explosionTargets = null;
-        this.particlesGeometry = null;
+        // Các mảng lưu trữ tọa độ để tạo hiệu ứng GSA chuyển động hạt
+        this.originalPositions = null; // Vị trí gốc của từng hạt tạo thành hình Logo
+        this.explosionTargets = null;  // Vị trí đích văng ra không gian của từng hạt (Tạo vụ nổ)
+        this.particlesGeometry = null; // Hình học Buffer chứa các đỉnh và màu sắc
         
+        // Cờ đánh dấu màn hình Intro đang chạy, nếu False thì game đã bắt đầu
         this.isIntroActive = true;
     }
 
+    // Hàm khởi tạo và dựng hình Intro ban đầu (Chưa chuyển động)
     init(callback) {
         const scene = this.sceneController.scene;
         const camera = this.sceneController.camera;
         const startBtn = document.getElementById('start-btn');
         
+        // Tạo một vân bề mặt (Texture) hình tròn gradient mờ ảo cho từng điểm hạt thêm lung linh
         const createCircleTexture = () => {
             const canvas = document.createElement('canvas');
             canvas.width = 64; canvas.height = 64;
             const ctx = canvas.getContext('2d');
             const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
             gradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); 
+            // Giảm opacity dần ra ngoài lề tạo viền mờ (Glow)
             gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.5)');
             gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
             ctx.fillStyle = gradient;
@@ -34,28 +42,37 @@ export class Intro {
         };
         const particleTexture = createCircleTexture();
 
+        // Khởi tạo tiến trình tải Hình ảnh Logo 2D
         const loader = new THREE.TextureLoader();
-        // Load từ public/textures/Logo.webp linh hoạt bằng import.meta.url
+        // Lấy đường dẫn an toàn bằng cú pháp URL mới của Vite theo import.meta.url
         const logoUrl = new URL('../../../public/textures/Logo.webp', import.meta.url).href;
+        
         loader.load(logoUrl, (texture) => {
+            // Lấy thông số điểm ảnh để tiến hành CẮT ảnh (Pixelation) thành Hạt
             const image = texture.image;
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            const canvas = document.createElement('canvas'); // Tạo khung Canvas ẩn
+            const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Bật cờ tăng tốc đọc ảnh
             
+            // Canh tỷ lệ chuẩn màn hình
             const canvasWidth = 250; 
             const canvasHeight = (image.height / image.width) * canvasWidth;
             canvas.width = canvasWidth; canvas.height = canvasHeight;
+            
+            // Vẽ ảnh lên canvas ẩn để chuẩn bị chiết xuất từng mãng màu
             ctx.drawImage(image, 0, 0, canvasWidth, canvasHeight);
 
+            // Bắt đầu là hiện 1 tấm ảnh 2D mờ ảo chứa logo ở gốc màn hình
             const planeGeom = new THREE.PlaneGeometry(canvasWidth * 1.5, canvasHeight * 1.5);
             const planeMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0, depthWrite: false });
             this.logoMesh = new THREE.Mesh(planeGeom, planeMat);
             scene.add(this.logoMesh);
 
+            // Rút trích dải điểm ảnh (Pixel Data) dưới dạng RGBA từ Canvas
             const imageData = ctx.getImageData(0, 0, canvasWidth, canvasHeight).data;
-            const positionsArr = [];
+            const positionsArr = []; // Chứa dải 0,0,0
             const colorsArr = []; 
             const targetsArr = [];
+            
             const step = 0.5; 
 
             for (let y = 0; y < canvas.height; y += step) {
@@ -67,6 +84,7 @@ export class Intro {
                     const alpha = imageData[index + 3];
 
                     if (alpha > 50) { 
+                        // Nhân tỷ lệ khuếch đại 1.5 để logo to lớn hoành tráng (ko phải 0.15)
                         const pX = (x - canvasWidth / 2) * 1.5; 
                         const pY = -(y - canvasHeight / 2) * 1.5;
                         const pZ = (Math.random() - 0.5) * 5; 
@@ -87,13 +105,16 @@ export class Intro {
                 }
             }
 
+            // Chuyển đối Buffer thành GPU Float32Array
             this.originalPositions = new Float32Array(positionsArr);
             this.explosionTargets = new Float32Array(targetsArr);
 
+            // Nạp Buffer vào Three.JS
             this.particlesGeometry = new THREE.BufferGeometry();
             this.particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positionsArr, 3));
             this.particlesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colorsArr, 3));
 
+            // Cấu hình vật liệu
             const particlesMaterial = new THREE.PointsMaterial({
                 size: 2.2, 
                 map: particleTexture, 
@@ -106,27 +127,47 @@ export class Intro {
 
             this.particleSystem = new THREE.Points(this.particlesGeometry, particlesMaterial);
 
+            // Fade-in ảnh 2D mờ trong 2 giây đầu
             gsap.to(planeMat, { opacity: 1, duration: 2, ease: "power2.inOut" });
+            
+            // Xử lý hiện nút Start sau khoảng trễ ngắn
             if(startBtn) {
                 gsap.to(startBtn, { opacity: 1, duration: 1.5, delay: 1.5, onComplete: () => {
-                    startBtn.style.pointerEvents = 'auto'; 
+                    startBtn.style.pointerEvents = 'auto'; // Cho phép click
                 }});
             }
         });
 
+        // Bắt sự kiện người dùng Click Start
         if(startBtn) {
             startBtn.addEventListener('click', () => {
+                // Xóa sổ ngay lập tức giao diện UI và ảnh Plane Mesh ảo
                 gsap.to(startBtn, { opacity: 0, scale: 0.8, duration: 0.4, onComplete: () => startBtn.style.display = 'none' });
                 if (!this.particlesGeometry || !this.logoMesh) return;
                 scene.remove(this.logoMesh);
+                
+                // MỘT SỰ ĐÁNH TRÁO: Thay mặt phẳng Plane 2D thành Hệ thống 100 ngàn điểm 3D ngay lập tức và khớp trùng khít!
                 scene.add(this.particleSystem); 
 
+                // Khai báo một Object trừu tượng để chạy Timeline cho Animation vụ nổ (Lerp CPU)
                 const positionsAttribute = this.particlesGeometry.attributes.position;
                 const currentPositions = positionsAttribute.array;
                 const animObj = { progress: 0 };
 
-                gsap.to(animObj, {
-                    progress: 1, duration: 2.5, ease: "power3.inOut",
+                // Kế thừa PHẦN 1 & PHẦN 2 từ luồng làm việc mới của chúng ta
+                const introTL = gsap.timeline({
+                    onComplete: () => {
+                        this.isIntroActive = false;
+                        if (callback) callback(this.particleSystem); // Gửi cờ gọi Phần 3 (GSA Hội tụ)
+                    }
+                });
+
+                // PHẦN 1: KÍCH NỔ LOGO UET
+                // Giữ tốc độ nổ cực kỳ chậm rãi như màn trước (4 giây)
+                introTL.to(animObj, {
+                    progress: 1, 
+                    duration: 8.0, 
+                    ease: "power3.out",
                     onUpdate: () => {
                         for (let i = 0; i < currentPositions.length; i++) {
                             currentPositions[i] = THREE.MathUtils.lerp(this.originalPositions[i], this.explosionTargets[i], animObj.progress);
@@ -135,87 +176,52 @@ export class Intro {
                     }
                 });
 
-                gsap.to(camera.position, {
-                    z: -60, duration: 3, ease: "power2.in",
-                    onComplete: () => {
-                        this.isIntroActive = false;
-                        if (callback) callback(this.particleSystem);
-                    }
+                // PHẦN 2: LIA CAMERA TỪ NGOÀI VÀO TRONG (Đến Z=5 Gameplay)
+                introTL.to(camera.position, {
+                    x: 0, y: 1.2, z: 5, 
+                    duration: 2.0, 
+                    ease: "power2.inOut"
                 });
             });
         }
     }
 
+    // Vòng lặp cập nhật Game Loop Intro để logo nổi nhấp nhô
     update(elapsedTime) {
         if (!this.isIntroActive) return;
-        const floatY = Math.sin(elapsedTime * 0.5) * 5;
+        const floatY = Math.sin(elapsedTime * 0.5) * 5; // Tính quỹ đạo bù Y hình sin
         const floatRotY = Math.sin(elapsedTime * 0.2) * 0.1;
         if (this.logoMesh) { this.logoMesh.position.y = floatY; this.logoMesh.rotation.y = floatRotY; }
         if (this.particleSystem) { this.particleSystem.position.y = floatY; this.particleSystem.rotation.y = floatRotY; }
     }
 
+    // PHẦN 3: HIỆU ỨNG GSA (GEOMETRY SAMPLE & ANIMATE) -> Tụ Hạt vào lưới Tàu
     startTransition(logoParticles, playerModel, cam, onComplete) {
         if (!logoParticles || !playerModel) {
             if (onComplete) onComplete();
-            return;
+            return; // Lỗi thiếu hệ hạt trươc khi chạy
         }
 
-        const targetPositions = [];
-        
         playerModel.updateMatrixWorld(true);
-        playerModel.traverse((child) => {
-            if (child.isMesh) {
-                const positions = child.geometry.attributes.position.array;
-                const matrix = child.matrixWorld; 
-                
-                for (let i = 0; i < positions.length; i += 3) {
-                    const v = new THREE.Vector3(positions[i], positions[i+1], positions[i+2]);
-                    v.applyMatrix4(matrix); 
-                    targetPositions.push(v.x, v.y, v.z);
-                }
-            }
-        });
-
-        const positionsAttribute = logoParticles.geometry.attributes.position;
-        const particlePositions = positionsAttribute.array;
+        // Quét siêu phân luồng mảng điểm Mesh của Tàu. Yêu cầu lấy đủ 100 ngàn điểm Target
+        const targetPoints = GSA.getModelPoints(playerModel);
         
-        const explosionPositions = new Float32Array(particlePositions);
-        const animObj = { progress: 0 };
-
         const tl = gsap.timeline();
+        
+        // Gọi lệnh GPU Shader, gồng hạt bụi 4.1 giây cho tới khi gắn thẳng mặt boong tàu
+        tl.add(GSA.animateToTarget(gsap, logoParticles, targetPoints, {
+            duration: 3.5, 
+            ease: "power2.out", 
+        }), 0);
 
-        tl.to(animObj, {
-            progress: 1,
-            duration: 4.5,
-            ease: "expo.inOut", 
-            onUpdate: () => {
-                for (let i = 0; i < particlePositions.length; i += 3) {
-                    if (targetPositions.length === 0) break;
-                    
-                    const targetIdx = (i % targetPositions.length);
-                    const validIdx = targetIdx - (targetIdx % 3);
-                    
-                    const tx = targetPositions[validIdx];
-                    const ty = targetPositions[validIdx + 1];
-                    const tz = targetPositions[validIdx + 2];
-
-                    if(tx !== undefined) particlePositions[i] = THREE.MathUtils.lerp(explosionPositions[i], tx, animObj.progress);
-                    if(ty !== undefined) particlePositions[i+1] = THREE.MathUtils.lerp(explosionPositions[i+1], ty, animObj.progress);
-                    if(tz !== undefined) particlePositions[i+2] = THREE.MathUtils.lerp(explosionPositions[i+2], tz, animObj.progress);
-                }
-                positionsAttribute.needsUpdate = true;
-            }
-        });
-
-        tl.to(cam.position, { z: -10, duration: 3.5, ease: "power2.inOut" }, "<");
+        // Đứng im tại trục Gameplay ngắm sự thành công 2 giây
+        tl.to({}, { duration: 2.0 });
 
         tl.call(() => {
+            // Đóng ánh sáng 3D ảo và thay bằng lưới Polygon xịn của phi thuyền
             logoParticles.visible = false;
             playerModel.visible = true;
-            
-            gsap.to(cam.position, { x: 0, y: 2, z: 8, duration: 2, ease: "power2.out", onComplete: () => {
-                if (onComplete) onComplete();
-            }});
+            if (onComplete) onComplete();
         });
     }
 }

@@ -49,7 +49,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 this.player.update(); // Gọi logic điều khiển tàu (nút bấm, di chuyển, xoay nghiêng)
 
                 // --- LOGIC HORIZON BANKING (Xoay nghiêng toàn bộ thế giới) ---
-                const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X; // Lấy giới hạn bay ngang từ cấu hình
+                const envX = window.innerWidth / 80; // Đồng bộ với giới hạn trong Player.js
                 let xRatio = this.player.mesh.position.x / envX; // Tính xem tàu đang ở đâu so với biên (từ -1 đến 1)
                 xRatio = Math.max(-1.8, Math.min(1.8, xRatio)); // Giới hạn tỉ lệ để tránh nền bị xoay quá gắt
                 

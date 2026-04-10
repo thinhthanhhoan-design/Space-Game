@@ -5,6 +5,9 @@ export default defineConfig({
     port: 3000,
     open: true
   },
+  resolve: {
+    dedupe: ['three']
+  },
   build: {
     outDir: 'dist'
   }
