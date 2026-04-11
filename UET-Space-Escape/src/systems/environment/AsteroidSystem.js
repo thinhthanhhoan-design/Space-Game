@@ -51,8 +51,8 @@ export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việ
         }
         
         // Thiết lập vị trí xuất hiện dựa trên 'Flight Envelope' trong CONFIG
-        const envX = window.innerWidth / 80;
-        const envY = window.innerHeight / 80;
+        const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
+        const envY = CONFIG.ENGINE.FLIGHT_ENVELOPE.Y;
         
         // Đặt vị trí X và Y ngẫu nhiên trong khoảng rộng gấp 3 lần vùng bay để tạo mật độ bao phủ
         asteroid.position.x = (Math.random() - 0.5) * envX * 3;

@@ -1,9 +1,11 @@
 import { SceneController } from './SceneController.js'; // Nhập lớp quản lý cảnh 3D (Camera, Ánh sáng, Renderer)
 import { GameLoop } from './GameLoop.js'; // Nhập lớp vòng lặp điều khiển tiến trình trò chơi (60fps)
+import gsap from 'gsap';
 import { StateManager } from './StateManager.js'; // Nhập lớp quản lý các trạng thái game (Intro, Playing, v.v.)
 import { Intro } from '../ui/Intro.js'; // Nhập hệ thống UI giới thiệu và hoạt cảnh đầu game
 import { Player } from '../player/Player.js'; // Nhập lớp Người chơi để khởi tạo phi thuyền UETE-3637
 import { Background } from '../environment/Background.js'; // Nhập hệ thống môi trường, nền vũ trụ, tinh vân
+import { CinematicEffects } from '../effects/CinematicEffects.js';
 
 import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập đối tượng cấu hình trung tâm cho toàn bộ dự án
 
@@ -16,6 +18,8 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.intro = new Intro(this.sceneController); // Khởi tạo hoạt cảnh giới thiệu, dùng chung camera từ core
         this.player = new Player(this.sceneController.scene); // Khởi tạo tàu người chơi và đặt nó vào không gian 3D của scene
         this.background = new Background(); // Khởi tạo đối tượng quản lý nền trời vũ trụ và các vì sao
+        
+        this.cinematicEffects = new CinematicEffects(this.sceneController.scene, this.sceneController.camera);
         // AsteroidSystem hiện đang được cấu hình mật độ thấp hoặc gỡ bỏ tùy theo cài đặt trong CONFIG // Ghi chú hệ thống vật cản
     } // Kết thúc quá trình lắp ráp các module
 
@@ -28,9 +32,39 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
             const checkModel = setInterval(() => { // Thiết lập bộ đếm thời gian hỏi định kỳ 100ms
                 if (this.player.mesh) { // Kiểm tra nếu mô hình 3D chiếc máy bay đã được tải xong từ server
                     clearInterval(checkModel); // Nếu tàu đã xuất hiện thì ngừng việc kiểm tra lặp lại
-                    // Thực hiện hiệu ứng chuyển cảnh mượt mà từ màn hình Intro vào góc nhìn sau tàu
+                    // Thực hiện hiệu ứng chuyển cảnh mượt mà từ màn hình Intro vào góc nhìn sau tàu (HỘI TỤ HẠT -> TÀU XUẤT HIỆN)
                     this.intro.startTransition(logoPoints, this.player.mesh, this.sceneController.camera, () => {
-                        this.stateManager.setGameStarted(true); // Khi hiệu ứng kết thúc, chuyển trạng thái game sang "PLAYING"
+                        
+                        // Đảm bảo tàu được hiển thị trực quan ngay bây giờ
+                        this.player.mesh.visible = true;
+                        
+                        // Kích hoạt hiệu ứng sao bay sượt qua camera tạo tốc độ Warp
+                        this.cinematicEffects.startSpeedLines();
+
+                        // Đợi 1 giây sau khi tàu hiện lên để người chơi chiêm ngưỡng, sau đó mới chạy film và lời thoại
+                        setTimeout(() => {
+                            // SAU KHI TÀU XUẤT HIỆN -> CHẠY SHORT FILM (CÁC CẢNH QUAY CAMERA & LỜI THOẠI)
+                            this.cinematicEffects.runShortFilm(CONFIG.CINEMATIC.SHOTS, () => {
+                                
+                                // SAU KHI KẾT THÚC SHORT FILM -> KÍCH HOẠT HỐ ĐEN (CLIMAX)
+                                this.cinematicEffects.warningEffect();
+                                this.cinematicEffects.showText("CẢNH BÁO: Phát hiện lỗ hổng không gian khổng lồ!", 2.5);
+                                
+                                setTimeout(() => {
+                                    // Tắt sao bay để dồn sự chú ý vào hố đen
+                                    this.cinematicEffects.stopSpeedLines();
+                                    
+                                    this.cinematicEffects.triggerBlackHole(this.player.mesh, () => {
+                                        // SAU KHI XUYÊN QUA HỐ ĐEN -> CHẠY HIỆU ỨNG ĐƯỜNG HẦM
+                                        this.cinematicEffects.startTunnelEffect(this.player.mesh, () => {
+                                            // KẾT THÚC ĐƯỜNG HẦM -> BẮT ĐẦU GAMEPLAY THỰC SỰ
+                                            this.stateManager.setGameStarted(true);
+                                        });
+                                    });
+                                }, 1500);
+
+                            });
+                        }, 1000);
                     }); // Kết thúc callback hàm chuyển cảnh
                 } // Kết thúc kiểm tra model
             }, 100); // Tần suất kiểm tra là 0.1 giây một lần
@@ -42,14 +76,13 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
     update(elapsedTime, delta) { // Hàm cập nhật logic game, được GameLoop gọi liên tục (60 lần/giây)
         if (!this.stateManager.isGameStarted) { // Nếu trò chơi đang ở giai đoạn Intro (chưa bắt đầu bay thật)
             this.intro.update(elapsedTime); // Chỉ cập nhật các hiệu ứng chuyển động trong màn hình Intro
-            if (this.player.mesh) this.player.mesh.visible = false; // Ẩn mô hình tàu chính để không bị lọt vào khung hình intro
         } else { // Nếu trạng thái đã chuyển sang "PLAYING" (đang chơi)
             if (this.player.mesh) { // Đảm bảo mô hình tàu đã sẵn sàng
                 this.player.mesh.visible = true; // Hiện tàu bay lên để người chơi điều khiển
                 this.player.update(); // Gọi logic điều khiển tàu (nút bấm, di chuyển, xoay nghiêng)
 
                 // --- LOGIC HORIZON BANKING (Xoay nghiêng toàn bộ thế giới) ---
-                const envX = window.innerWidth / 80; // Đồng bộ với giới hạn trong Player.js
+                const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X; 
                 let xRatio = this.player.mesh.position.x / envX; // Tính xem tàu đang ở đâu so với biên (từ -1 đến 1)
                 xRatio = Math.max(-1.8, Math.min(1.8, xRatio)); // Giới hạn tỉ lệ để tránh nền bị xoay quá gắt
                 

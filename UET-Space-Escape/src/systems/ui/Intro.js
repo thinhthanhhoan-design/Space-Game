@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import gsap from 'gsap';
 import { GSA } from '../effects/GSA.js';
+import { CONFIG } from '../../utils/CONFIG.JS';
 
 export class Intro {
     constructor(sceneController) {
@@ -163,7 +164,7 @@ export class Intro {
                 });
 
                 // PHẦN 1: KÍCH NỔ LOGO UET
-                // Giữ tốc độ nổ cực kỳ chậm rãi như màn trước (4 giây)
+                // Sử dụng thời lượng từ CONFIG (ví dụ INTRO_DURATION hoặc giá trị mặc định)
                 introTL.to(animObj, {
                     progress: 1, 
                     duration: 8.0, 
@@ -176,9 +177,10 @@ export class Intro {
                     }
                 });
 
-                // PHẦN 2: LIA CAMERA TỪ NGOÀI VÀO TRONG (Đến Z=5 Gameplay)
+                // PHẦN 2: LIA CAMERA TỪ NGOÀI VÀO TRONG (Đến tọa độ Gameplay từ CONFIG)
+                const camOffset = CONFIG.CAMERA.OFFSET;
                 introTL.to(camera.position, {
-                    x: 0, y: 1.2, z: 5, 
+                    x: camOffset.x, y: camOffset.y, z: camOffset.z, 
                     duration: 2.0, 
                     ease: "power2.inOut"
                 });
