@@ -116,7 +116,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
         const tl = gsap.timeline();
         tl.to([this.blackHole.scale, this.blackGlow.scale], { x: 5, y: 5, z: 5, duration: 1.0, ease: "power2.out" });
         gsap.to(this.blackGlow.rotation, { z: "+=6", duration: 3, repeat: -1, ease: "none" });
-        tl.to(this.camera.position, { x: 0, y: 0.6, z: 2.5, duration: 1.5, ease: "power2.inOut" }, "-=0.5");
+        tl.to(this.camera.position, { x: 0, y: 3, z: 10, duration: 1, ease: "power2.inOut" }, "-=0.5");
         tl.to(targetMesh.position, { x: 0, y: 0, z: -50, duration: 1.2, ease: "power3.in" }, "+=0.3");
         tl.to(targetMesh.scale, { x: 0.0001, y: 0.0001, z: 0.0001, duration: 1.2, ease: "power3.in" }, "<");
         tl.to(this.whiteFlash, { opacity: 1, duration: 0.2 }, "-=0.1");
