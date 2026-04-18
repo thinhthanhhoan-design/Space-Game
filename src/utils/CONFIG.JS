@@ -70,7 +70,7 @@ export const CONFIG = {
         end: 9,
         text: "Cảnh báo: tín hiệu lạ phát hiện!",
         camera: {
-          pos: [-2, 4, 5],
+          pos: [-3, 2, 8],
           lookAt: [0, 0, -5],
           fov: 80,
         },
@@ -82,8 +82,8 @@ export const CONFIG = {
         end: 13,
         text: "Hệ thống AI bị vô hiệu hoá. Đang rơi tự do...",
         camera: {
-          pos: [0, 7, 16],
-          lookAt: [0, 0, -12],
+          pos: [0, 3, 10],
+          lookAt: [0, 0, 0],
           fov: 75,
         },
       },
