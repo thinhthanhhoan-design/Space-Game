@@ -1,0 +1,34 @@
+/* Khung nền vũ trụ */
+body { 
+    margin: 0; 
+    overflow: hidden; 
+    background-color: #071539; 
+    font-family: 'Courier New', Courier, monospace; 
+}
+
+/* Chứa môi trường 3D */
+#canvas-container { 
+    position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; 
+}
+
+/* Lớp UI đè lên trên để chứa nút bấm START */
+#ui-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: flex-end;
+    padding-bottom: 15vh; box-sizing: border-box;
+    pointer-events: none; /* Cho phép click xuyên qua lớp này vào game */
+}
+
+/* Nút START siêu ngầu từ Cảnh 1 */
+#start-btn {
+    pointer-events: auto; padding: 15px 50px; font-size: 28px; font-weight: bold;
+    color: #fff; background: rgba(0, 0, 0, 0.5); border: 2px solid #fff;
+    cursor: pointer; text-transform: uppercase; letter-spacing: 5px;
+    transition: all 0.3s ease; box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    backdrop-filter: blur(5px);
+}
+
+#start-btn:hover { 
+    background: #fff; color: #000; 
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.8); 
+}
