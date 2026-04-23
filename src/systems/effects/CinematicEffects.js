@@ -231,7 +231,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
                 this.scene.remove(this.blackHoleGroup);
                 this.blackHoleGroup = null;
             }
-            targetMesh.scale.set(0.01, 0.01, 0.01);
+            targetMesh.scale.set(1.0, 1.0, 1.0);
             targetMesh.position.set(0, 0, 0);
             if (onComplete) onComplete();
         });
@@ -268,23 +268,23 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
     }
 
     startSpeedLines() {
-        const lineCount = 3000;
-        const geo = new THREE.BufferGeometry();
-        const posArr = new Float32Array(lineCount * 3);
-        const sizeArr = new Float32Array(lineCount);
-        for (let i = 0; i < lineCount; i++) {
-            posArr[i * 3] = (Math.random() - 0.5) * 80;
-            posArr[i * 3 + 1] = (Math.random() - 0.5) * 80;
-            posArr[i * 3 + 2] = -Math.random() * 300;
-            sizeArr[i] = Math.random() * 2;
+            const lineCount = 3000;
+            const geo = new THREE.BufferGeometry();
+            const posArr = new Float32Array(lineCount * 3);
+            const sizeArr = new Float32Array(lineCount);
+            for (let i = 0; i < lineCount; i++) {
+                posArr[i * 3] = (Math.random() - 0.5) * 80;
+                posArr[i * 3 + 1] = (Math.random() - 0.5) * 80;
+                posArr[i * 3 + 2] = -Math.random() * 300;
+                sizeArr[i] = Math.random() * 2;
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+            const mat = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.2, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+            this.speedLines = new THREE.Points(geo, mat);
+            this.scene.add(this.speedLines);
+            this.isSpeedLinesActive = true;
+            this.animateSpeedLines();
         }
-        geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-        const mat = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.15, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
-        this.speedLines = new THREE.Points(geo, mat);
-        this.scene.add(this.speedLines);
-        this.isSpeedLinesActive = true;
-        this.animateSpeedLines();
-    }
 
     animateSpeedLines() {
         if (!this.isSpeedLinesActive || !this.speedLines) return;
@@ -357,7 +357,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
         }
 
         // 4. Vệt sáng (Streaks)
-        const streakCount = 1200; // Tăng thêm số lượng tia sáng
+        const streakCount = 1500; // Tăng thêm số lượng tia sáng
         // Dùng OctahedronGeometry (hình bát diện) và scale dài ra sẽ được hình kim nhọn 2 đầu
         const streakGeo = new THREE.OctahedronGeometry(0.5, 0);
         const streakColors = [0xffffff, 0xffffff, 0xffffff, 0xffffff, 0x00ffff, 0x00aaff]; // Tăng tỷ lệ tia trắng (4 trắng : 2 xanh)
@@ -369,7 +369,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
             const mat = new THREE.MeshBasicMaterial({
                 color: colorHex,
                 transparent: true,
-                opacity: 0.8, // Sửa dấu chấm phẩy thành dấu phẩy ở đây
+                opacity: isWhite ? 1.0 : 0.8, // Sửa dấu chấm phẩy thành dấu phẩy ở đây
                 blending: THREE.AdditiveBlending,
                 depthWrite: false
             });
@@ -380,7 +380,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
         const dummy = new THREE.Object3D();
         this.warpStreaksGroups.forEach((instMesh, gIdx) => {
             for (let i = 0; i < instMesh.count; i++) {
-                const radius = 3 + Math.random() * 60;
+                const radius = 15 + Math.random() * 60;
                 const angle = Math.random() * Math.PI * 2;
                 const z = -Math.random() * 300;
                 dummy.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, z);
@@ -427,7 +427,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
         this.streakData.forEach((data) => {
             data.z += data.speed * this.warpSpeedMultiplier;
             data.angle += 0.01 * this.warpSpeedMultiplier;
-            if (data.z > 20) { data.z = -300 - Math.random() * 50; data.radius = 3 + Math.random() * 60; }
+            if (data.z > 20) { data.z = -300 - Math.random() * 50; data.radius = 15 + Math.random() * 60; }
             dummy.position.set(Math.cos(data.angle) * data.radius, Math.sin(data.angle) * data.radius, data.z);
             // Tia trắng và cyan (groupIndex < 3) sẽ to hơn một chút để trông sáng hơn
             const sizeScale = data.groupIndex < 3 ? 0.16 : 0.12;

@@ -11,6 +11,8 @@ import { EnemyManager } from '../enemy/Enemy.js';
 import { Boss } from '../enemy/Boss.js';
 import { AsteroidSystem } from '../environment/AsteroidSystem.js';
 import { Combat } from '../player/Combat.js';
+import { UIManager } from '../ui/UIManager.js';
+import { BossUI } from '../ui/BossUI.js';
 
 import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập đối tượng cấu hình trung tâm cho toàn bộ dự án
 
@@ -31,6 +33,8 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.asteroidSystem = new AsteroidSystem(this.sceneController.scene);
         this.combat = new Combat();
         this.boss = null;
+        this.uiManager = new UIManager();
+        this.bossUI = new BossUI();
 
         this.gamePlayState = 'WAVES'; // 'WAVES', 'ASTEROIDS', 'BOSS'
 
@@ -78,6 +82,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                                         this.cinematicEffects.startTunnelEffect(this.player.mesh, () => {
                                             // KẾT THÚC ĐƯỜNG HẦM -> BẮT ĐẦU GAMEPLAY THỰC SỰ
                                             this.stateManager.setGameStarted(true);
+                                            this.uiManager.show(); // Hiển thị HUD người chơi
                                             this.enemyManager.startWaveSystem();
                                         });
                                     });
@@ -106,6 +111,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     currentEnemies = [this.boss];
                 }
                 this.player.update(currentEnemies); // Gọi logic điều khiển tàu, truyền list quái vào để vẽ tâm ngắm
+                this.uiManager.update(this.player, this.enemyManager.killCount || 0); // Liên tục cập nhật HUD máu, đạn
 
                 // --- LOGIC HORIZON BANKING (Xoay nghiêng toàn bộ thế giới) ---
                 const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
@@ -136,8 +142,10 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                         this.gamePlayState = 'BOSS';
                         if (!this.boss) { // Lần đầu sinh Boss
                             this.boss = new Boss(this.sceneController.scene, this.projectileSystem);
+                            this.bossUI.bindBoss(this.boss); // Gắn dữ liệu boss vào thanh máu UI
                             this.boss.onRetreatComplete = () => {
                                 console.log("Boss 1 đã bỏ chạy. Sinh lại Wave quái 1!");
+                                this.bossUI.hide(); // Ẩn boss UI khi boss rút lui
                                 this.gamePlayState = 'WAVES';
                                 this.enemyManager.resetAndStartWaveSystem();
                             };
@@ -149,12 +157,14 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                             this.boss.mesh.scale.set(3, 3, 3);
                             this.boss.shootCount = 0;
                             this.boss.shootTimer = 0;
+                            this.bossUI.show(); // Hiện lại thanh máu Boss UI
                         }
                     }
                 } else if (this.gamePlayState === 'BOSS') {
                     if (this.boss) {
                         this.boss.update(delta, this.player.mesh.position);
                         this.combat.update(this.player, [this.boss], this.asteroidSystem.asteroids);
+                        this.bossUI.update(); // Liên tục cập nhật % máu
 
                         if (this.boss.isDead) {
                             console.log("🎉 BOSS BỊ TIÊU DIỆT! LEVEL 1 CLEARED!");

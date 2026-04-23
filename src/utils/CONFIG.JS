@@ -11,7 +11,7 @@ export const CONFIG = {
   ASSETS: {
     MODELS: {
       UET_LOGO: "PROCEDURAL", // Dùng hạt (particles) thay cho model logo
-      PLAYER_V1: "/models/uete_3637.glb",
+      PLAYER_V1: "/models/Tau.glb",
       PLAYER_V2: "PROCEDURAL",
       PLAYER_V3: "PROCEDURAL",
       ENEMY_1: "/models/Monster 1.glb",
