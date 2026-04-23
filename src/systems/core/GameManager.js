@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { SceneController } from './SceneController.js'; // Nhập lớp quản lý cảnh 3D (Camera, Ánh sáng, Renderer)
 import { GameLoop } from './GameLoop.js'; // Nhập lớp vòng lặp điều khiển tiến trình trò chơi (60fps)
 import gsap from 'gsap';
@@ -11,6 +12,8 @@ import { EnemyManager } from '../enemy/Enemy.js';
 import { Boss } from '../enemy/Boss.js';
 import { AsteroidSystem } from '../environment/AsteroidSystem.js';
 import { Combat } from '../player/Combat.js';
+import { ExplosionSystem } from '../effects/Explosion.js';
+import { UIManager } from '../ui/UIManager.js';
 
 import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập đối tượng cấu hình trung tâm cho toàn bộ dự án
 
@@ -25,12 +28,14 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.background = new Background(); // Khởi tạo đối tượng quản lý nền trời vũ trụ và các vì sao
 
         this.cinematicEffects = new CinematicEffects(this.sceneController.scene, this.sceneController.camera);
-        // AsteroidSystem hiện đang được cấu hình mật độ thấp hoặc gỡ bỏ tùy theo cài đặt trong CONFIG // Ghi chú hệ thống vật cản
         this.projectileSystem = new ProjectileSystem(this.sceneController.scene);
         this.enemyManager = new EnemyManager(this.sceneController.scene, this.projectileSystem);
         this.asteroidSystem = new AsteroidSystem(this.sceneController.scene);
         this.combat = new Combat();
+        this.explosionSystem = new ExplosionSystem(this.sceneController.scene, this.sceneController.camera);
+        this.uiManager = new UIManager();
         this.boss = null;
+        this.currentLevelKey = 'LEVEL_1'; // Theo dõi màn chơi hiện tại
 
         this.gamePlayState = 'WAVES'; // 'WAVES', 'ASTEROIDS', 'BOSS'
 
@@ -78,7 +83,11 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                                         this.cinematicEffects.startTunnelEffect(this.player.mesh, () => {
                                             // KẾT THÚC ĐƯỜNG HẦM -> BẮT ĐẦU GAMEPLAY THỰC SỰ
                                             this.stateManager.setGameStarted(true);
+                                            this.uiManager.show();
                                             this.enemyManager.startWaveSystem();
+
+                                            // Hiệu ứng nhiễu nhiệt động cơ
+                                            this.explosionSystem.attachEngineHeat(this.player.mesh);
                                         });
                                     });
                                 }, 1500);
@@ -93,60 +102,69 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.gameLoop.start(); // Chính thức kích hoạt vòng lặp game liên tục (requestAnimationFrame)
     } // Kết thúc hàm nạp tài nguyên
 
-    update(elapsedTime, delta) { // Hàm cập nhật logic game, được GameLoop gọi liên tục (60 lần/giây)
-        if (!this.stateManager.isGameStarted) { // Nếu trò chơi đang ở giai đoạn Intro (chưa bắt đầu bay thật)
-            this.intro.update(elapsedTime); // Chỉ cập nhật các hiệu ứng chuyển động trong màn hình Intro
-        } else { // Nếu trạng thái đã chuyển sang "PLAYING" (đang chơi)
+    update(elapsedTime, delta) { // Hàm cập nhật logic game
+        this.uiManager.updateFPS(delta); // Luôn cập nhật FPS ở mọi trạng thái
+
+        if (!this.stateManager.isGameStarted) {
+            this.intro.update(elapsedTime); // Chỉ cập nhật Intro khi game chưa bắt đầu
+        } else { // Khi game đã bắt đầu (PLAYING)
             if (this.player.mesh) { // Đảm bảo mô hình tàu đã sẵn sàng
-                this.player.mesh.visible = true; // Hiện tàu bay lên để người chơi điều khiển
+                this.player.mesh.visible = true;
                 let currentEnemies = [];
                 if (this.gamePlayState === 'WAVES') {
                     currentEnemies = this.enemyManager.enemies;
                 } else if (this.gamePlayState === 'BOSS' && this.boss) {
                     currentEnemies = [this.boss];
                 }
-                this.player.update(currentEnemies); // Gọi logic điều khiển tàu, truyền list quái vào để vẽ tâm ngắm
+                this.player.update(currentEnemies);
 
-                // --- LOGIC HORIZON BANKING (Xoay nghiêng toàn bộ thế giới) ---
+                // --- LOGIC HORIZON BANKING ---
                 const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
-                let xRatio = this.player.mesh.position.x / envX; // Tính xem tàu đang ở đâu so với biên (từ -1 đến 1)
-                xRatio = Math.max(-1.8, Math.min(1.8, xRatio)); // Giới hạn tỉ lệ để tránh nền bị xoay quá gắt
-
-                // Tính toán góc nghiêng của nền trời dựa trên vị trí ngang của tàu (nghiêng ngược lại để tạo cảm giác thực)
+                let xRatio = this.player.mesh.position.x / envX;
+                xRatio = Math.max(-1.8, Math.min(1.8, xRatio));
                 const targetBgRoll = -xRatio * CONFIG.ENGINE.DYNAMIC_BANKING.WORLD_ROLL_LIMIT;
-                // Áp dụng góc xoay này vào hệ thống Background với độ mượt lerp đã cài đặt
                 this.background.setRoll(targetBgRoll, CONFIG.ENGINE.DYNAMIC_BANKING.SMOOTHNESS);
 
                 // --- LOGIC GAMEPLAY SEQUENCE ---
                 this.projectileSystem.update(delta);
                 this.asteroidSystem.update(delta);
+                this.explosionSystem.update(delta);
 
                 // Kiểm tra va chạm đạn với người chơi
                 const dmg = this.projectileSystem.checkCollision(this.player.mesh, 1.2);
                 if (dmg) {
                     this.player.takeDamage(dmg);
-                    this.sceneController.triggerShake(0.5, 0.3);
+                    this.sceneController.triggerShake(0.3, 0.2); // Rung camera nhẹ khi trúng đạn
+                    this.explosionSystem.spawnShipImpact(this.player.mesh.position); // Hiệu ứng khói/lửa khi trúng đạn
+                    this.explosionSystem.startWarning(0.4); // Nháy đỏ nhẹ màn hình khi bị thương
                 }
 
                 if (this.gamePlayState === 'WAVES') {
                     this.enemyManager.update(delta, this.player.mesh.position);
-                    this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids);
+                    this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem);
                     
                     if (this.enemyManager.isAllWavesCleared) {
                         this.gamePlayState = 'BOSS';
-                        if (!this.boss) { // Lần đầu sinh Boss
+                        if (!this.boss) {
                             this.boss = new Boss(this.sceneController.scene, this.projectileSystem);
+                            
+                            // Hiệu ứng CẢNH BÁO trước khi Boss vào trận
+                            this.explosionSystem.startWarning(3.0);
+                            this.sceneController.triggerShake(0.35, 3.0); // Giảm rung xuống 0.35 cho dễ nhìn hơn
+                            this.uiManager.showBossHP("TRÙM KHÔNG GIAN V1");
                             this.boss.onRetreatComplete = () => {
-                                console.log("Boss 1 đã bỏ chạy. Sinh lại Wave quái 1!");
                                 this.gamePlayState = 'WAVES';
-                                this.enemyManager.resetAndStartWaveSystem();
+                                this.enemyManager.resetAndStartWaveSystem(1);
                             };
-                            console.log("Boss 1 xuất hiện!");
-                        } else { // Boss quay trở lại sau khi bỏ chạy
-                            console.log("Boss 1 quay trở lại!");
+                        } else {
+                            // Boss quay trở lại
+                            this.explosionSystem.startWarning(2.0);
+                            this.sceneController.triggerShake(0.5, 2.0);
+                            
+                            this.uiManager.showBossHP("TRÙM KHÔNG GIAN V1 (FINAL)");
                             this.boss.state = 'FIGHTING';
                             this.boss.mesh.position.set(0, 10, -40);
-                            this.boss.mesh.scale.set(3, 3, 3);
+                            this.boss.mesh.scale.set(10, 10, 10);
                             this.boss.shootCount = 0;
                             this.boss.shootTimer = 0;
                         }
@@ -154,26 +172,30 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 } else if (this.gamePlayState === 'BOSS') {
                     if (this.boss) {
                         this.boss.update(delta, this.player.mesh.position);
-                        this.combat.update(this.player, [this.boss], this.asteroidSystem.asteroids);
+                        this.combat.update(this.player, [this.boss], this.asteroidSystem.asteroids, this.explosionSystem);
+                        this.uiManager.updateBossHP(this.boss.hp, this.boss.maxHP);
+
+                        if (this.boss.state === 'RETREATING') {
+                            this.uiManager.hideBossHP();
+                        }
 
                         if (this.boss.isDead) {
-                            console.log("🎉 BOSS BỊ TIÊU DIỆT! LEVEL 1 CLEARED!");
-                            this.gamePlayState = 'VICTORY'; // Chuyển trạng thái game sang Chiến Thắng
+                            this.uiManager.hideBossHP();
+                            this.explosionSystem.spawnBossExplosion(this.boss.mesh.position);
+                            this.sceneController.triggerShake(1.5, 0.8);
+                            this.gamePlayState = 'VICTORY';
                         }
                     }
-                } else if (this.gamePlayState === 'VICTORY') {
-                    // Xử lý hiệu ứng qua màn
                 }
-            } // Kết thúc block player update
+            }
+            this.uiManager.update(this.player, this.currentLevelKey);
         } // Kết thúc khối phân nhánh trạng thái
 
         // --- CẬP NHẬT CAMERA (Camera Update) ---
-        if (this.stateManager.isGameStarted) { // Nếu đã vào màn chơi chính
-            // Yêu cầu camera đuổi theo và lấy nét vào mô hình máy bay
+        if (this.stateManager.isGameStarted) {
             this.sceneController.update(delta, this.player.mesh);
-        } // Kết thúc cập nhật camera
+        }
 
-        // Cập nhật các hiệu ứng nền vũ trụ (sao quay nhè nhẹ, tinh vân trôi lững lờ)
-        this.background.update();
-    } // Khép lại hàm update tổng
-} // Khép lại lớp GameManager
+        this.background.update(delta);
+    }
+}

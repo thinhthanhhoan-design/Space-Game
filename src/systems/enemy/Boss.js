@@ -14,6 +14,7 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         this.state = 'FIGHTING'; // Trạng thái: FIGHTING, RETREATING, HIDDEN
         this.shootTimer = 0;
         this.shootCount = 0;
+        this.hasRetreated = false; // Đánh dấu đã từng bỏ chạy chưa
         this.onRetreatComplete = null; // Callback khi Boss chạy trốn thành công
     }
 
@@ -21,19 +22,19 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         const modelPath = CONFIG.ASSETS.MODELS.BOSS_1; // Lấy đường dẫn file 3D từ cấu hình
         this.loader.load(modelPath, (glb) => { // Bắt đầu tải model
             this.mesh = glb.scene; // Gán mô hình đã tải vào biến this.mesh
-            this.mesh.scale.set(3, 3, 3); // Phóng to Boss lên 3 lần
+            this.mesh.scale.set(10, 10, 10); // Phóng to Boss lên 6 lần
             this.mesh.position.set(0, 10, -40); // Đặt vị trí ban đầu (cao 10, cách xa người chơi 40 đơn vị)
             this.scene.add(this.mesh); // Thêm Boss vào cảnh 3D để nhìn thấy được
             this.isLoaded = true; // Đánh dấu đã tải xong để bắt đầu cập nhật logic
         }, undefined, (err) => { // Nếu tải file 3D bị lỗi (sai đường dẫn, mất mạng...)
             console.error("Lỗi khi tải model Boss 1.2:", err);
             // Fallback: Tạo một khối hình nút thắt (TorusKnot) màu hồng để thay thế nếu không tải được model
-            const geo = new THREE.TorusKnotGeometry(2, 0.5, 100, 16);
-            const mat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-            this.mesh = new THREE.Mesh(geo, mat);
-            this.mesh.position.set(0, 10, -40);
-            this.scene.add(this.mesh);
-            this.isLoaded = true;
+            // const geo = new THREE.TorusKnotGeometry(2, 0.5, 100, 16);
+            // const mat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+            // this.mesh = new THREE.Mesh(geo, mat);
+            // this.mesh.position.set(0, 10, -40);
+            // this.scene.add(this.mesh);
+            // this.isLoaded = true;
         });
     }
 // 4. Logic cập nhật mỗi khung hình
@@ -73,25 +74,34 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         // Cập nhật vị trí X dựa trên hướng, tốc độ và thời gian delta (đảm bảo mượt ở mọi tốc độ khung hình)
         this.mesh.position.x += this.moveDirection * this.moveSpeed * delta * 60;
 
-        // Chặn biên ngang: Nếu chạm giới hạn 80% vùng bay, Boss sẽ đổi hướng ngược lại
-        const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
-        if (this.mesh.position.x > envX * 0.8) this.moveDirection = -1;
-        if (this.mesh.position.x < -envX * 0.8) this.moveDirection = 1;
+        // --- KIỂM TRA BIÊN NGANG TƯƠNG ĐỐI (GIỮ BOSS TRONG MÀN HÌNH) ---
+        const viewLimitX = 18; // Bán kính di chuyển ngang của Boss so với Player
+        const minX = playerPos.x - viewLimitX;
+        const maxX = playerPos.x + viewLimitX;
+
+        if (this.mesh.position.x > maxX) {
+            this.mesh.position.x = maxX;
+            this.moveDirection = -1; // Đổi hướng sang trái
+        } else if (this.mesh.position.x < minX) {
+            this.mesh.position.x = minX;
+            this.moveDirection = 1; // Đổi hướng sang phải
+        }
 
         // Hiệu ứng "nhấp nhô": Dùng hàm Sin để Boss bay lên xuống nhẹ nhàng như đang thở
         this.mesh.position.y += Math.sin(Date.now() * 0.001) * 0.05;
 
         // --- LOGIC NHẢ CẦU 5s ---
         this.shootTimer += delta;
-        if (this.shootTimer >= 5.0) { // Mỗi 5s nhả quả cầu
+        if (this.shootTimer >= 2.0) { // Mỗi 2s nhả quả cầu
             this.shootTimer = 0;
             this.shootSphere(playerPos);
             this.shootCount++;
-            
-            if (this.shootCount >= 3) { // Nhả ra 3 lần
-                this.state = 'RETREATING'; // Rút lui
-                this.shootCount = 0; // Reset để lần sau xuất hiện bắn tiếp
-            }
+        }
+
+        // --- LOGIC RÚT LUI KHI MÁU <= 200 ---
+        if (this.state === 'FIGHTING' && this.hp <= 200 && !this.hasRetreated) {
+            this.state = 'RETREATING'; // Rút lui
+            this.hasRetreated = true; // Đánh dấu để lần sau quay lại không bỏ chạy nữa
         }
     }
 // 5. Hệ thống tấn công

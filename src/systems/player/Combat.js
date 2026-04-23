@@ -15,7 +15,7 @@ export class Combat {
     /**
      * Cập nhật logic va chạm tổng thể.
      */
-    update(player, enemies = [], asteroids = []) {
+    update(player, enemies = [], asteroids = [], explosionSystem = null) {
         if (!player.mesh) return;
 
         const playerPos = player.mesh.position;
@@ -27,6 +27,7 @@ export class Combat {
                 if (MathUtils.checkSphereCollisionSq(playerPos, enemy.mesh.position, this.playerHitboxRadiusSq, this.enemyHitboxRadiusSq)) {
                     console.log("⚠️ Player đâm trúng tàu địch!");
                     player.takeDamage(enemy.damage || 15);
+                    if (explosionSystem) explosionSystem.spawnShipImpact(playerPos);
                     enemy.die(); // Gọi hàm die() của Enemy class
                 }
             }
@@ -42,13 +43,14 @@ export class Combat {
                 if (MathUtils.checkSphereCollisionSq(playerPos, astMesh.position, this.playerHitboxRadiusSq, this.asteroidHitboxRadiusSq)) {
                     console.log("⚠️ Player đâm trúng thiên thạch!");
                     player.takeDamage(userData.damage || 10);
+                    if (explosionSystem) explosionSystem.spawnAsteroidImpact(astMesh.position);
                     userData.markedForDeletion = true;
                     astMesh.position.z = 100; // Đẩy thiên thạch ra xa chờ hủy
                 }
             }
         }
 
-        // 3. Đạn của Player trúng mục tiêu (Kích hoạt khi player có weapon và fire)
+        // 3. Đạn của Player trúng mục tiêu
         if (player.weapon) {
             const bullets = player.weapon.bullets;
             for (let i = 0; i < bullets.length; i++) {
@@ -63,7 +65,11 @@ export class Combat {
                     const enemy = enemies[j];
                     if (enemy.mesh && !enemy.isDead && !enemy.userData?.markedForDeletion) {
                         if (MathUtils.checkSphereCollisionSq(bulletPos, enemy.mesh.position, this.bulletHitboxRadiusSq, this.enemyHitboxRadiusSq)) {
-                            console.log(`💥 Đạn bắn trúng Enemy, gây ${bullet.userData.damage} DMG!`);
+                            if (explosionSystem) {
+                                explosionSystem.spawnHitFlash(bulletPos, 1.2);
+                                explosionSystem.spawnShipImpact(enemy.mesh.position); // Thêm nổ quái
+                            }
+                            
                             if (typeof enemy.takeDamage === 'function') {
                                 enemy.takeDamage(bullet.userData.damage);
                             } else {
@@ -86,7 +92,8 @@ export class Combat {
 
                     if (astMesh && !userData.markedForDeletion) {
                         if (MathUtils.checkSphereCollisionSq(bulletPos, astMesh.position, this.bulletHitboxRadiusSq, this.asteroidHitboxRadiusSq)) {
-                            console.log("💥 Đạn đập trúng thiên thạch!");
+                            if (explosionSystem) explosionSystem.spawnAsteroidImpact(astMesh.position);
+                            
                             userData.markedForDeletion = true;
                             astMesh.position.z = 100; // Xóa thiên thạch
                             bullet.userData.markedForDeletion = true;
