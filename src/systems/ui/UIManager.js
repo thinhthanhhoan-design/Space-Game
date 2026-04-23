@@ -171,10 +171,43 @@ export class UIManager {
     this.fpsText.style.borderRadius = "5px";
     this.fpsText.style.zIndex = "1001";
     this.fpsText.innerText = "FPS: --";
+
+    // ===== MESSAGE NOTIFICATION =====
+    this.messageContainer = document.createElement("div");
+    this.messageContainer.style.position = "fixed";
+    this.messageContainer.style.top = "50%";
+    this.messageContainer.style.left = "50%";
+    this.messageContainer.style.transform = "translate(-50%, -50%)";
+    this.messageContainer.style.fontFamily = "Orbitron, sans-serif";
+    this.messageContainer.style.fontSize = "32px";
+    this.messageContainer.style.fontWeight = "bold";
+    this.messageContainer.style.color = "#ffffff";
+    this.messageContainer.style.textAlign = "center";
+    this.messageContainer.style.pointerEvents = "none";
+    this.messageContainer.style.zIndex = "2000";
+    this.messageContainer.style.textShadow = "0 0 15px rgba(255,255,255,0.5)";
+    this.messageContainer.style.opacity = "0";
+    this.messageContainer.style.transition = "opacity 0.3s ease-out, transform 0.3s ease-out";
     
     document.body.appendChild(this.container);
     document.body.appendChild(this.bossHpContainer);
     document.body.appendChild(this.fpsText);
+    document.body.appendChild(this.messageContainer);
+  }
+
+  // Hiển thị thông báo trên màn hình
+  showMessage(text, color = "#ffffff", duration = 2000) {
+    this.messageContainer.innerText = text;
+    this.messageContainer.style.color = color;
+    this.messageContainer.style.textShadow = `0 0 20px ${color}`;
+    this.messageContainer.style.opacity = "1";
+    this.messageContainer.style.transform = "translate(-50%, -50%) scale(1.1)";
+
+    if (this.messageTimeout) clearTimeout(this.messageTimeout);
+    this.messageTimeout = setTimeout(() => {
+        this.messageContainer.style.opacity = "0";
+        this.messageContainer.style.transform = "translate(-50%, -50%) scale(1)";
+    }, duration);
   }
 
 

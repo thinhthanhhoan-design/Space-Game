@@ -100,7 +100,7 @@ export const CONFIG = {
   // ===============================
   ENGINE: {
     TYPE: "FORWARD_PROGRESSION",
-    FORWARD_SPEED: 0.25, // Đã tăng gấp đôi tốc độ (cũ: 0.175) để tàu lướt nhanh và mượt hơn
+    FORWARD_SPEED: 0.75, // Tăng lên 0.75 để tàu linh hoạt hơn với hệ thống velocity mới
     FLIGHT_ENVELOPE: {
       X: 40, // Mở rộng không gian bay ngang
       Y: 20, // Mở rộng không gian bay dọc
@@ -199,6 +199,49 @@ export const CONFIG = {
     LEVEL_3: {
       asteroid_speed: 0.05,
       asteroid_density: 25
+    }
+  },
+
+  // ===============================
+  // 🎁 ITEMS & POWERUPS
+  // ===============================
+  ITEMS: {
+    SPAWN_INTERVAL: 6.5,      // Cứ 6.5s spawn 1 item ngẫu nhiên
+    SPEED_FACTOR: 0.5,        // Tốc độ bay (0.5 = chậm hơn thiên thạch 1 nửa)
+    SCALE_BASE: 3.0,          // Tăng gấp đôi kích thước cơ bản (cũ: 1.5)
+    GLOW_OPACITY: 1.0,        // Tăng độ rực tối đa (cũ: 0.8)
+    EDGE_GLOW_OPACITY: 0.8,   // Tăng độ sáng viền trắng (cũ: 0.5)
+    LIGHT_INTENSITY: 10,      // Cường độ ánh sáng (cũ: 5)
+    LIGHT_RANGE: 25,          // Tầm chiếu sáng (cũ: 10)
+    COLLECTION_RADIUS: 4,   // Bán kính va chạm nhặt đồ (Tăng lên 3.5 để nhặt đồ dễ hơn)
+    
+    // --- Chỉ số Buff ---
+    HEALTH_VALUE: 100,        // Máu hồi phục
+    AMMO_REFILL_PERCENT: 0.5, // Nạp lại 50% số lượng đạn tối đa
+    SHIELD_DURATION: 5000,   // Thời gian giáp bảo vệ (5 giây)
+    
+    // --- Chỉ số Debuff ---
+    WEAPON_LOCK_DURATION: 7000, // Thời gian khóa súng (7 giây)
+    ENV_DISORDER_DURATION: 10000, // Thời gian rối loạn môi trường (10 giây)
+    ASTEROID_STORM: {
+        SPEED_MULT: 2.5,      // Thiên thạch bay nhanh gấp 2.5 lần
+        DENSITY_MULT: 5.0      // Mật độ thiên thạch dày gấp 5 lần
+    },
+
+    SPAWN_RANGE_FACTOR: 1.8,  // Hệ số thu hẹp vùng spawn (X, Y)
+    ANIM_DURATION: 0.2,       // Thời gian chuyển màu GSAP
+    SHAKE_INTENSITY: 1.5,     // Độ mạnh rung camera
+    
+    COLORS: {
+      BUFF: 0x00ff00,
+      DEBUFF: 0xff2200,
+      NEUTRAL: 0xaaaaaa       // Dùng khi đạn bắn trúng item
+    },
+
+    DROP_CHANCE: {
+      ENEMY_BUFF: 0.3,        // 30% quái rơi đồ xịn
+      ENEMY_DEBUFF: 0.1,      // 10% quái rơi đồ dỏm
+      ASTEROID: 0.2           // 20% thiên thạch rơi đồ
     }
   },
 

@@ -14,6 +14,7 @@ import { AsteroidSystem } from '../environment/AsteroidSystem.js';
 import { Combat } from '../player/Combat.js';
 import { ExplosionSystem } from '../effects/Explosion.js';
 import { UIManager } from '../ui/UIManager.js';
+import { ParticleSystem } from '../effects/ParticleSystem.js';
 
 import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập đối tượng cấu hình trung tâm cho toàn bộ dự án
 
@@ -29,15 +30,26 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
 
         this.cinematicEffects = new CinematicEffects(this.sceneController.scene, this.sceneController.camera);
         this.projectileSystem = new ProjectileSystem(this.sceneController.scene);
-        this.enemyManager = new EnemyManager(this.sceneController.scene, this.projectileSystem);
+        this.enemyManager = new EnemyManager(this.sceneController.scene, this.projectileSystem, this.player.itemSystem);
         this.asteroidSystem = new AsteroidSystem(this.sceneController.scene);
         this.combat = new Combat();
         this.explosionSystem = new ExplosionSystem(this.sceneController.scene, this.sceneController.camera);
+        this.particleSystem = new ParticleSystem(this.sceneController.scene);
         this.uiManager = new UIManager();
+        
+        // Kết nối ItemSystem với UI, Camera và AsteroidSystem để hiển thị thông báo và hiệu ứng
+        this.player.itemSystem.setUIManager(this.uiManager);
+        this.player.itemSystem.setCamera(this.sceneController.camera);
+        this.player.itemSystem.setAsteroidSystem(this.asteroidSystem);
+        
         this.boss = null;
         this.currentLevelKey = 'LEVEL_1'; // Theo dõi màn chơi hiện tại
 
         this.gamePlayState = 'WAVES'; // 'WAVES', 'ASTEROIDS', 'BOSS'
+        
+        // --- ITEM SPAWN SYSTEM ---
+        this.itemSpawnTimer = 0;
+        this.itemSpawnInterval = CONFIG.ITEMS.SPAWN_INTERVAL || 6.5; 
 
         // --- DEBUG SHORTCUTS ---
         window.addEventListener('keydown', (e) => {
@@ -116,7 +128,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 } else if (this.gamePlayState === 'BOSS' && this.boss) {
                     currentEnemies = [this.boss];
                 }
-                this.player.update(currentEnemies);
+                this.player.update(delta, currentEnemies);
 
                 // --- LOGIC HORIZON BANKING ---
                 const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
@@ -139,9 +151,18 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     this.explosionSystem.startWarning(0.4); // Nháy đỏ nhẹ màn hình khi bị thương
                 }
 
+                // --- Cập nhật Items tự do (Bay từ xa tới tương đương quái) ---
+                this.itemSpawnTimer += delta;
+                if (this.itemSpawnTimer > this.itemSpawnInterval) {
+                    this.itemSpawnTimer = 0;
+                    const itemTypes = ['HEALTH', 'AMMO', 'SHIELD', 'WEAPON_LOCK', 'ASTEROID_ITEM'];
+                    const type = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+                    this.player.itemSystem.spawnItem(type);
+                }
+
                 if (this.gamePlayState === 'WAVES') {
                     this.enemyManager.update(delta, this.player.mesh.position);
-                    this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem);
+                    this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem);
                     
                     if (this.enemyManager.isAllWavesCleared) {
                         this.gamePlayState = 'BOSS';
@@ -172,7 +193,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 } else if (this.gamePlayState === 'BOSS') {
                     if (this.boss) {
                         this.boss.update(delta, this.player.mesh.position);
-                        this.combat.update(this.player, [this.boss], this.asteroidSystem.asteroids, this.explosionSystem);
+                        this.combat.update(this.player, [this.boss], this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem);
                         this.uiManager.updateBossHP(this.boss.hp, this.boss.maxHP);
 
                         if (this.boss.state === 'RETREATING') {
