@@ -24,6 +24,11 @@ export const CONFIG = {
       SPACE_BG: "/textures/nebula_dark.jpg",
       PARTICLE: "/textures/star_glow.png",
       BUBBLE: "/textures/gas_bubble.png",
+      ITEM_SECURITY: "/textures/bao_ve.png",
+      ITEM_HP: "/textures/HP.png",
+      ITEM_DAN: "/textures/dan.png",
+      ITEM_KHOA_VK: "/textures/khoa_vk.png",
+      ITEM_THIEN_THACH: "/textures/thien_thach.png",
     },
     SOUNDS: {
       BGM_INTRO: "/sounds/mysterious_space.mp3",
