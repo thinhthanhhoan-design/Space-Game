@@ -60,8 +60,8 @@ export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việ
         // Đặt vị trí Z ở xa (tầm -150) theo cấu hình SPAWN_DISTANCE_Z
         asteroid.position.z = CONFIG.WORLD.SPAWN_DISTANCE_Z;
 
-        // Thiết lập kích thước tỉ lệ (scale) ngẫu nhiên để các thiên thạch to nhỏ khác nhau
-        const scale = 0.4 + Math.random() * 2.0;
+        // Thiết lập kích thước tỉ lệ (scale) lớn hơn (từ 1.5 đến 4.5)
+        const scale = 1.5 + Math.random() * 3.0;
         asteroid.scale.set(scale, scale, scale);
         
         // Đặt góc xoay ban đầu ngẫu nhiên quanh các trục X và Y
@@ -73,6 +73,7 @@ export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việ
             x: (Math.random() - 0.5) * 0.05,
             y: (Math.random() - 0.5) * 0.05
         };
+        asteroid.userData.damage = CONFIG.WORLD.LEVEL_1.asteroid_damage || 50; // Set sát thương của asteroid
 
         this.scene.add(asteroid); // Thêm thiên thạch vào scene chính để hiển thị
         this.asteroids.push(asteroid); // Lưu vào mảng quản lý để cập nhật logic sau này
@@ -90,7 +91,8 @@ export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việ
         }
 
         // 2. Cập nhật Vị trí và Xoay cho từng thiên thạch
-        const speedMultiplier = 60; // Tốc độ di chuyển tiến về phía màn hình (di chuyển theo trục Z dương)
+        const configSpeed = CONFIG.WORLD.LEVEL_1.asteroid_speed || 0.015;
+        const speedMultiplier = configSpeed * 4000; // Quy đổi ra tốc độ di chuyển
         
         for (let i = this.asteroids.length - 1; i >= 0; i--) { // Duyệt mảng từ dưới lên để an toàn khi xóa phần tử
             const asteroid = this.asteroids[i];

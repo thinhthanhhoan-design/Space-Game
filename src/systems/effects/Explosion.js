@@ -1,5 +1,5 @@
-// src/systems/effects/Explosion.js
 import * as THREE from "three";
+import gsap from "gsap";
 
 export class ExplosionSystem {
   constructor(scene, camera) {
@@ -219,10 +219,10 @@ export class ExplosionSystem {
   // ASTEROID LEVEL_1 EFFECT
   // ====================================================
   spawnAsteroidImpact(position) {
-    this.spawnHitFlash(position, 1.4);
-    this.spawnSparks(position, 45, 2.8);
-    this.spawnFireDust(position, 30);
-    this.spawnSmoke(position, 20);
+    this.spawnHitFlash(position, 2.5); // Tăng kích thước flash
+    this.spawnSparks(position, 60, 4.5); // Tăng số lượng và độ lan tỏa tia lửa
+    this.spawnFireDust(position, 40);
+    this.spawnSmoke(position, 30);
   }
 
   // ====================================================
@@ -232,6 +232,135 @@ export class ExplosionSystem {
     this.spawnHitFlash(position, 0.8);
     this.spawnSparks(position, 20, 1.6);
     this.spawnSmoke(position, 25);
+  }
+
+  // ====================================================
+  // SHOCKWAVE (Vòng tròn sóng xung kích)
+  // ====================================================
+  spawnShockwave(position, color = 0x00ffff, scale = 10) {
+    const geo = new THREE.RingGeometry(0.1, 0.2, 64);
+    const mat = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 1,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    const ring = new THREE.Mesh(geo, mat);
+    ring.position.copy(position);
+    ring.rotation.x = Math.PI / 2;
+    this.scene.add(ring);
+
+    gsap.to(ring.scale, {
+        x: scale,
+        y: scale,
+        duration: 0.8,
+        ease: "power2.out"
+    });
+    gsap.to(mat, {
+        opacity: 0,
+        duration: 0.8,
+        ease: "power2.in",
+        onComplete: () => {
+            this.scene.remove(ring);
+            geo.dispose();
+            mat.dispose();
+        }
+    });
+  }
+
+  // ====================================================
+  // DEBRIS (Mảnh vỡ bay ra)
+  // ====================================================
+  spawnDebris(position, count = 15) {
+    for (let i = 0; i < count; i++) {
+        const geo = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+        const mat = new THREE.MeshBasicMaterial({ color: 0x444444 });
+        const debris = new THREE.Mesh(geo, mat);
+        
+        debris.position.copy(position);
+        this.scene.add(debris);
+
+        const target = new THREE.Vector3(
+            position.x + (Math.random() - 0.5) * 20,
+            position.y + (Math.random() - 0.5) * 20,
+            position.z + (Math.random() - 0.5) * 20
+        );
+
+        gsap.to(debris.position, {
+            x: target.x,
+            y: target.y,
+            z: target.z,
+            duration: 1.5,
+            ease: "power1.out"
+        });
+        gsap.to(debris.rotation, {
+            x: Math.random() * 10,
+            y: Math.random() * 10,
+            duration: 1.5
+        });
+        gsap.to(mat, {
+            opacity: 0,
+            duration: 1.5,
+            delay: 0.5,
+            onComplete: () => {
+                this.scene.remove(debris);
+                geo.dispose();
+                mat.dispose();
+            }
+        });
+    }
+  }
+
+  // ====================================================
+  // BOSS EXPLOSION EFFECT (Cực kỳ hoành tráng)
+  // ====================================================
+  spawnBossExplosion(position) {
+    // 1. Sóng xung kích khổng lồ (Cyan/White)
+    this.spawnShockwave(position, 0x00ffff, 30);
+    this.spawnShockwave(position, 0xffffff, 15);
+
+    // 2. Chớp sáng màn hình
+    this.spawnHitFlash(position, 10.0);
+
+    // 3. Chuỗi vụ nổ liên hoàn (Daisy Chain)
+    for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+            const offset = new THREE.Vector3(
+                (Math.random() - 0.5) * 12,
+                (Math.random() - 0.5) * 12,
+                (Math.random() - 0.5) * 12
+            );
+            const p = position.clone().add(offset);
+            
+            this.spawnAsteroidImpact(p);
+            this.spawnSparks(p, 60, 4.0);
+            
+            // Hiệu ứng hạt lửa tung tóe
+            this.spawnFireDust(p, 40);
+        }, i * 150);
+    }
+
+    // 4. Mảnh vỡ bay ra
+    this.spawnDebris(position, 30);
+
+    // 5. Cú nổ cuối cùng cực lớn
+    setTimeout(() => {
+        this.spawnSparks(position, 300, 10.0);
+        this.spawnHitFlash(position, 20.0);
+        this.spawnShockwave(position, 0xffaa00, 50);
+        
+        // Rung lắc camera cực mạnh qua GSAP (nếu có tham chiếu camera)
+        if (this.camera) {
+            gsap.to(this.camera.position, {
+                x: "+=1.5",
+                y: "+=1.5",
+                duration: 0.1,
+                repeat: 10,
+                yoyo: true
+            });
+        }
+    }, 1200);
   }
 
   // ====================================================
@@ -323,12 +452,12 @@ export class ExplosionSystem {
     if (this.warningActive) {
       this.warningTime += delta;
 
-      const blink = Math.sin(this.warningTime * 20) > 0 ? 0.35 : 0.05;
+      const blink = Math.sin(this.warningTime * 15) * 0.2 + 0.2; // Nhấp nháy nhẹ nhàng hơn
       this.warningMesh.material.opacity = blink;
-
+ 
       if (this.warningTime >= this.warningDuration) {
         this.warningActive = false;
-        this.warningMesh.material.opacity = 0;
+        gsap.to(this.warningMesh.material, { opacity: 0, duration: 0.5 });
       }
     }
 

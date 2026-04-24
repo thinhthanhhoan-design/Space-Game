@@ -95,10 +95,10 @@ export const CONFIG = {
   // ===============================
   ENGINE: {
     TYPE: "FORWARD_PROGRESSION",
-    FORWARD_SPEED: 0.25, // Đã tăng gấp đôi tốc độ (cũ: 0.175) để tàu lướt nhanh và mượt hơn
+    FORWARD_SPEED: 0.35, // Tăng tốc độ điều khiển lên cao (cũ: 0.25) để khử cảm giác nặng nề lề mề
     FLIGHT_ENVELOPE: {
-      X: 40, // Mở rộng không gian bay ngang
-      Y: 20, // Mở rộng không gian bay dọc
+      X: 60, // Mở rộng không gian bay ngang ra xa hơn để thoải mái né đạn
+      Y: 100, // Khôn gian bay lên xuống tha hồ lạng lách
     },
     // Thông số cho hiệu ứng nghiêng thế giới
     DYNAMIC_BANKING: {
@@ -134,7 +134,7 @@ export const CONFIG = {
       V3: { hp_limit: 350, name: "UETE-Final-Form", next_model: "V2", REVERT_AT: 0.7 },
     },
     WEAPONS: {
-      GUN_1: { damage: 25, ammo: 100, fireRate: 0.4, ammo_per_shot: 1 },
+      GUN_1: { damage: 25, ammo: 1000, fireRate: 0.4, ammo_per_shot: 1 },
       GUN_2: { damage: 50, ammo: 50, fireRate: 0.3, ammo_per_shot: 2 },
       GUN_3: { damage: 45, ammo: 120, fireRate: 0.2, ammo_per_shot: 3 },
     }
@@ -146,10 +146,10 @@ export const CONFIG = {
   ENEMIES: {
     QUAI_1: { HP: 50, DAMAGE: 10 },
     BOSS_1: {
-      HP: 1000,
-      ATTACK_INTERVAL: 4,
+      HP: 300,
+      ATTACK_INTERVAL: 5,
       DAMAGE: 30,
-      LIMIT: 3,
+      LIMIT: 1,
       RETREAT_Z: -50
     },
     BOSS_2: {
@@ -176,8 +176,9 @@ export const CONFIG = {
     DESPAWN_DISTANCE_Z: 20,
 
     LEVEL_1: {
-      asteroid_speed: 0.015,
-      asteroid_density: 5, // Xóa hết thiên thạch (Mật độ = 0)
+      asteroid_speed: 0.03, // Tốc độ vừa phải
+      asteroid_density: 15, // Mật độ vừa phải
+      asteroid_damage: 50, // Sát thương -50hp
       FINAL_DASH: {
         trigger: "boss_1_retreat",
         duration: 8,
