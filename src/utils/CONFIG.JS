@@ -149,11 +149,13 @@ export const CONFIG = {
   // 👾 ENEMIES & BOSSES
   // ===============================
   ENEMIES: {
-    QUAI_1: { HP: 50, DAMAGE: 10 },
+    QUAI_1: { HP: 50, DAMAGE: 10, BULLET_SPEED: 0.8 },
     BOSS_1: {
       HP: 300,
       ATTACK_INTERVAL: 5,
       DAMAGE: 30,
+      BULLET_SPEED: 1.5,      // Tốc độ bắn đạn thường/cầu
+      HOMING_SPEED: 5,      // Tốc độ bắn đạn tự nhắm
       LIMIT: 1,
       RETREAT_Z: -50
     },

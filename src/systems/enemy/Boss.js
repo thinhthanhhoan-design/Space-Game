@@ -4,9 +4,10 @@ import { CONFIG } from '../../utils/CONFIG.JS';
 import { Enemy } from './Enemy.js';
 
 export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Enemy
-    constructor(scene, projectileSystem) { // Hàm khởi tạo nhận vào scene (cảnh 3D) và hệ thống đạn
-        super(scene, projectileSystem, 'BOSS_1'); // Gọi hàm khởi tạo của lớp cha (Enemy) với loại là 'BOSS_1'
-        this.hp = CONFIG.ENEMIES.BOSS_1?.HP || 500; // Gán máu cho Boss từ file cấu hình, mặc định là 500
+    constructor(scene, projectileSystem, itemSystem) { // Thêm itemSystem vào tham số
+        // Lỗi cũ: super(scene, projectileSystem, 'BOSS_1'); -> Truyền nhầm 'BOSS_1' vào chỗ của itemSystem!
+        super(scene, projectileSystem, itemSystem, 'BOSS_1'); 
+        this.hp = CONFIG.ENEMIES.BOSS_1?.HP || 500; 
         this.moveDirection = 1; // Hướng di chuyển ngang (1 là sang phải, -1 là sang trái)
         this.moveSpeed = 0.1; // Tốc độ di chuyển cơ bản của Boss
         
@@ -109,21 +110,23 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
         // Tính toán hướng bắn: Lấy vị trí người chơi trừ đi vị trí Boss và chuẩn hóa (normalize) về độ dài 1
         const direction = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
+        const speed = CONFIG.ENEMIES.BOSS_1?.BULLET_SPEED || 0.4;
         // Gọi hệ thống đạn tạo ra 1 viên đạn bắn về phía người chơi
-        this.projectileSystem.spawn(this.mesh.position, direction, 0.4, this.damage, true);
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, this.damage, true);
     }
 
     shootHoming(playerPos) { // Hàm bắn đạn tầm nhiệt/tự nhắm (Homing)
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
-        // Tương tự như bắn thường nhưng tốc độ nhanh hơn (0.6) và sát thương lớn hơn (20)
         const direction = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
-        this.projectileSystem.spawn(this.mesh.position, direction, 0.6, 20, true);
+        const speed = CONFIG.ENEMIES.BOSS_1?.HOMING_SPEED || 0.6;
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, 20, true);
     }
 
     shootSphere(playerPos) { // Boss nhả quả cầu sát thương lớn
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
         const direction = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
+        const speed = CONFIG.ENEMIES.BOSS_1?.BULLET_SPEED || 0.4;
         // Nhả cầu sát thương 30hp, tốc độ 0.4, loại 'SPHERE'
-        this.projectileSystem.spawn(this.mesh.position, direction, 0.4, 30, true, 'SPHERE');
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, 30, true, 'SPHERE');
     }
 }

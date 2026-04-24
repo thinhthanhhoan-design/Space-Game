@@ -136,8 +136,9 @@ export class Enemy {
         // Quái nhỏ bắn tia laser dọc theo trục Z (tiến về phía màn hình / người chơi)
         const direction = new THREE.Vector3(0, 0, 1);
         
+        const speed = CONFIG.ENEMIES[this.type]?.BULLET_SPEED || 0.5;
         // Gọi spawn với loại đạn là 'LASER'
-        this.projectileSystem.spawn(this.mesh.position, direction, 0.5, this.damage, true, 'LASER');
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, this.damage, true, 'LASER');
     }
 
     die() {

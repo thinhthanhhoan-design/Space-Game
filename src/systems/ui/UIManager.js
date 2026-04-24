@@ -144,14 +144,30 @@ export class UIManager {
     this.bossHpBarWrapper.style.background = "rgba(255,0,0,0.1)";
     this.bossHpBarWrapper.style.border = "1px solid #ff3333";
     this.bossHpBarWrapper.style.borderRadius = "4px";
+    this.bossHpBarWrapper.style.position = "relative";
     this.bossHpBarWrapper.style.overflow = "hidden";
 
+    // Thanh bóng mờ (tụt chậm)
+    this.bossHpDamageBar = document.createElement("div");
+    this.bossHpDamageBar.style.position = "absolute";
+    this.bossHpDamageBar.style.top = "0";
+    this.bossHpDamageBar.style.left = "0";
+    this.bossHpDamageBar.style.width = "100%";
+    this.bossHpDamageBar.style.height = "100%";
+    this.bossHpDamageBar.style.background = "rgba(255, 255, 255, 0.7)";
+    this.bossHpDamageBar.style.transition = "width 0.5s ease-out";
+
     this.bossHpBar = document.createElement("div");
+    this.bossHpBar.style.position = "absolute";
+    this.bossHpBar.style.top = "0";
+    this.bossHpBar.style.left = "0";
     this.bossHpBar.style.width = "100%";
     this.bossHpBar.style.height = "100%";
     this.bossHpBar.style.background = "linear-gradient(90deg, #990000, #ff3333)";
-    this.bossHpBar.style.transition = "width 0.3s ease-out";
+    this.bossHpBar.style.transition = "width 0.15s ease-out";
+    this.bossHpBar.style.boxShadow = "0 0 10px #ff3333";
 
+    this.bossHpBarWrapper.appendChild(this.bossHpDamageBar);
     this.bossHpBarWrapper.appendChild(this.bossHpBar);
     this.bossHpContainer.appendChild(this.bossNameText);
     this.bossHpContainer.appendChild(this.bossHpBarWrapper);
@@ -280,6 +296,13 @@ export class UIManager {
   updateBossHP(current, max) {
     const percent = Math.max(0, (current / max) * 100);
     this.bossHpBar.style.width = percent + "%";
+    
+    // Hiệu ứng thanh ảo (damage trail) tụt chậm hơn thanh thật
+    setTimeout(() => {
+        if (this.bossHpDamageBar) {
+            this.bossHpDamageBar.style.width = percent + "%";
+        }
+    }, 300); // Trễ 0.3 giây
   }
 
   hideBossHP() {

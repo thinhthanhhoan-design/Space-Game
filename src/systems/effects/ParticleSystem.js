@@ -21,7 +21,7 @@ export class ParticleSystem {
      * Tạo vụ nổ hạt tại một vị trí cụ thể với màu sắc chỉ định.
      */
     explodeAt(position, colorHex = 0xffffff) {
-        const count = 200; // Tối ưu: Chỉ dùng 100-200 hạt để tránh lag
+        const count = 1000; // Tối ưu: Chỉ dùng 1000 hạt để tránh lag
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(count * 3);
         const velocities = new Float32Array(count * 3);

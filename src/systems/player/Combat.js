@@ -26,7 +26,21 @@ export class Combat {
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
             if (enemy.mesh && !enemy.isDead && !enemy.userData?.markedForDeletion) {
-                if (MathUtils.checkSphereCollisionSq(playerPos, enemy.mesh.position, this.playerHitboxRadiusSq, this.enemyHitboxRadiusSq)) {
+                const isBoss = enemy.type && enemy.type.startsWith('BOSS');
+                
+                let isCrash = false;
+                if (isBoss) {
+                    const bossBox = new THREE.Box3().setFromObject(enemy.mesh);
+                    if (bossBox.containsPoint(playerPos)) {
+                        isCrash = true;
+                    }
+                } else {
+                    if (MathUtils.checkSphereCollisionSq(playerPos, enemy.mesh.position, this.playerHitboxRadiusSq, 1.5 * 1.5)) {
+                        isCrash = true;
+                    }
+                }
+
+                if (isCrash) {
                     console.log("⚠️ Player va chạm tàu địch!");
                     
                     // Kiểm tra giáp bảo vệ
@@ -80,17 +94,38 @@ export class Combat {
                 for (let j = 0; j < enemies.length; j++) {
                     const enemy = enemies[j];
                     if (enemy.mesh && !enemy.isDead && !enemy.userData?.markedForDeletion) {
-                        if (MathUtils.checkSphereCollisionSq(bulletPos, enemy.mesh.position, this.bulletHitboxRadiusSq, this.enemyHitboxRadiusSq)) {
+                        // Xác định xem có phải Boss không
+                        const isBoss = enemy.type && enemy.type.startsWith('BOSS');
+                        
+                        let isHit = false;
+                        if (isBoss) {
+                            // Dùng Box3 (Bounding Box) thực tế để bao quát toàn bộ khối lượng của Boss
+                            // Việc này giải quyết triệt để lỗi tâm mô hình (Origin) bị lệch trong file GLB
+                            const bossBox = new THREE.Box3().setFromObject(enemy.mesh);
+                            if (bossBox.containsPoint(bulletPos)) {
+                                isHit = true;
+                            }
+                        } else {
+                            // Quái thường vẫn dùng SphereCollision để tối ưu hiệu suất
+                            if (MathUtils.checkSphereCollisionSq(bulletPos, enemy.mesh.position, this.bulletHitboxRadiusSq, 1.5 * 1.5)) {
+                                isHit = true;
+                            }
+                        }
+                        
+                        if (isHit) {
+                            console.log(`💥 Bắn trúng! Kẻ địch: ${enemy.type}, Máu trước: ${enemy.hp}`);
                             if (explosionSystem) {
                                 explosionSystem.spawnHitFlash(bulletPos, 1.2);
-                                explosionSystem.spawnShipImpact(enemy.mesh.position); // Thêm nổ quái
+                                explosionSystem.spawnShipImpact(bulletPos); // Nổ ngay tại điểm đạn chạm vào Boss
                             }
                             
                             if (typeof enemy.takeDamage === 'function') {
                                 enemy.takeDamage(bullet.userData.damage);
+                                console.log(`🩸 Đã trừ máu. Máu sau: ${enemy.hp}`);
                             } else {
                                 enemy.die();
                             }
+
                             bullet.userData.markedForDeletion = true;
                             hit = true;
                             break;

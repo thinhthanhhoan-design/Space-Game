@@ -167,7 +167,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     if (this.enemyManager.isAllWavesCleared) {
                         this.gamePlayState = 'BOSS';
                         if (!this.boss) {
-                            this.boss = new Boss(this.sceneController.scene, this.projectileSystem);
+                            this.boss = new Boss(this.sceneController.scene, this.projectileSystem, this.player.itemSystem);
                             
                             // Hiệu ứng CẢNH BÁO trước khi Boss vào trận
                             this.explosionSystem.startWarning(3.0);
