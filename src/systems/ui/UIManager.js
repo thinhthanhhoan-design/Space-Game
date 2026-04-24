@@ -138,14 +138,30 @@ export class UIManager {
     this.bossHpBarWrapper.style.background = "rgba(255,0,0,0.1)";
     this.bossHpBarWrapper.style.border = "1px solid #ff3333";
     this.bossHpBarWrapper.style.borderRadius = "4px";
+    this.bossHpBarWrapper.style.position = "relative";
     this.bossHpBarWrapper.style.overflow = "hidden";
 
+    // Thanh bóng mờ (tụt chậm)
+    this.bossHpDamageBar = document.createElement("div");
+    this.bossHpDamageBar.style.position = "absolute";
+    this.bossHpDamageBar.style.top = "0";
+    this.bossHpDamageBar.style.left = "0";
+    this.bossHpDamageBar.style.width = "100%";
+    this.bossHpDamageBar.style.height = "100%";
+    this.bossHpDamageBar.style.background = "rgba(255, 255, 255, 0.7)";
+    this.bossHpDamageBar.style.transition = "width 0.5s ease-out";
+
     this.bossHpBar = document.createElement("div");
+    this.bossHpBar.style.position = "absolute";
+    this.bossHpBar.style.top = "0";
+    this.bossHpBar.style.left = "0";
     this.bossHpBar.style.width = "100%";
     this.bossHpBar.style.height = "100%";
     this.bossHpBar.style.background = "linear-gradient(90deg, #990000, #ff3333)";
-    this.bossHpBar.style.transition = "width 0.3s ease-out";
+    this.bossHpBar.style.transition = "width 0.15s ease-out";
+    this.bossHpBar.style.boxShadow = "0 0 10px #ff3333";
 
+    this.bossHpBarWrapper.appendChild(this.bossHpDamageBar);
     this.bossHpBarWrapper.appendChild(this.bossHpBar);
     this.bossHpContainer.appendChild(this.bossNameText);
     this.bossHpContainer.appendChild(this.bossHpBarWrapper);
@@ -165,10 +181,43 @@ export class UIManager {
     this.fpsText.style.borderRadius = "5px";
     this.fpsText.style.zIndex = "1001";
     this.fpsText.innerText = "FPS: --";
+
+    // ===== MESSAGE NOTIFICATION =====
+    this.messageContainer = document.createElement("div");
+    this.messageContainer.style.position = "fixed";
+    this.messageContainer.style.top = "50%";
+    this.messageContainer.style.left = "50%";
+    this.messageContainer.style.transform = "translate(-50%, -50%)";
+    this.messageContainer.style.fontFamily = "Orbitron, sans-serif";
+    this.messageContainer.style.fontSize = "32px";
+    this.messageContainer.style.fontWeight = "bold";
+    this.messageContainer.style.color = "#ffffff";
+    this.messageContainer.style.textAlign = "center";
+    this.messageContainer.style.pointerEvents = "none";
+    this.messageContainer.style.zIndex = "2000";
+    this.messageContainer.style.textShadow = "0 0 15px rgba(255,255,255,0.5)";
+    this.messageContainer.style.opacity = "0";
+    this.messageContainer.style.transition = "opacity 0.3s ease-out, transform 0.3s ease-out";
     
     document.body.appendChild(this.container);
     document.body.appendChild(this.bossHpContainer);
     document.body.appendChild(this.fpsText);
+    document.body.appendChild(this.messageContainer);
+  }
+
+  // Hiển thị thông báo trên màn hình
+  showMessage(text, color = "#ffffff", duration = 2000) {
+    this.messageContainer.innerText = text;
+    this.messageContainer.style.color = color;
+    this.messageContainer.style.textShadow = `0 0 20px ${color}`;
+    this.messageContainer.style.opacity = "1";
+    this.messageContainer.style.transform = "translate(-50%, -50%) scale(1.1)";
+
+    if (this.messageTimeout) clearTimeout(this.messageTimeout);
+    this.messageTimeout = setTimeout(() => {
+        this.messageContainer.style.opacity = "0";
+        this.messageContainer.style.transform = "translate(-50%, -50%) scale(1)";
+    }, duration);
   }
 
 
@@ -241,6 +290,13 @@ export class UIManager {
   updateBossHP(current, max) {
     const percent = Math.max(0, (current / max) * 100);
     this.bossHpBar.style.width = percent + "%";
+    
+    // Hiệu ứng thanh ảo (damage trail) tụt chậm hơn thanh thật
+    setTimeout(() => {
+        if (this.bossHpDamageBar) {
+            this.bossHpDamageBar.style.width = percent + "%";
+        }
+    }, 300); // Trễ 0.3 giây
   }
 
   hideBossHP() {

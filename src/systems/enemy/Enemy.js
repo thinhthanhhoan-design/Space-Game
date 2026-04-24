@@ -4,9 +4,10 @@ import { CONFIG } from '../../utils/CONFIG.JS';
 import { Patterns } from './Patterns.js';
 
 export class Enemy {
-    constructor(scene, projectileSystem, type = 'QUAI_1') {
+    constructor(scene, projectileSystem, itemSystem, type = 'QUAI_1') {
         this.scene = scene; // Lưu tham chiếu đến cảnh 3D
         this.projectileSystem = projectileSystem; // Lưu tham chiếu đến hệ thống đạn (để quái bắn hoặc tương tác đạn)
+        this.itemSystem = itemSystem; // Tham chiếu đến ItemSystem để rơi đồ
         this.type = type; // Loại quái (mặc định là QUAI_1)
         this.maxHP = CONFIG.ENEMIES[type]?.HP || 50; // Lưu lượng máu tối đa
         this.hp = this.maxHP;
@@ -135,24 +136,42 @@ export class Enemy {
         // Quái nhỏ bắn tia laser dọc theo trục Z (tiến về phía màn hình / người chơi)
         const direction = new THREE.Vector3(0, 0, 1);
         
+        const speed = CONFIG.ENEMIES[this.type]?.BULLET_SPEED || 0.5;
         // Gọi spawn với loại đạn là 'LASER'
-        this.projectileSystem.spawn(this.mesh.position, direction, 0.5, this.damage, true, 'LASER');
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, this.damage, true, 'LASER');
     }
 
     die() {
         if (this.isDead) return;
         this.isDead = true; // Đánh dấu đã chết
         if (this.mesh) {
+            const diePos = this.mesh.position.clone();
             this.scene.remove(this.mesh); // Xóa hình ảnh khỏi cảnh 3D
+
+            // Cơ chế rơi vật phẩm (Drop Item logic)
+            if (this.itemSystem) {
+                const rand = Math.random();
+                const buffChance = CONFIG.ITEMS.DROP_CHANCE.ENEMY_BUFF || 0.3;
+                const debuffChance = CONFIG.ITEMS.DROP_CHANCE.ENEMY_DEBUFF || 0.1;
+
+                if (rand < buffChance) { // Rơi Buff
+                    const type = Math.random() > 0.5 ? 'HEALTH' : 'AMMO';
+                    this.itemSystem.spawnItem(type, diePos);
+                } else if (rand < buffChance + debuffChance) { // Rơi Debuff
+                    const type = Math.random() > 0.5 ? 'WEAPON_LOCK' : 'ASTEROID_ITEM';
+                    this.itemSystem.spawnItem(type, diePos);
+                }
+            }
         }
     }
 }
 // 2. Quản lý các đợt quái (wave-system)
 // Khởi tạo
 export class EnemyManager {
-    constructor(scene, projectileSystem) {
+    constructor(scene, projectileSystem, itemSystem) {
         this.scene = scene;
         this.projectileSystem = projectileSystem;
+        this.itemSystem = itemSystem;
         this.enemies = []; // Mảng chứa danh sách các con quái đang hoạt động
         this.currentWave = 0; // Đợt quái hiện tại
         this.waveInProgress = false; // Đang trong đợt quái hay không
@@ -190,7 +209,7 @@ export class EnemyManager {
                 return;
             }
 
-            const enemy = new Enemy(this.scene, this.projectileSystem); // Tạo quái mới
+            const enemy = new Enemy(this.scene, this.projectileSystem, this.itemSystem); // Tạo quái mới
             const index = this.spawnedInWave;
 
             if (waveNum === 2) {

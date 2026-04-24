@@ -25,9 +25,14 @@ export class Weapon {
             opacity: 0.9, // Tăng độ đậm của đạn
             blending: THREE.AdditiveBlending // Chế độ hòa trộn cộng sáng để tạo hiệu ứng phát sáng (Glow)
         }); 
+
+        this.isLocked = false; // Trạng thái bị khóa súng (do Debuff)
     }
 
     fire() {
+        // Nếu súng bị khóa (do Debuff), không thể bắn
+        if (this.isLocked) return;
+
         // Kiểm tra thời gian hồi chiêu giữa 2 lần bắn (Fire Rate)
         const now = performance.now() / 1000;
         if (now - this.lastFireTime < this.fireRate) return;

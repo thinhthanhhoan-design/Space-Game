@@ -37,6 +37,10 @@ export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việ
         }
 
         this.spawnTimer = 0; // Bộ đếm thời gian để kiểm soát nhịp độ sinh thiên thạch
+
+        // --- MULTIPLIERS FOR EFFECTS (e.g. ASTEROID STORM) ---
+        this.speedMultiplier = 1.0;
+        this.densityMultiplier = 1.0;
     } // Kết thúc constructor
 
     // Hàm tạo (spawn) một thiên thạch mới đưa vào cảnh
@@ -82,7 +86,10 @@ export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việ
     update(delta) { // Phương thức cập nhật chuyển động của toàn bộ thiên thạch mỗi khung hình
         // 1. Quản lý thời điểm Sinh (Spawn)
         this.spawnTimer += delta; // Tăng dần bộ đếm theo thời gian delta
-        const density = CONFIG.WORLD.LEVEL_1.asteroid_density || 10; // Lấy mật độ từ CONFIG
+        
+        // Áp dụng densityMultiplier khi có bão thiên thạch
+        const baseDensity = CONFIG.WORLD.LEVEL_1.asteroid_density || 10;
+        const density = baseDensity * this.densityMultiplier; 
         const spawnInterval = 1 / density; // Tính toán khoảng cách thời gian giữa mỗi lần sinh
         
         if (this.spawnTimer > spawnInterval) { // Nếu bộ đếm vượt qua khoảng thời gian spawn
@@ -92,7 +99,8 @@ export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việ
 
         // 2. Cập nhật Vị trí và Xoay cho từng thiên thạch
         const configSpeed = CONFIG.WORLD.LEVEL_1.asteroid_speed || 0.015;
-        const speedMultiplier = configSpeed * 4000; // Quy đổi ra tốc độ di chuyển
+        // Áp dụng speedMultiplier khi có bão thiên thạch
+        const speedMultiplier = (configSpeed * 4000) * this.speedMultiplier;
         
         for (let i = this.asteroids.length - 1; i >= 0; i--) { // Duyệt mảng từ dưới lên để an toàn khi xóa phần tử
             const asteroid = this.asteroids[i];
