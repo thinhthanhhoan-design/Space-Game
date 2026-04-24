@@ -139,9 +139,9 @@ export const CONFIG = {
       V3: { hp_limit: 350, name: "UETE-Final-Form", next_model: "V2", REVERT_AT: 0.7 },
     },
     WEAPONS: {
-      GUN_1: { damage: 25, ammo: 1000, fireRate: 0.4, ammo_per_shot: 1 },
-      GUN_2: { damage: 50, ammo: 50, fireRate: 0.3, ammo_per_shot: 2 },
-      GUN_3: { damage: 45, ammo: 120, fireRate: 0.2, ammo_per_shot: 3 },
+      GUN_1: { damage: 25, ammo: 100, fireRate: 0.4, ammo_per_shot: 1 },
+      GUN_2: { damage: 50, ammo: 200, fireRate: 0.3, ammo_per_shot: 2 },
+      GUN_3: { damage: 45, ammo: 500, fireRate: 0.2, ammo_per_shot: 3 },
     }
   },
 
@@ -216,24 +216,24 @@ export const CONFIG = {
     LIGHT_INTENSITY: 10,      // Cường độ ánh sáng (cũ: 5)
     LIGHT_RANGE: 25,          // Tầm chiếu sáng (cũ: 10)
     COLLECTION_RADIUS: 4,   // Bán kính va chạm nhặt đồ (Tăng lên 3.5 để nhặt đồ dễ hơn)
-    
+
     // --- Chỉ số Buff ---
     HEALTH_VALUE: 100,        // Máu hồi phục
     AMMO_REFILL_PERCENT: 0.5, // Nạp lại 50% số lượng đạn tối đa
     SHIELD_DURATION: 5000,   // Thời gian giáp bảo vệ (5 giây)
-    
+
     // --- Chỉ số Debuff ---
     WEAPON_LOCK_DURATION: 7000, // Thời gian khóa súng (7 giây)
     ENV_DISORDER_DURATION: 10000, // Thời gian rối loạn môi trường (10 giây)
     ASTEROID_STORM: {
-        SPEED_MULT: 2.5,      // Thiên thạch bay nhanh gấp 2.5 lần
-        DENSITY_MULT: 5.0      // Mật độ thiên thạch dày gấp 5 lần
+      SPEED_MULT: 2.5,      // Thiên thạch bay nhanh gấp 2.5 lần
+      DENSITY_MULT: 5.0      // Mật độ thiên thạch dày gấp 5 lần
     },
 
     SPAWN_RANGE_FACTOR: 1.8,  // Hệ số thu hẹp vùng spawn (X, Y)
     ANIM_DURATION: 0.2,       // Thời gian chuyển màu GSAP
     SHAKE_INTENSITY: 1.5,     // Độ mạnh rung camera
-    
+
     COLORS: {
       BUFF: 0x00ff00,
       DEBUFF: 0xff2200,
