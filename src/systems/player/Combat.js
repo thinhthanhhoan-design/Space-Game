@@ -16,7 +16,7 @@ export class Combat {
     /**
      * Cập nhật logic va chạm tổng thể.
      */
-    update(player, enemies = [], asteroids = [], explosionSystem = null, particleSystem = null) {
+    update(player, enemies = [], asteroids = [], explosionSystem = null, particleSystem = null, sceneController = null) {
         if (!player.mesh) return;
 
         const playerPos = player.mesh.position;
@@ -48,6 +48,8 @@ export class Combat {
                         console.log("🛡️ Shield đã chặn sát thương!");
                     } else {
                         player.takeDamage(enemy.damage || 15);
+                        if (explosionSystem) explosionSystem.startWarning(0.4);
+                        if (sceneController) sceneController.triggerShake(0.4, 0.2);
                     }
 
                     if (explosionSystem) explosionSystem.spawnShipImpact(playerPos);
@@ -71,6 +73,8 @@ export class Combat {
                         console.log("🛡️ Shield đã chặn sát thương từ thiên thạch!");
                     } else {
                         player.takeDamage(userData.damage || 10);
+                        if (explosionSystem) explosionSystem.startWarning(0.4);
+                        if (sceneController) sceneController.triggerShake(0.4, 0.2);
                     }
 
                     if (explosionSystem) explosionSystem.spawnAsteroidImpact(astMesh.position);

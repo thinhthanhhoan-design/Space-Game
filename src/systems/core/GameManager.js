@@ -167,8 +167,8 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
 
                 if (this.gamePlayState === 'WAVES') {
                     this.enemyManager.update(delta, this.player.mesh.position);
-                    this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem);
-
+                    this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem, this.sceneController);
+                    
                     if (this.enemyManager.isAllWavesCleared) {
                         this.gamePlayState = 'BOSS';
                         if (!this.boss) {

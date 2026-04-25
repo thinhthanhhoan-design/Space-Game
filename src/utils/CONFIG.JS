@@ -29,6 +29,8 @@ export const CONFIG = {
       ITEM_DAN: "/textures/dan.png",
       ITEM_KHOA_VK: "/textures/khoa_vk.png",
       ITEM_THIEN_THACH: "/textures/thien_thach.png",
+      ITEM_Sung2: "/textures/sung_2.png",
+      ITEM_Sung3: "/textures/sung_3.png",
     },
     SOUNDS: {
       BGM_INTRO: "/sounds/mysterious_space.mp3",

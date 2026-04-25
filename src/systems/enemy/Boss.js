@@ -26,7 +26,7 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         const modelPath = CONFIG.ASSETS.MODELS.BOSS_1; // Lấy đường dẫn file 3D từ cấu hình
         this.loader.load(modelPath, (glb) => { // Bắt đầu tải model
             this.mesh = glb.scene; // Gán mô hình đã tải vào biến this.mesh
-            this.mesh.scale.set(10, 10, 10); // Phóng to Boss lên 6 lần
+            this.mesh.scale.set(13, 13, 13); // Phóng to Boss lên 10 lần
             this.mesh.position.set(0, 10, -40); // Đặt vị trí ban đầu (cao 10, cách xa người chơi 40 đơn vị)
             this.scene.add(this.mesh); // Thêm Boss vào cảnh 3D để nhìn thấy được
             this.isLoaded = true; // Đánh dấu đã tải xong để bắt đầu cập nhật logic
