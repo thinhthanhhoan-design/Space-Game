@@ -76,22 +76,31 @@ export class Weapon {
             // Cập nhật mốc thời gian bắn bắn gần nhất
             this.lastFireTime = now;
 
-            // Tạo Mesh đạn 3D thực sự
-            const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial);
-            
-            // Đặt vị trí đạn trước mũi tàu để tránh va lầm player
-            bullet.position.copy(this.player.mesh.position);
-            bullet.position.z -= 1.5; 
-            
-            // Dữ liệu dùng cho xử lý va chạm
-            bullet.userData = {
-                damage: this.damage,
-                speed: 0.5, // Vận tốc bay của đạn
-                markedForDeletion: false
-            };
+            // --- LOGIC BẮN ĐẠN (HỖ TRỢ CỘNG DỒN NHIỀU TIA) ---
+            const count = this.player.bulletCount || 1;
+            const spacing = 2.2; // Khoảng cách giữa các tia đạn (Tăng lên để dàn rộng hơn)
 
-            this.scene.add(bullet);
-            this.bullets.push(bullet);
+            for (let i = 0; i < count; i++) {
+                const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial);
+                bullet.position.copy(this.player.mesh.position);
+                
+                // Tính toán vị trí dàn hàng ngang cho các tia đạn
+                if (count > 1) {
+                    const offsetX = (i - (count - 1) / 2) * spacing;
+                    const sideVector = new THREE.Vector3(1, 0, 0).applyQuaternion(this.player.mesh.quaternion);
+                    bullet.position.add(sideVector.multiplyScalar(offsetX));
+                }
+                
+                bullet.position.z -= 1.5;
+                
+                bullet.userData = {
+                    damage: this.damage,
+                    speed: 0.5,
+                    markedForDeletion: false
+                };
+                this.scene.add(bullet);
+                this.bullets.push(bullet);
+            }
 
             // Tùy chọn: Thêm hiệu ứng âm thanh bắn tại đây
             // const sfx = new Audio(CONFIG.ASSETS.SOUNDS.SFX_LASER); 

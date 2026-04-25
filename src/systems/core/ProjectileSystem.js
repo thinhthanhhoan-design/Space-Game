@@ -9,15 +9,14 @@ function createBossBulletTexture() {
 
     // Nền trong suốt
     ctx.clearRect(0, 0, 16, 256);
-    
-    // Gradient dọc từ đầu đến đuôi (Lõi vàng cam -> Hồng cánh sen -> Tím)
-    const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-    gradient.addColorStop(0.0, 'rgba(255, 255, 200, 1)');   // Lõi đầu đạn: Trắng ngả vàng
-    gradient.addColorStop(0.05, 'rgba(255, 200, 50, 1)');   // Vàng cam rực
-    gradient.addColorStop(0.15, 'rgba(255, 50, 150, 1)');   // Hồng rực (Pink/Magenta)
-    gradient.addColorStop(0.4, 'rgba(200, 0, 150, 0.8)');   // Thân: Tím hồng
-    gradient.addColorStop(0.8, 'rgba(80, 0, 100, 0.3)');    // Đuôi mờ dần: Tím tối
-    gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0)');         // Trong suốt
+
+    // Gradient dọc từ đầu đến đuôi (Kéo dài dải màu để thấy rõ phần đuôi dài)
+    const gradient = ctx.createLinearGradient(0, 256, 0, 0); 
+    gradient.addColorStop(0.0, 'rgba(255, 255, 200, 1)');   // Lõi trắng vàng rực rỡ (Head)
+    gradient.addColorStop(0.1, 'rgba(255, 180, 0, 1)');    // Quầng cam lửa
+    gradient.addColorStop(0.3, 'rgba(255, 0, 150, 0.9)');   // Thân hồng rực
+    gradient.addColorStop(0.6, 'rgba(100, 0, 200, 0.4)');   // Phần đuôi bắt đầu mờ
+    gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0)');         // Kết thúc ở 1.0 để dùng hết chiều dài đạn
 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 16, 256);
@@ -31,9 +30,18 @@ export class ProjectileSystem {
         this.projectiles = [];
 
         // Geometry cho đạn
-        this.sphereGeo = new THREE.CylinderGeometry(1.0, 0.05, 8.0, 12); // Đạn hình giọt nước to của Boss (đã thu nhỏ một chút)
-        this.sphereGeo.rotateX(Math.PI / 2); // Xoay để đầu to (+Y) hướng về trục +Z (để hàm lookAt đưa đầu đạn về phía trước)
-        
+        // --- TẠO HÌNH GIỌT NƯỚC SIÊU DÀI (LONG TEARDROP) ---
+        const pts = [];
+        // Phần đầu tròn - Làm thon hơn nữa (1.0 -> 0.8)
+        for (let i = 0; i <= 15; i++) {
+            const a = (i / 15) * Math.PI * 0.5;
+            pts.push(new THREE.Vector2(Math.sin(a) * 0.8, Math.cos(a) * 0.8));
+        }
+        // Phần đuôi vuốt nhọn SIÊU DÀI (từ 8 lên 15) để ra dáng giọt nước phim ảnh
+        pts.push(new THREE.Vector2(0, -15));
+        this.sphereGeo = new THREE.LatheGeometry(pts, 16);
+        this.sphereGeo.rotateX(Math.PI / 2); // Xoay để đầu tròn hướng về phía trước (trục Z)
+
         this.laserGeo = new THREE.CylinderGeometry(0.3, 0.3, 4.0, 8); // Tia laser của quái
         this.laserGeo.rotateX(Math.PI / 2); // Xoay để nòng tia nằm dọc theo trục Z
 
@@ -43,13 +51,13 @@ export class ProjectileSystem {
         // Material phát sáng
         this.enemyLaserMat = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending });
         this.bossLaserMat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.9, blending: THREE.AdditiveBlending }); // Màu xanh lơ (Cyan)
-        
+
         // Material đạn Boss dùng Texture giọt nước
-        this.bossSphereMat = new THREE.MeshBasicMaterial({ 
-            map: createBossBulletTexture(), 
-            color: 0xffffff, 
-            transparent: true, 
-            opacity: 1.0, 
+        this.bossSphereMat = new THREE.MeshBasicMaterial({
+            map: createBossBulletTexture(),
+            color: 0xffffff,
+            transparent: true,
+            opacity: 1.0,
             blending: THREE.AdditiveBlending,
             depthWrite: false,
             side: THREE.DoubleSide

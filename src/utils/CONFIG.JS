@@ -105,7 +105,7 @@ export const CONFIG = {
     FORWARD_SPEED: 0.75, // Tăng lên 0.75 để tàu linh hoạt hơn với hệ thống velocity mới
     FLIGHT_ENVELOPE: {
       X: 70, // Mở rộng không gian bay ngang ra xa hơn để thoải mái né đạn
-      Y: 20, // Khôn gian bay lên xuống tha hồ lạng lách
+      Y: 30, // Khôn gian bay lên xuống tha hồ lạng lách
     },
     // Thông số cho hiệu ứng nghiêng thế giới
     DYNAMIC_BANKING: {
@@ -216,7 +216,7 @@ export const CONFIG = {
   // 🎁 ITEMS & POWERUPS
   // ===============================
   ITEMS: {
-    SPAWN_INTERVAL: 6.5,      // Cứ 6.5s spawn 1 item ngẫu nhiên
+    SPAWN_INTERVAL: 4.5,      // Cứ 4.5s spawn 1 item ngẫu nhiên (Giảm thêm để súng xuất hiện nhanh hơn)
     SPEED_FACTOR: 0.5,        // Tốc độ bay (0.5 = chậm hơn thiên thạch 1 nửa)
     SCALE_BASE: 3.0,          // Tăng gấp đôi kích thước cơ bản (cũ: 1.5)
     GLOW_OPACITY: 1.0,        // Tăng độ rực tối đa (cũ: 0.8)
@@ -228,10 +228,11 @@ export const CONFIG = {
     // --- Chỉ số Buff ---
     HEALTH_VALUE: 100,        // Máu hồi phục
     AMMO_REFILL_PERCENT: 0.5, // Nạp lại 50% số lượng đạn tối đa
-    SHIELD_DURATION: 5000,   // Thời gian giáp bảo vệ (5 giây)
+    SHIELD_DURATION: 10000,   // Thời gian giáp bảo vệ (10 giây)
 
     // --- Chỉ số Debuff ---
     WEAPON_LOCK_DURATION: 7000, // Thời gian khóa súng (7 giây)
+    DOUBLE_FIRE_DURATION: 10000, // Thời gian bắn đôi (10 giây)
     ENV_DISORDER_DURATION: 10000, // Thời gian rối loạn môi trường (10 giây)
     ASTEROID_STORM: {
       SPEED_MULT: 2.5,      // Thiên thạch bay nhanh gấp 2.5 lần

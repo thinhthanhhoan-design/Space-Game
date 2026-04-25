@@ -5,11 +5,11 @@ import { CONFIG } from '../../utils/CONFIG.JS';
 export class Combat {
     constructor() {
         // Tối ưu hiệu suất: Bounding Sphere/Radius thay cho Box3 setFromObject.
-        this.playerHitboxRadiusSq = 1.0; 
-        this.enemyHitboxRadiusSq = 1.5; 
+        this.playerHitboxRadiusSq = 1.0;
+        this.enemyHitboxRadiusSq = 1.5;
         this.asteroidHitboxRadiusSq = 2.0;
-        
-       // Tính toán va chạm và trúng mục tiêu
+
+        // Tính toán va chạm và trúng mục tiêu
         this.bulletHitboxRadiusSq = 12.0;
     }
 
@@ -27,7 +27,7 @@ export class Combat {
             const enemy = enemies[i];
             if (enemy.mesh && !enemy.isDead && !enemy.userData?.markedForDeletion) {
                 const isBoss = enemy.type && enemy.type.startsWith('BOSS');
-                
+
                 let isCrash = false;
                 if (isBoss) {
                     const bossBox = new THREE.Box3().setFromObject(enemy.mesh);
@@ -42,7 +42,7 @@ export class Combat {
 
                 if (isCrash) {
                     console.log("⚠️ Player va chạm tàu địch!");
-                    
+
                     // Kiểm tra giáp bảo vệ
                     if (player.hasShield) {
                         console.log("🛡️ Shield đã chặn sát thương!");
@@ -53,7 +53,7 @@ export class Combat {
                     }
 
                     if (explosionSystem) explosionSystem.spawnShipImpact(playerPos);
-                    enemy.die(); 
+                    enemy.die();
                 }
             }
         }
@@ -79,7 +79,7 @@ export class Combat {
 
                     if (explosionSystem) explosionSystem.spawnAsteroidImpact(astMesh.position);
                     userData.markedForDeletion = true;
-                    astMesh.position.z = 100; 
+                    astMesh.position.z = 100;
                 }
             }
         }
@@ -100,7 +100,7 @@ export class Combat {
                     if (enemy.mesh && !enemy.isDead && !enemy.userData?.markedForDeletion) {
                         // Xác định xem có phải Boss không
                         const isBoss = enemy.type && enemy.type.startsWith('BOSS');
-                        
+
                         let isHit = false;
                         if (isBoss) {
                             // Dùng Box3 (Bounding Box) thực tế để bao quát toàn bộ khối lượng của Boss
@@ -115,14 +115,14 @@ export class Combat {
                                 isHit = true;
                             }
                         }
-                        
+
                         if (isHit) {
                             console.log(`💥 Bắn trúng! Kẻ địch: ${enemy.type}, Máu trước: ${enemy.hp}`);
                             if (explosionSystem) {
                                 explosionSystem.spawnHitFlash(bulletPos, 1.2);
                                 explosionSystem.spawnShipImpact(bulletPos); // Nổ ngay tại điểm đạn chạm vào Boss
                             }
-                            
+
                             if (typeof enemy.takeDamage === 'function') {
                                 enemy.takeDamage(bullet.userData.damage);
                                 console.log(`🩸 Đã trừ máu. Máu sau: ${enemy.hp}`);
@@ -148,7 +148,7 @@ export class Combat {
                     if (astMesh && !userData.markedForDeletion) {
                         if (MathUtils.checkSphereCollisionSq(bulletPos, astMesh.position, this.bulletHitboxRadiusSq, this.asteroidHitboxRadiusSq)) {
                             if (explosionSystem) explosionSystem.spawnAsteroidImpact(astMesh.position);
-                            
+
                             // Rơi đồ từ thiên thạch
                             const astDropChance = CONFIG.ITEMS.DROP_CHANCE.ASTEROID || 0.2;
                             if (player.itemSystem && Math.random() < astDropChance) {
@@ -167,97 +167,61 @@ export class Combat {
 
                 if (hit) continue;
 
-                // 3.3 Đạn trúng Item (Chỉ nổ hiệu ứng, không có tác dụng)
+                // 3.3 Đạn trúng Item (Bỏ qua va chạm để item không bị mất khi bị bắn)
+                // Logic va chạm đạn-item đã bị xóa theo yêu cầu người dùng.
+
+                // 4. Va chạm Người chơi vs Vật phẩm (Items)
                 if (player.itemSystem && player.itemSystem.activeItems) {
                     const items = player.itemSystem.activeItems;
-                    for (let m = 0; m < items.length; m++) {
-                        const item = items[m];
+                    const itemColors = CONFIG.ITEMS.COLORS || { BUFF: 0x00ff00, DEBUFF: 0xff2200 };
+
+                    for (let i = items.length - 1; i >= 0; i--) {
+                        const item = items[i];
                         if (item.userData.collected) continue;
 
-                                if (MathUtils.checkSphereCollisionSq(bulletPos, item.position, this.bulletHitboxRadiusSq, 1.5)) {
-                                    item.userData.collected = true; // Đánh dấu để không va chạm tiếp
-                                    
-                                    // Hiệu ứng vỡ hạt nhưng không gọi collectItem
-                                    if (particleSystem) {
-                                        const neutralColor = CONFIG.ITEMS.COLORS.NEUTRAL || 0xaaaaaa;
-                                        particleSystem.explodeAt(item.position, neutralColor);
-                                    }
+                        // Tăng mạnh phạm vi nhặt đồ: Dựa trên tỷ lệ scale hiện tại của item
+                        // Nếu item to (scale ~9), vùng nhặt sẽ cực rộng. 
+                        const baseRadius = CONFIG.ITEMS.COLLECTION_RADIUS || 5;
+                        const dynamicRadius = (item.scale.x * 1.2) + baseRadius;
+                        const dynamicRadiusSq = dynamicRadius * dynamicRadius;
 
-                                    // Ẩn item ngay lập tức
-                                    if (item.children) {
-                                        item.children.forEach(child => { if (child.material) child.material.opacity = 0; });
-                                    }
+                        if (MathUtils.checkSphereCollisionSq(playerPos, item.position, this.playerHitboxRadiusSq, dynamicRadiusSq)) {
+                            item.userData.collected = true;
+                            const itemType = item.userData.type;
+                            const isBuff = ['HEALTH', 'AMMO', 'SHIELD'].includes(itemType);
 
-                                    // Xóa item sau 1s
-                                    setTimeout(() => {
-                                        if (item.parent) {
-                                            player.itemSystem.scene.remove(item);
-                                            const idx = player.itemSystem.activeItems.indexOf(item);
-                                            if (idx > -1) player.itemSystem.activeItems.splice(idx, 1);
-                                        }
-                                    }, 1000);
+                            // --- VISUAL SEQUENCE ---
+                            // Bước 1: Gọi hiệu ứng chuyển màu từ ItemSystem
+                            player.itemSystem.triggerCollisionEffect(item, isBuff ? 'Buff' : 'Debuff');
 
-                                    bullet.userData.markedForDeletion = true;
-                                    hit = true;
-                                    break;
-                                }
+                            // Bước 2: Ẩn Sprite ngay lập tức
+                            if (item.children) {
+                                item.children.forEach(child => {
+                                    if (child.material) child.material.opacity = 0;
+                                });
                             }
+
+                            // Bước 3: Tạo vụ nổ hạt
+                            if (particleSystem) {
+                                const explodeColor = isBuff ? itemColors.BUFF : itemColors.DEBUFF;
+                                particleSystem.explodeAt(item.position, explodeColor);
+                            }
+
+                            // --- LOGIC ACTION ---
+                            player.itemSystem.collectItem(itemType);
+
+                            // Xóa item sau khi hiệu ứng hoàn tất
+                            setTimeout(() => {
+                                if (item.parent) {
+                                    player.itemSystem.scene.remove(item);
+                                    const idx = player.itemSystem.activeItems.indexOf(item);
+                                    if (idx > -1) player.itemSystem.activeItems.splice(idx, 1);
+                                }
+                            }, 1200);
                         }
                     }
-                }
-
-        // 4. Va chạm Người chơi vs Vật phẩm (Items)
-        if (player.itemSystem && player.itemSystem.activeItems) {
-            const items = player.itemSystem.activeItems;
-            const itemColors = CONFIG.ITEMS.COLORS || { BUFF: 0x00ff00, DEBUFF: 0xff2200 };
-
-            for (let i = items.length - 1; i >= 0; i--) {
-                const item = items[i];
-                if (item.userData.collected) continue;
-
-                // Tăng mạnh phạm vi nhặt đồ: Dựa trên tỷ lệ scale hiện tại của item
-                // Nếu item to (scale ~9), vùng nhặt sẽ cực rộng. 
-                const baseRadius = CONFIG.ITEMS.COLLECTION_RADIUS || 5;
-                const dynamicRadius = (item.scale.x * 1.2) + baseRadius;
-                const dynamicRadiusSq = dynamicRadius * dynamicRadius;
-
-                if (MathUtils.checkSphereCollisionSq(playerPos, item.position, this.playerHitboxRadiusSq, dynamicRadiusSq)) {
-                    item.userData.collected = true;
-                    const itemType = item.userData.type;
-                    const isBuff = ['HEALTH', 'AMMO', 'SHIELD'].includes(itemType);
-                    
-                    // --- VISUAL SEQUENCE ---
-                    // Bước 1: Gọi hiệu ứng chuyển màu từ ItemSystem
-                    player.itemSystem.triggerCollisionEffect(item, isBuff ? 'Buff' : 'Debuff');
-                    
-                    // Bước 2: Ẩn Sprite ngay lập tức
-                    if (item.children) {
-                        item.children.forEach(child => {
-                            if (child.material) child.material.opacity = 0;
-                        });
-                    }
-                    
-                    // Bước 3: Tạo vụ nổ hạt
-                    if (particleSystem) {
-                        const explodeColor = isBuff ? itemColors.BUFF : itemColors.DEBUFF;
-                        particleSystem.explodeAt(item.position, explodeColor);
-                    }
-
-                    // --- LOGIC ACTION ---
-                    player.itemSystem.collectItem(itemType);
-                    
-                    // Xóa item sau khi hiệu ứng hoàn tất
-                    setTimeout(() => {
-                        if (item.parent) {
-                            player.itemSystem.scene.remove(item);
-                            const idx = player.itemSystem.activeItems.indexOf(item);
-                            if (idx > -1) player.itemSystem.activeItems.splice(idx, 1);
-                        }
-                    }, 1200); 
                 }
             }
         }
     }
-
-
 }

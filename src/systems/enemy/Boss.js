@@ -322,7 +322,9 @@ export class Boss3 extends Enemy {
         this.maxHP = this.hp;
 
         this.moveDirection = 1;
-        this.moveSpeed = 0.2; // Tốc độ di chuyển cơ bản nhanh hơn
+        this.moveDirectionY = 1; // Hướng di chuyển trục Y
+        this.moveSpeed = 0.25; // Tăng tốc độ ngang
+        this.moveSpeedY = 0.3; // Tăng tốc độ dọc đáng kể để dễ thấy hơn
 
         this.dodgeCooldown = 0; // Thời gian hồi chiêu né đạn
         this.shockwaveTimer = 0; // Bộ đếm 6s cho sóng âm
@@ -331,6 +333,7 @@ export class Boss3 extends Enemy {
         this.targetZ = -80;
 
         this.specialAttackTimer = 0; // Bộ đếm 3s cho đòn bắn tỏa đặc biệt
+        this.shockwaves = []; // Danh sách các vòng sóng đang lan tỏa (để xử lý logic vật lý)
     }
 
     loadModel() {
@@ -384,12 +387,29 @@ export class Boss3 extends Enemy {
             this.moveDirection = 1;
         }
 
-        // Nhấp nhô sinh động
-        this.mesh.position.y += Math.sin(Date.now() * 0.003) * 0.1;
+        // --- DI CHUYỂN DỌC (Y) ---
+        this.mesh.position.y += this.moveDirectionY * this.moveSpeedY * delta * 60;
+
+        // Giới hạn độ cao (Bay trong khoảng từ 0 đến 35 - rộng hơn cũ)
+        const minY = 0;
+        const maxY = 35;
+        if (this.mesh.position.y > maxY) {
+            this.mesh.position.y = maxY;
+            this.moveDirectionY = -1;
+        } else if (this.mesh.position.y < minY) {
+            this.mesh.position.y = minY;
+            this.moveDirectionY = 1;
+        }
+
+        // Thỉnh thoảng đổi hướng dọc ngẫu nhiên để khó bắn hơn
+        if (Math.random() < 0.01) this.moveDirectionY *= -1;
+
+        // Nhấp nhô nhẹ bổ trợ thêm
+        this.mesh.position.y += Math.sin(Date.now() * 0.003) * 0.05;
 
         // --- CƠ CHẾ SÓNG ÂM (SHOCKWAVE) ---
-        // Kích hoạt khi máu mất 1/3 (còn lại <= 2/3)
-        if (this.hp <= this.maxHP * (2 / 3)) {
+        // Kích hoạt khi máu dưới 700 HP
+        if (this.hp <= 700) {
             this.shockwaveTimer += delta;
             const cooldown = CONFIG.ENEMIES.BOSS_3?.SHOCKWAVE_COOLDOWN || 6;
             if (this.shockwaveTimer >= cooldown) {
@@ -411,23 +431,27 @@ export class Boss3 extends Enemy {
             this.specialAttackTimer = 0;
             this.shootSpecialSpread(playerPos);
         }
+
+        // --- CẬP NHẬT LOGIC VẬT LÝ SÓNG ÂM ---
+        this.updateShockwaves(delta);
     }
 
     checkAndDodge() {
-        if (!this.projectileSystem) return;
+        if (!this.projectileSystem || !this.mesh) return;
 
-        // Quét tìm đạn của người chơi đang bay tới gần
-        const warningDist = 15;
+        // Tăng tầm quét đạn để Boss phản ứng sớm hơn (từ 15 lên 25)
+        const warningDist = 25;
         for (const p of this.projectileSystem.projectiles) {
-            if (p.isEnemy || p.isDead) continue; // Bỏ qua đạn của quái
+            if (p.isEnemy || p.isDead) continue;
 
             const dist = this.mesh.position.distanceTo(p.mesh.position);
             if (dist < warningDist) {
-                // Thực hiện né: Dash sang hướng ngược lại với đạn hoặc ngẫu nhiên
-                const dodgeDir = Math.random() > 0.5 ? 1 : -1;
+                // Thực hiện né: Dash xa hơn (từ 15 lên 20) để người chơi thấy rõ
+                const dodgeDir = p.mesh.position.x > this.mesh.position.x ? -1 : 1;
+
                 gsap.to(this.mesh.position, {
-                    x: this.mesh.position.x + dodgeDir * 15,
-                    duration: 0.4,
+                    x: this.mesh.position.x + dodgeDir * 20,
+                    duration: 0.3, // Dash nhanh hơn
                     ease: "power2.out"
                 });
                 this.dodgeCooldown = 2.0; // Nghỉ 2s mới né tiếp
@@ -438,51 +462,77 @@ export class Boss3 extends Enemy {
     }
 
     triggerShockwave() {
-        console.log("🔊 Boss 3: PHÁT SÓNG ÂM!");
+        console.log("🔊 Boss 3: PHÁT SÓNG ÂM SONAR!");
 
-        // 1. Hiệu ứng thị giác (3D Sonic Wave Fronts)
-        if (this.scene) {
-            // Tạo các mặt sóng cong (Hemisphere/Cap) để có chiều sâu thực sự
-            for (let i = 0; i < 4; i++) {
-                setTimeout(() => {
-                    // Tạo một phần mặt cầu (Cap) để trông như mặt sóng 3D
-                    // SphereGeometry(radius, widthSeg, heightSeg, phiStart, phiLength, thetaStart, thetaLength)
-                    const waveGeo = new THREE.SphereGeometry(2, 32, 20, 0, Math.PI * 2, 0, 0.8);
-                    const waveMat = new THREE.MeshBasicMaterial({
-                        color: 0x00f0ff,
-                        transparent: true,
-                        opacity: 0.6,
-                        blending: THREE.AdditiveBlending,
-                        side: THREE.DoubleSide,
-                        wireframe: true // Thêm wireframe để nhìn rõ các đường vân sóng âm
-                    });
-                    const wave = new THREE.Mesh(waveGeo, waveMat);
-                    
-                    wave.position.copy(this.mesh.position);
-                    // Xoay mặt cầu hướng về phía người chơi
-                    wave.rotation.x = Math.PI / 2;
-                    
-                    this.scene.add(wave);
+        // Tạo 5 vòng sóng lan tỏa liên tiếp để tạo hiệu ứng Sonar (giống trong phim)
+        for (let i = 0; i < 5; i++) {
+            setTimeout(() => {
+                if (this.isDead || !this.scene) return;
 
-                    // Hiệu ứng: Mặt sóng nở to cực đại và lao về phía màn hình
-                    gsap.to(wave.scale, { x: 60, y: 60, z: 20, duration: 2.0, ease: "power1.out" });
-                    gsap.to(wave.position, { z: 40, duration: 2.0, ease: "none" });
-                    gsap.to(waveMat, {
-                        opacity: 0, duration: 2.0, onComplete: () => {
-                            this.scene.remove(wave);
-                            waveGeo.dispose();
-                            waveMat.dispose();
-                        }
-                    });
-                }, i * 400);
+                const geometry = new THREE.RingGeometry(0.95, 1.0, 64);
+                const material = new THREE.MeshBasicMaterial({
+                    color: 0x398080, // Đổi sang màu xanh lục lam (ngả xanh lá hơn)
+                    transparent: true,
+                    opacity: 1.0,
+                    side: THREE.DoubleSide,
+                    blending: THREE.AdditiveBlending
+                });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.copy(this.mesh.position);
+                this.scene.add(mesh);
+
+                const wave = {
+                    mesh: mesh,
+                    geometry: geometry,
+                    material: material,
+                    radius: 0,
+                    maxRadius: 150, // Độ xa tối đa của sóng
+                    speed: 80,      // Tốc độ nở của vòng sóng
+                    opacity: 1.0
+                };
+                this.shockwaves.push(wave);
+            }, i * 250); // Mỗi vòng cách nhau 0.25 giây để tạo hiệu ứng sóng đuổi nhau
+        }
+
+        // Reset bộ đếm shockwave
+        this.shockwaveTimer = 0;
+    }
+
+    updateShockwaves(delta) {
+        if (!this.player || !this.shockwaves.length) return;
+
+        this.shockwaves.forEach((wave, index) => {
+            // 1. Tăng bán kính vòng sóng
+            wave.radius += wave.speed * delta;
+            wave.opacity -= 0.5 * delta; // Làm mờ dần
+
+            // Cập nhật hiển thị (Bắt buộc phải có để thấy được trong 3D)
+            wave.mesh.scale.set(wave.radius, wave.radius, 1);
+            wave.material.opacity = Math.max(0, wave.opacity);
+
+            // Di chuyển sóng về phía người chơi (Trục Z) để có hiệu ứng "Sonar bắn về phía màn hình"
+            wave.mesh.position.z += delta * 60;
+
+            // 2. Tính khoảng cách từ Player đến vòng sóng hiện tại (để logic làm chậm chính xác)
+            const dist = this.player.mesh.position.distanceTo(wave.mesh.position);
+
+            // 3. Logic làm chậm & Kẹt súng: Nếu Player chạm vào mặt sóng
+            // Khi khoảng cách gần bằng bán kính sóng, coi như bị trúng sóng chấn động
+            if (!wave.hasHit && Math.abs(dist - wave.radius) < 8 && wave.radius < wave.maxRadius) {
+                this.player.applySlow(3.0, 0.05); // Chậm lại 3 giây (gần như chết cứng)
+                this.player.applyJam(3.0);       // Không thể bắn trong 3 giây
+                wave.hasHit = true;
             }
-        }
 
-        // 2. Gây hiệu ứng làm chậm lên người chơi
-        if (this.player && this.player.applySlow) {
-            const slowFactor = CONFIG.ENEMIES.BOSS_3?.SLOW || 0.5;
-            this.player.applySlow(3.5, slowFactor); // Làm chậm trong 3.5 giây
-        }
+            // 4. Xóa sóng khi quá xa hoặc mờ hẳn
+            if (wave.radius > wave.maxRadius || wave.opacity <= 0) {
+                this.scene.remove(wave.mesh);
+                wave.geometry.dispose();
+                wave.material.dispose();
+                this.shockwaves.splice(index, 1);
+                this.player.slowMultiplier = 1.0; // Đảm bảo reset tốc độ
+            }
+        });
     }
 
     shootDoubleHoming(playerPos) {
@@ -504,17 +554,17 @@ export class Boss3 extends Enemy {
 
     shootSpecialSpread(playerPos) {
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
-        
+
         // Bắn 8 viên từ bên trái và 8 viên từ bên phải (tổng 16 viên), nhắm về phía tàu
         const angles = [-0.7, -0.5, -0.3, -0.1, 0.1, 0.3, 0.5, 0.7];
         const axis = new THREE.Vector3(0, 1, 0);
-        
+
         const leftPos = this.mesh.position.clone().add(new THREE.Vector3(-8, 0, 2));
         const rightPos = this.mesh.position.clone().add(new THREE.Vector3(8, 0, 2));
-        
+
         // Nhắm hướng trung tâm về phía người chơi
         const baseDir = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
-        
+
         angles.forEach(angle => {
             const dir = baseDir.clone().applyAxisAngle(axis, angle);
             this.projectileSystem.spawn(leftPos, dir, 0.6, 25, true, 'SPHERE');

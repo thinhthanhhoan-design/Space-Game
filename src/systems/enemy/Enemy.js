@@ -19,8 +19,8 @@ export class Enemy {
 
         // Vận tốc di chuyển ngẫu nhiên theo trục X và Y
         this.randomVel = {
-            x: (Math.random() - 0.5) * 10, // Giá trị từ -5 đến 5
-            y: (Math.random() - 0.5) * 10
+            x: (Math.random() - 0.5) * 6, // Giảm từ 10 xuống 6 để bay tập trung hơn
+            y: (Math.random() - 0.5) * 6
         };
 
         // Các thông số để tạo chuyển động uốn lượn (sin/cos)
@@ -29,7 +29,7 @@ export class Enemy {
             y: Math.random() * Math.PI * 2
         };
         this.moveFreq = 0.5 + Math.random(); // Tần suất dao động (nhanh hay chậm)
-        this.moveAmp = 2 + Math.random() * 3; // Biên độ dao động (xa hay gần)
+        this.moveAmp = 1 + Math.random() * 2; // Giảm biên độ dao động (cũ: 2 + 3)
 
         // Khoảng cách Z mục tiêu (con quái sẽ bay đến vị trí này trước mặt người chơi rồi dừng lại)
         this.targetZ = -15 - Math.random() * 20;
@@ -156,16 +156,33 @@ export class Enemy {
 
             // Cơ chế rơi vật phẩm (Drop Item logic)
             if (this.itemSystem) {
-                const rand = Math.random();
-                const buffChance = CONFIG.ITEMS.DROP_CHANCE.ENEMY_BUFF || 0.3;
-                const debuffChance = CONFIG.ITEMS.DROP_CHANCE.ENEMY_DEBUFF || 0.1;
+                const isBoss = this.type && this.type.startsWith('BOSS');
+                const diePos = this.mesh.position.clone();
 
-                if (rand < buffChance) { // Rơi Buff
-                    const type = Math.random() > 0.5 ? 'HEALTH' : 'AMMO';
-                    this.itemSystem.spawnItem(type, diePos);
-                } else if (rand < buffChance + debuffChance) { // Rơi Debuff
-                    const type = Math.random() > 0.5 ? 'WEAPON_LOCK' : 'ASTEROID_ITEM';
-                    this.itemSystem.spawnItem(type, diePos);
+                if (isBoss) {
+                    // Boss rơi 3 item xịn khi chết
+                    for (let i = 0; i < 3; i++) {
+                        const types = ['HEALTH', 'AMMO', 'SHIELD', 'DOUBLE_FIRE', 'TRIPLE_FIRE'];
+                        const type = types[Math.floor(Math.random() * types.length)];
+                        // Spread items slightly
+                        const offset = new THREE.Vector3((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 5, 0);
+                        this.itemSystem.spawnItem(type, diePos.clone().add(offset));
+                    }
+                } else {
+                    // Quái thường rơi đồ
+                    const rand = Math.random();
+                    const buffChance = 0.4; // Tăng tỉ lệ rơi buff lên 40%
+                    const debuffChance = 0.1;
+
+                    if (rand < buffChance) { // Rơi Buff (Thêm súng và khiên)
+                        const buffTypes = ['HEALTH', 'AMMO', 'SHIELD', 'DOUBLE_FIRE', 'TRIPLE_FIRE'];
+                        const type = buffTypes[Math.floor(Math.random() * buffTypes.length)];
+                        this.itemSystem.spawnItem(type, diePos);
+                    } else if (rand < buffChance + debuffChance) { // Rơi Debuff
+                        const debuffTypes = ['WEAPON_LOCK', 'ASTEROID_ITEM'];
+                        const type = debuffTypes[Math.floor(Math.random() * debuffTypes.length)];
+                        this.itemSystem.spawnItem(type, diePos);
+                    }
                 }
             }
         }
@@ -223,18 +240,18 @@ export class EnemyManager {
             const index = this.spawnedInWave;
 
             if (this.currentLevel === 3) {
-                enemy.moveFreq *= 2.0; // Bay cực nhanh
-                enemy.moveAmp *= 2.0;
-                enemy.shootCooldownMultiplier = 0.35; // Xả đạn liên tục
-                enemy.randomVel.x *= 2.2;
-                enemy.randomVel.y *= 2.2;
-            } else if (waveNum === 2) {
-                enemy.isRandomTopMove = true;
-                enemy.moveFreq *= 1.5; // Bay lượn nhanh hơn
-                enemy.moveAmp *= 1.5; // Đảo vị trí xa hơn (lạng lách tinh ranh)
-                enemy.shootCooldownMultiplier = 0.5; // Bắn nhanh gấp đôi
+                enemy.moveFreq *= 1.5;
+                enemy.moveAmp *= 1.2;
+                enemy.shootCooldownMultiplier = 0.35; 
                 enemy.randomVel.x *= 1.5;
                 enemy.randomVel.y *= 1.5;
+            } else if (waveNum === 2) {
+                enemy.isRandomTopMove = true;
+                enemy.moveFreq *= 1.2;
+                enemy.moveAmp *= 1.1; // Giảm biên độ lạng lách (cũ: 1.5)
+                enemy.shootCooldownMultiplier = 0.5;
+                enemy.randomVel.x *= 1.2;
+                enemy.randomVel.y *= 1.2;
             }
 
             // Đợi model tải xong rồi mới đặt vị trí để tránh lỗi giật hình

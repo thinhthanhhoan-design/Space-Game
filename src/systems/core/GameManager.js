@@ -160,7 +160,16 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 this.itemSpawnTimer += delta;
                 if (this.itemSpawnTimer > this.itemSpawnInterval) {
                     this.itemSpawnTimer = 0;
-                    const itemTypes = ['HEALTH', 'AMMO', 'SHIELD', 'WEAPON_LOCK', 'ASTEROID_ITEM'];
+                    // Danh sách item với trọng số (SHIELD, HEALTH và SÚNG xuất hiện nhiều hơn)
+                    const itemTypes = [
+                        'HEALTH', 'HEALTH', 
+                        'AMMO', 
+                        'SHIELD', 'SHIELD', 'SHIELD', 
+                        'WEAPON_LOCK', 
+                        'ASTEROID_ITEM', 
+                        'DOUBLE_FIRE', 'DOUBLE_FIRE', 
+                        'TRIPLE_FIRE', 'TRIPLE_FIRE'
+                    ];
                     const type = itemTypes[Math.floor(Math.random() * itemTypes.length)];
                     this.player.itemSystem.spawnItem(type);
                 }

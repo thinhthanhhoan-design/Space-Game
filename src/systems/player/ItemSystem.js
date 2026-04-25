@@ -10,7 +10,7 @@ export class ItemSystem {
         this.activeItems = []; // Lưu trữ các item 3D đang hiển thị trên màn hình
 
         this.textureLoader = new THREE.TextureLoader();
-        
+
         // Tải texture hào quang
         this.glowTexture = this.textureLoader.load(CONFIG.ASSETS.TEXTURES.PARTICLE || '');
 
@@ -20,6 +20,8 @@ export class ItemSystem {
             'AMMO': CONFIG.ASSETS.TEXTURES.ITEM_DAN,
             'SHIELD': CONFIG.ASSETS.TEXTURES.ITEM_SECURITY,
             'WEAPON_LOCK': CONFIG.ASSETS.TEXTURES.ITEM_KHOA_VK,
+            'DOUBLE_FIRE': CONFIG.ASSETS.TEXTURES.ITEM_Sung2,
+            'TRIPLE_FIRE': CONFIG.ASSETS.TEXTURES.ITEM_Sung3,
             'ASTEROID_ITEM': CONFIG.ASSETS.TEXTURES.ITEM_THIEN_THACH
         };
     }
@@ -43,7 +45,7 @@ export class ItemSystem {
      */
     spawnItem(type, position = null) {
         const group = new THREE.Group();
-        
+
         // Thiết lập vị trí spawn ngẫu nhiên tương đương quái nếu không có position truyền vào
         if (!position) {
             const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
@@ -58,7 +60,7 @@ export class ItemSystem {
         } else {
             group.position.copy(position);
         }
-        
+
         group.userData.type = type;
 
         // ... (icon, glow, light creation omitted but preserve original logic)
@@ -96,8 +98,8 @@ export class ItemSystem {
         group.add(edgeGlow);
 
         const light = new THREE.PointLight(
-            0xff0000, 
-            CONFIG.ITEMS.LIGHT_INTENSITY || 10, 
+            0xff0000,
+            CONFIG.ITEMS.LIGHT_INTENSITY || 10,
             CONFIG.ITEMS.LIGHT_RANGE || 25
         );
         group.add(light);
@@ -108,7 +110,7 @@ export class ItemSystem {
 
         this.scene.add(group);
         this.activeItems.push(group);
-        
+
         return group;
     }
 
@@ -151,7 +153,7 @@ export class ItemSystem {
         const colors = CONFIG.ITEMS.COLORS || { BUFF: 0x00ff00, DEBUFF: 0xff2200 };
         const targetColor = type === 'Buff' ? new THREE.Color(colors.BUFF) : new THREE.Color(colors.DEBUFF);
         const duration = CONFIG.ITEMS.ANIM_DURATION || 0.2;
-        
+
         gsap.to(item.userData.glowSprite.material.color, {
             r: targetColor.r, g: targetColor.g, b: targetColor.b,
             duration: duration,
@@ -189,7 +191,7 @@ export class ItemSystem {
     // Hàm cổng giao tiếp đón nhận Item từ map rơi ra
     collectItem(itemType) {
         this.inventory.push(itemType);
-        
+
         const lockDuration = CONFIG.ITEMS.WEAPON_LOCK_DURATION || 5000;
         const shieldDuration = CONFIG.ITEMS.SHIELD_DURATION || 10000;
         const disorderDuration = CONFIG.ITEMS.ENV_DISORDER_DURATION || 6000;
@@ -202,19 +204,10 @@ export class ItemSystem {
                 this.refillAmmo();
                 break;
             case 'SHIELD':
-                if (this.uiManager) this.uiManager.showMessage("🛡️ Barrier", "#00ffff");
-                
-                // Kích hoạt hiệu ứng visual và flag bảo vệ trên Player
-                if (this.player.setShield) {
-                    this.player.setShield(true);
+                if (this.uiManager) this.uiManager.showMessage("🛡️ BARRIER UP!", "#00ffff", 3000);
+                if (this.player.addShieldTime) {
+                    this.player.addShieldTime(shieldDuration);
                 }
-
-                setTimeout(() => { 
-                    if (this.player.setShield) {
-                        this.player.setShield(false);
-                    }
-                    if (this.uiManager) this.uiManager.showMessage("SHIELD EXPIRED", "#aaaaaa", 1000);
-                }, shieldDuration);
                 break;
             case 'WEAPON_LOCK':
                 if (this.uiManager) this.uiManager.showMessage("⚠️ WEAPON LOCKED!", "#ff0000", 3000);
@@ -223,7 +216,7 @@ export class ItemSystem {
                 break;
             case 'ASTEROID_ITEM':
                 if (this.uiManager) this.uiManager.showMessage("🌪️ ASTEROID STORM!", "#ff6600", 3000);
-                
+
                 // Hiệu ứng rung camera
                 if (this.camera) {
                     const originalPos = this.camera.position.clone();
@@ -246,6 +239,18 @@ export class ItemSystem {
                         this.asteroidSystem.densityMultiplier = 1.0;
                         if (this.uiManager) this.uiManager.showMessage("STORM CLEARED", "#00ff00", 2000);
                     }, disorderDuration);
+                }
+                break;
+            case 'DOUBLE_FIRE':
+                if (this.uiManager) this.uiManager.showMessage("🔥 DOUBLE FIRE!", "#ffaa00", 3000);
+                if (this.player.activateDoubleFire) {
+                    this.player.activateDoubleFire();
+                }
+                break;
+            case 'TRIPLE_FIRE':
+                if (this.uiManager) this.uiManager.showMessage("⚡ TRIPLE FIRE!", "#00ffff", 3000);
+                if (this.player.activateTripleFire) {
+                    this.player.activateTripleFire();
                 }
                 break;
         }
