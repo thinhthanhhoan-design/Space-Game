@@ -1,6 +1,29 @@
 import * as THREE from 'three';
 import { CONFIG } from '../../utils/CONFIG.JS';
 
+function createBulletTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 16;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d');
+
+    // Nền trong suốt
+    ctx.clearRect(0, 0, 16, 256);
+    
+    // Gradient dọc từ đầu đến đuôi
+    const gradient = ctx.createLinearGradient(0, 0, 0, 256);
+    gradient.addColorStop(0.0, 'rgba(255, 255, 255, 1)');   // Đầu đạn: Trắng chói
+    gradient.addColorStop(0.1, 'rgba(255, 255, 150, 1)');   // Vàng sáng
+    gradient.addColorStop(0.3, 'rgba(255, 120, 0, 0.9)');   // Thân: Cam
+    gradient.addColorStop(0.7, 'rgba(150, 0, 0, 0.3)');     // Đuôi mờ dần: Đỏ tối
+    gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0)');         // Trong suốt hoàn toàn
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 16, 256);
+
+    return new THREE.CanvasTexture(canvas);
+}
+
 export class Weapon {
     constructor(scene, player) {
         this.scene = scene;
@@ -15,15 +38,22 @@ export class Weapon {
         
         this.lastFireTime = 0;
         
-        // Tối ưu: Dùng chung 1 Geometry và Material cho tất cả đạn
-        this.bulletGeometry = new THREE.CylinderGeometry(0.5, 0.5, 3.0, 8); // Tăng kích thước (radius 0.2, dài 3.0) để nhìn rõ tia laser
-        this.bulletGeometry.rotateX(Math.PI / 2); // Xoay để nòng đạn hướng về phía trước theo trục Z
+        // Tạo hình khối 3D cho đạn: Đầu to (0.6), đuôi nhọn (0.05), dài 6.0
+        // Khối 3D giúp đạn không bị dẹt khi nhìn từ góc chéo (sửa lỗi đạn phẳng)
+        this.bulletGeometry = new THREE.CylinderGeometry(0.6, 0.05, 6.0, 12);
+        
+        // Xoay khối 3D sao cho đầu to (+Y) hướng về phía trước (-Z) 
+        // Điều này giúp đạn "lao về phía trước" trong không gian 3D thay vì "chĩa lên trời"
+        this.bulletGeometry.rotateX(-Math.PI / 2);
 
         this.bulletMaterial = new THREE.MeshBasicMaterial({ 
-            color: 0x00ffff, // Xanh cyan laser
+            map: createBulletTexture(), 
+            color: 0xffffff, 
             transparent: true,
-            opacity: 0.9, // Tăng độ đậm của đạn
-            blending: THREE.AdditiveBlending // Chế độ hòa trộn cộng sáng để tạo hiệu ứng phát sáng (Glow)
+            opacity: 1.0, 
+            blending: THREE.AdditiveBlending, // Hiệu ứng phát sáng
+            depthWrite: false, // Ngăn lỗi che khuất Alpha
+            side: THREE.DoubleSide
         }); 
 
         this.isLocked = false; // Trạng thái bị khóa súng (do Debuff)
@@ -46,7 +76,7 @@ export class Weapon {
             // Cập nhật mốc thời gian bắn bắn gần nhất
             this.lastFireTime = now;
 
-            // Tạo mesh viêm đạn
+            // Tạo Mesh đạn 3D thực sự
             const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial);
             
             // Đặt vị trí đạn trước mũi tàu để tránh va lầm player

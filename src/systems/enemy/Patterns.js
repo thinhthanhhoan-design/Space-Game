@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CONFIG } from '../../utils/CONFIG.JS';
 
 export const Patterns = {
     // Wave 1: Formation (e.g., an inverted V or Grid)
@@ -20,11 +21,13 @@ export const Patterns = {
         return new THREE.Vector3(x, y, -150);
     },
 
-    // Wave 2: Random movement in top 1/3
+    // Wave 2: Random movement in flight envelope
     getRandomTopPosition: () => {
+        const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
+        const envY = CONFIG.ENGINE.FLIGHT_ENVELOPE.Y;
         return new THREE.Vector3(
-            (Math.random() - 0.5) * 30, // X ngẫu nhiên từ -15 đến 15 (trải ngang màn hình)
-            5 + Math.random() * 5,      // Y ngẫu nhiên từ 5 đến 10 (chỉ xuất hiện ở nửa trên màn hình)
+            (Math.random() - 0.5) * envX * 2, // X ngẫu nhiên toàn bộ giới hạn
+            (Math.random() - 0.5) * envY * 2, // Y ngẫu nhiên toàn bộ giới hạn
             -150                        // Z = -150 (vẫn xuất hiện từ xa)
         );
     },

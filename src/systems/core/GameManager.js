@@ -9,7 +9,7 @@ import { Background } from '../environment/Background.js'; // Nhập hệ thốn
 import { CinematicEffects } from '../effects/CinematicEffects.js';
 import { ProjectileSystem } from '../core/ProjectileSystem.js';
 import { EnemyManager } from '../enemy/Enemy.js';
-import { Boss } from '../enemy/Boss.js';
+import { Boss, Boss2, Boss3 } from '../enemy/Boss.js';
 import { AsteroidSystem } from '../environment/AsteroidSystem.js';
 import { Combat } from '../player/Combat.js';
 import { UIManager } from '../ui/UIManager.js';
@@ -54,7 +54,10 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         // --- DEBUG SHORTCUTS ---
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyK') {
-                this.enemyManager.clearAllEnemies();
+                this.enemyManager.clearAllEnemies(); // Diệt sạch quái thường
+                if (this.boss) {
+                    this.boss.takeDamage(9999); // Diệt luôn Boss nếu đang có
+                }
             }
         });
     } // Kết thúc quá trình lắp ráp các module
@@ -96,10 +99,10 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                                             // KẾT THÚC ĐƯỜNG HẦM -> BẮT ĐẦU GAMEPLAY THỰC SỰ
                                             this.stateManager.setGameStarted(true);
                                             this.uiManager.show(); // Hiển thị HUD người chơi
-                                            this.enemyManager.startWaveSystem();
+                                            this.enemyManager.startWaveSystem(2, 1); // Bắt đầu Màn 1 (2 wave)
 
-                                            // Hiệu ứng nhiễu nhiệt động cơ
-                                            this.explosionSystem.attachEngineHeat(this.player.mesh);
+                                            // Hiệu ứng nhiễu nhiệt động cơ bằng ô vuông (Đã tạm ẩn vì lỗi hình khối)
+                                            // this.explosionSystem.attachEngineHeat(this.player.mesh);
                                         });
                                     });
                                 }, 1500);
@@ -126,7 +129,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 if (this.gamePlayState === 'WAVES') {
                     currentEnemies = this.enemyManager.enemies;
                 } else if (this.gamePlayState === 'BOSS' && this.boss) {
-                    currentEnemies = [this.boss];
+                    currentEnemies = [this.boss, ...this.enemyManager.enemies];
                 }
                 //this.player.update(currentEnemies); // Gọi logic điều khiển tàu, truyền list quái vào để vẽ tâm ngắm
                 //this.uiManager.update(this.player, this.enemyManager.killCount || 0); // Liên tục cập nhật HUD máu, đạn
@@ -169,36 +172,57 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     if (this.enemyManager.isAllWavesCleared) {
                         this.gamePlayState = 'BOSS';
                         if (!this.boss) {
-                            this.boss = new Boss(this.sceneController.scene, this.projectileSystem, this.player.itemSystem);
+                            if (this.currentLevelKey === 'LEVEL_1') {
+                                this.boss = new Boss(this.sceneController.scene, this.projectileSystem, this.player.itemSystem);
 
-                            // Hiệu ứng CẢNH BÁO trước khi Boss vào trận
-                            this.explosionSystem.startWarning(3.0);
-                            this.sceneController.triggerShake(0.35, 3.0); // Giảm rung xuống 0.35 cho dễ nhìn hơn
-                            if (this.uiManager.showBossHP) this.uiManager.showBossHP("TRÙM KHÔNG GIAN V1");
+                                // Hiệu ứng CẢNH BÁO trước khi Boss vào trận
+                                this.explosionSystem.startWarning(3.0);
+                                this.sceneController.triggerShake(0.35, 3.0); // Giảm rung xuống 0.35 cho dễ nhìn hơn
+                                if (this.uiManager.showBossHP) this.uiManager.showBossHP("TRÙM KHÔNG GIAN V1");
 
-                            this.boss.onRetreatComplete = () => {
-                                console.log("Boss 1 đã bỏ chạy. Sinh lại Wave quái 1!");
-                                if (this.uiManager.hideBossHP) this.uiManager.hideBossHP(); // Ẩn thanh máu khi đổi phase
-                                this.gamePlayState = 'WAVES';
-                                this.enemyManager.resetAndStartWaveSystem(1);
-                            };
+                                this.boss.onRetreatComplete = () => {
+                                    console.log("Boss 1 đã bỏ chạy. Sinh lại Wave quái 1!");
+                                    if (this.uiManager.hideBossHP) this.uiManager.hideBossHP(); // Ẩn thanh máu khi đổi phase
+                                    this.gamePlayState = 'WAVES';
+                                    this.enemyManager.resetAndStartWaveSystem(1, 1); // 1 wave ở Màn 1
+                                };
+                            } else if (this.currentLevelKey === 'LEVEL_2') {
+                                this.boss = new Boss2(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.enemyManager);
+
+                                // Hiệu ứng CẢNH BÁO
+                                this.explosionSystem.startWarning(3.0);
+                                this.sceneController.triggerShake(0.5, 3.0); 
+                                if (this.uiManager.showBossHP) this.uiManager.showBossHP("KẺ HỦY DIỆT V2");
+                            } else if (this.currentLevelKey === 'LEVEL_3') {
+                                this.boss = new Boss3(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.player);
+
+                                // Hiệu ứng CẢNH BÁO
+                                this.explosionSystem.startWarning(3.0);
+                                this.sceneController.triggerShake(0.6, 3.0); 
+                                if (this.uiManager.showBossHP) this.uiManager.showBossHP("CHÚA TỂ BÓNG TỐI V3");
+                            }
                         } else {
-                            // Boss quay trở lại
-                            this.explosionSystem.startWarning(2.0);
-                            this.sceneController.triggerShake(0.5, 2.0);
+                            // Boss quay trở lại (chỉ áp dụng cho Boss 1 phase 2)
+                            if (this.currentLevelKey === 'LEVEL_1') {
+                                this.explosionSystem.startWarning(2.0);
+                                this.sceneController.triggerShake(0.5, 2.0);
 
-                            this.uiManager.showBossHP("TRÙM KHÔNG GIAN V1 (FINAL)");
-                            this.boss.state = 'FIGHTING';
-                            this.boss.mesh.position.set(0, 10, -40);
-                            this.boss.mesh.scale.set(10, 10, 10);
-                            this.boss.shootCount = 0;
-                            this.boss.shootTimer = 0;
+                                this.uiManager.showBossHP("TRÙM KHÔNG GIAN V1 (FINAL)");
+                                this.boss.state = 'FIGHTING';
+                                this.boss.mesh.position.set(0, 10, -40);
+                                this.boss.mesh.scale.set(10, 10, 10);
+                                this.boss.shootCount = 0;
+                                this.boss.shootTimer = 0;
+                            }
                         }
                     }
                 } else if (this.gamePlayState === 'BOSS') {
                     if (this.boss) {
                         this.boss.update(delta, this.player.mesh.position);
-                        this.combat.update(this.player, [this.boss], this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem);
+                        this.enemyManager.update(delta, this.player.mesh.position); // Cập nhật cả quái do Boss sinh ra
+                        
+                        const combatEnemies = [this.boss, ...this.enemyManager.enemies];
+                        this.combat.update(this.player, combatEnemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem);
                         this.uiManager.updateBossHP(this.boss.hp, this.boss.maxHP);
 
                         if (this.boss.state === 'RETREATING') {
@@ -209,7 +233,24 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                             this.uiManager.hideBossHP();
                             this.explosionSystem.spawnBossExplosion(this.boss.mesh.position);
                             this.sceneController.triggerShake(1.5, 0.8);
-                            this.gamePlayState = 'VICTORY';
+                            
+                            if (this.currentLevelKey === 'LEVEL_1') {
+                                console.log("Tiến vào LEVEL 2!");
+                                this.currentLevelKey = 'LEVEL_2';
+                                this.gamePlayState = 'WAVES';
+                                this.boss = null;
+                                this.enemyManager.resetAndStartWaveSystem(2, 2); // 2 wave ở Màn 2
+                                if (this.cinematicEffects) this.cinematicEffects.showText("LEVEL 2 - CẨN THẬN!", 3);
+                            } else if (this.currentLevelKey === 'LEVEL_2') {
+                                console.log("Tiến vào LEVEL 3!");
+                                this.currentLevelKey = 'LEVEL_3';
+                                this.gamePlayState = 'WAVES';
+                                this.boss = null;
+                                this.enemyManager.resetAndStartWaveSystem(2, 3); // 2 wave ở Màn 3
+                                if (this.cinematicEffects) this.cinematicEffects.showText("LEVEL 3 - ĐỊA NGỤC!", 3);
+                            } else {
+                                this.gamePlayState = 'VICTORY';
+                            }
                         }
                     }
                 }

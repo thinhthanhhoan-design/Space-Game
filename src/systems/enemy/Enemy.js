@@ -32,12 +32,12 @@ export class Enemy {
         this.moveAmp = 2 + Math.random() * 3; // Biên độ dao động (xa hay gần)
 
         // Khoảng cách Z mục tiêu (con quái sẽ bay đến vị trí này trước mặt người chơi rồi dừng lại)
-        this.targetZ = -15 - Math.random() * 20; 
+        this.targetZ = -15 - Math.random() * 20;
 
         this.loader = new GLTFLoader(); // Khởi tạo bộ tải model 3D
         this.loadModel(); // Gọi hàm tải model
     }
-// Hàm tải model
+    // Hàm tải model
     loadModel() {
         const modelPath = CONFIG.ASSETS.MODELS.ENEMY_1; // Lấy đường dẫn file 3D
         this.loader.load(modelPath, (glb) => { // Thực hiện tải file
@@ -56,14 +56,15 @@ export class Enemy {
             this.isLoaded = true;
         });
     }
-// Hàm cập nhật logic
+    // Hàm cập nhật logic
     update(delta, playerPos) {
         if (!this.mesh || this.isDead) return; // Nếu chưa tải xong hoặc đã chết thì không làm gì
 
 
         // --- SHOOT LASER ---
         this.shootTimer = (this.shootTimer || 0) + delta;
-        if (this.shootTimer > 2.0 + Math.random() * 2.0) { // Quái bắn ngẫu nhiên mỗi 2-4s
+        const cooldownMulti = this.shootCooldownMultiplier || 1.0; // Wave 2 sẽ gán hệ số này < 1
+        if (this.shootTimer > (2.0 + Math.random() * 2.0) * cooldownMulti) { // Quái bắn ngẫu nhiên
             this.shootTimer = 0;
             this.shootLaser(playerPos);
         }
@@ -78,53 +79,58 @@ export class Enemy {
         }
 
         // --- DI CHUYỂN X & Y (CHUYỂN ĐỘNG PHỨC TẠP) ---
-        const time = Date.now() * 0.001; // Lấy thời gian hiện tại
-        
-        // Tính toán dao động hình Sin và Cos
-        const oscX = Math.sin(time * this.moveFreq + this.randomOffset.x) * (this.moveAmp * delta);
-        const oscY = Math.cos(time * this.moveFreq * 0.8 + this.randomOffset.y) * (this.moveAmp * delta);
+        if (this.isBossMinion && this.shieldTarget && this.shieldTarget.mesh) {
+            // --- LOGIC BAY QUANH BOSS (GUARD MODE) ---
+            const time = Date.now() * 0.001;
+            // Dao động ngẫu nhiên nhẹ xung quanh vị trí bảo vệ của Boss
+            const localOscX = Math.sin(time * 2.5 + this.randomOffset.x) * 3.0;
+            const localOscY = Math.cos(time * 2.5 + this.randomOffset.y) * 3.0;
 
-        // Cộng dồn chuyển động dao động và vận tốc ngẫu nhiên vào vị trí quái
-        this.mesh.position.x += oscX + this.randomVel.x * delta * 0.5;
-        this.mesh.position.y += oscY + this.randomVel.y * delta * 0.5;
+            const targetX = this.shieldTarget.mesh.position.x + (this.shieldOffsetX || 0) + localOscX;
+            const targetY = this.shieldTarget.mesh.position.y + localOscY;
 
-        // --- KIỂM TRA BIÊN TƯƠNG ĐỐI (GIỮ QUÁI TRONG TẦM NHÌN NGƯỜI CHƠI) ---
-        // Thay vì dùng biên cứng cố định, ta dùng biên mềm chạy theo Player
-        const viewLimitX = 22; // Khớp với chiều rộng màn hình ở FOV 75
-        const viewLimitY = 12; // Khớp với chiều cao màn hình ở FOV 75
+            this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, targetX, 0.1);
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, targetY, 0.1);
+            
+            // Luôn duy trì ở phía trước Boss (trục Z)
+            this.targetZ = this.shieldTarget.mesh.position.z + 7;
+        } else {
+            const time = Date.now() * 0.001;
+            const oscX = Math.sin(time * this.moveFreq + this.randomOffset.x) * (this.moveAmp * delta);
+            const oscY = Math.cos(time * this.moveFreq * 0.8 + this.randomOffset.y) * (this.moveAmp * delta);
 
-        const minX = playerPos.x - viewLimitX;
-        const maxX = playerPos.x + viewLimitX;
-        const minY = playerPos.y - viewLimitY;
-        const maxY = playerPos.y + viewLimitY;
+            this.mesh.position.x += oscX + this.randomVel.x * delta * 0.5;
+            this.mesh.position.y += oscY + this.randomVel.y * delta * 0.5;
 
-        // Nếu chạm biên tương đối, nảy ngược lại và đổi hướng vận tốc
-        if (this.mesh.position.x > maxX) {
-            this.mesh.position.x = maxX;
-            this.randomVel.x = -Math.abs(this.randomVel.x) * 1.1;
-        } else if (this.mesh.position.x < minX) {
-            this.mesh.position.x = minX;
-            this.randomVel.x = Math.abs(this.randomVel.x) * 1.1;
+            // --- KIỂM TRA BIÊN CHUYỂN ĐỘNG ---
+            const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
+            const envY = CONFIG.ENGINE.FLIGHT_ENVELOPE.Y;
+
+            if (this.mesh.position.x > envX) {
+                this.mesh.position.x = envX;
+                this.randomVel.x = -Math.abs(this.randomVel.x) * 1.1;
+            } else if (this.mesh.position.x < -envX) {
+                this.mesh.position.x = -envX;
+                this.randomVel.x = Math.abs(this.randomVel.x) * 1.1;
+            }
+
+            if (this.mesh.position.y > envY) {
+                this.mesh.position.y = envY;
+                this.randomVel.y = -Math.abs(this.randomVel.y) * 1.1;
+            } else if (this.mesh.position.y < -envY) {
+                this.mesh.position.y = -envY;
+                this.randomVel.y = Math.abs(this.randomVel.y) * 1.1;
+            }
+
+            const maxVel = 15;
+            this.randomVel.x = THREE.MathUtils.clamp(this.randomVel.x, -maxVel, maxVel);
+            this.randomVel.y = THREE.MathUtils.clamp(this.randomVel.y, -maxVel, maxVel);
         }
-
-        if (this.mesh.position.y > maxY) {
-            this.mesh.position.y = maxY;
-            this.randomVel.y = -Math.abs(this.randomVel.y) * 1.1;
-        } else if (this.mesh.position.y < minY) {
-            this.mesh.position.y = minY;
-            this.randomVel.y = Math.abs(this.randomVel.y) * 1.1;
-        }
-
-        // Khống chế tốc độ tối đa để quái không bay quá nhanh sau khi nảy nhiều lần
-        const maxVel = 15;
-        this.randomVel.x = THREE.MathUtils.clamp(this.randomVel.x, -maxVel, maxVel);
-        this.randomVel.y = THREE.MathUtils.clamp(this.randomVel.y, -maxVel, maxVel);
-
 
         // Hiện tại z despawn là 20, nhưng ta đã chặn ở targetZ. 
         // Nếu game có mechanic khác để chúng đi qua thì giữ lại logic, nhưng ở đây ta chặn rồi.
     }
-// Hàm nhận sát thương và chết
+    // Hàm nhận sát thương và chết
     takeDamage(amount) {
         this.hp -= amount; // Trừ máu
         if (this.hp <= 0) this.die(); // Nếu hết máu thì chết
@@ -132,10 +138,10 @@ export class Enemy {
 
     shootLaser(playerPos) {
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
-        
+
         // Quái nhỏ bắn tia laser dọc theo trục Z (tiến về phía màn hình / người chơi)
         const direction = new THREE.Vector3(0, 0, 1);
-        
+
         const speed = CONFIG.ENEMIES[this.type]?.BULLET_SPEED || 0.5;
         // Gọi spawn với loại đạn là 'LASER'
         this.projectileSystem.spawn(this.mesh.position, direction, speed, this.damage, true, 'LASER');
@@ -178,28 +184,32 @@ export class EnemyManager {
         this.spawnedInWave = 0; // Số lượng quái đã được sinh ra trong đợt này
         this.isAllWavesCleared = false; // Đã thắng hết các đợt chưa
         this.maxWaves = 2; // Số lượng wave tối đa (mặc định là 2)
+        this.currentLevel = 1; // Màn chơi hiện tại
     }
-// Hệ thống wave
-    startWaveSystem(maxWaves = 2) {
-        if (this.waveInProgress) return; 
+    // Hệ thống wave
+    startWaveSystem(maxWaves = 2, level = 1) {
+        if (this.waveInProgress) return;
         this.maxWaves = maxWaves;
+        this.currentLevel = level;
         this.currentWave = 1;
-        this.spawnWave(1); 
+        this.spawnWave(1);
     }
 
-    resetAndStartWaveSystem(maxWaves = 2) {
+    resetAndStartWaveSystem(maxWaves = 2, level = 1) {
         this.isAllWavesCleared = false;
         this.currentWave = 1;
         this.spawnedInWave = 0;
         this.waveInProgress = false;
         this.enemies = [];
-        this.startWaveSystem(maxWaves);
+        this.startWaveSystem(maxWaves, level); // Sửa lỗi: Truyền tham số level xuống startWaveSystem
     }
 
     spawnWave(waveNum) {
         this.waveInProgress = true;
         this.spawnedInWave = 0;
-        const count = 10; // Mỗi wave có 10 con quái
+        let count = 10;
+        if (this.currentLevel === 3) count = 20;
+        else if (this.currentLevel === 2) count = 15;
 
         // Sử dụng Interval để cứ 0.8 giây lại sinh ra một con quái (không xuất hiện cùng lúc cả 10 con)
         this.activeInterval = setInterval(() => {
@@ -212,8 +222,19 @@ export class EnemyManager {
             const enemy = new Enemy(this.scene, this.projectileSystem, this.itemSystem); // Tạo quái mới
             const index = this.spawnedInWave;
 
-            if (waveNum === 2) {
+            if (this.currentLevel === 3) {
+                enemy.moveFreq *= 2.0; // Bay cực nhanh
+                enemy.moveAmp *= 2.0;
+                enemy.shootCooldownMultiplier = 0.35; // Xả đạn liên tục
+                enemy.randomVel.x *= 2.2;
+                enemy.randomVel.y *= 2.2;
+            } else if (waveNum === 2) {
                 enemy.isRandomTopMove = true;
+                enemy.moveFreq *= 1.5; // Bay lượn nhanh hơn
+                enemy.moveAmp *= 1.5; // Đảo vị trí xa hơn (lạng lách tinh ranh)
+                enemy.shootCooldownMultiplier = 0.5; // Bắn nhanh gấp đôi
+                enemy.randomVel.x *= 1.5;
+                enemy.randomVel.y *= 1.5;
             }
 
             // Đợi model tải xong rồi mới đặt vị trí để tránh lỗi giật hình
@@ -231,10 +252,10 @@ export class EnemyManager {
             this.spawnedInWave++;
         }, 800);
     }
-// Dẹp quái
+    // Dẹp quái
     clearAllEnemies() {
         console.log("🛠️ Debug: Đang dọn sạch toàn bộ quái...");
-        
+
         // Dừng việc sinh quái nếu đang sinh dở
         if (this.activeInterval) {
             clearInterval(this.activeInterval);
@@ -243,12 +264,15 @@ export class EnemyManager {
 
         this.enemies.forEach(enemy => enemy.die()); // Cho tất cả quái hiện tại "chết"
         this.enemies = []; // Xóa mảng
-        this.spawnedInWave = 10; // Đánh dấu là đã xong số lượng quái
-        this.waveInProgress = true; 
-        
+        let finalCount = 10;
+        if (this.currentLevel === 3) finalCount = 20;
+        else if (this.currentLevel === 2) finalCount = 15;
+        this.spawnedInWave = finalCount; // Đánh dấu là đã xong số lượng quái
+        this.waveInProgress = true;
+
         console.log("✅ Đã dọn xong. Chờ hệ thống kích hoạt Wave tiếp theo...");
     }
-// Cập nhật và chuyển wave
+    // Cập nhật và chuyển wave
     update(delta, playerPos) {
         // Duyệt ngược mảng quái để cập nhật (duyệt ngược để khi xóa phần tử không bị lỗi chỉ số)
         for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -260,8 +284,12 @@ export class EnemyManager {
             }
         }
 
+        let requiredCount = 10;
+        if (this.currentLevel === 3) requiredCount = 20;
+        else if (this.currentLevel === 2) requiredCount = 15;
+
         // Logic chuyển Wave: Kiểm tra xem đã hết quái và đã sinh đủ số lượng chưa
-        if (this.waveInProgress && this.spawnedInWave === 10 && this.enemies.length === 0) {
+        if (this.waveInProgress && this.spawnedInWave >= requiredCount && this.enemies.length === 0) {
             if (this.currentWave < this.maxWaves) {
                 const nextWave = this.currentWave + 1;
                 this.currentWave = nextWave;

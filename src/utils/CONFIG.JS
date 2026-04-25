@@ -16,8 +16,8 @@ export const CONFIG = {
       PLAYER_V3: "PROCEDURAL",
       ENEMY_1: "/models/Monster 1.glb",
       BOSS_1: "/models/Boss 1.2.glb",
-      BOSS_2: "PROCEDURAL",
-      BOSS_3: "PROCEDURAL",
+      BOSS_2: "/models/Boss_2.glb",
+      BOSS_3: "/models/Boss_3.glb",
       ASTEROID: "PROCEDURAL",
     },
     TEXTURES: {
@@ -102,8 +102,8 @@ export const CONFIG = {
     TYPE: "FORWARD_PROGRESSION",
     FORWARD_SPEED: 0.75, // Tăng lên 0.75 để tàu linh hoạt hơn với hệ thống velocity mới
     FLIGHT_ENVELOPE: {
-      X: 60, // Mở rộng không gian bay ngang ra xa hơn để thoải mái né đạn
-      Y: 100, // Khôn gian bay lên xuống tha hồ lạng lách
+      X: 70, // Mở rộng không gian bay ngang ra xa hơn để thoải mái né đạn
+      Y: 20, // Khôn gian bay lên xuống tha hồ lạng lách
     },
     // Thông số cho hiệu ứng nghiêng thế giới
     DYNAMIC_BANKING: {
@@ -132,9 +132,9 @@ export const CONFIG = {
   // 👤 PLAYER STATS (Đã xử lý cơ chế thoái hóa & tiêu tốn đạn)
   // ===============================
   PLAYER: {
-    INITIAL_HP: 250,
+    INITIAL_HP: 300,
     MODELS: {
-      V1: { hp_limit: 250, name: "UETE-3637", next_model: null },
+      V1: { hp_limit: 300, name: "UETE-3637", next_model: null },
       V2: { hp_limit: 300, name: "Asterum-Enemy-Mod", next_model: "V1", REVERT_AT: 0.7 },
       V3: { hp_limit: 350, name: "UETE-Final-Form", next_model: "V2", REVERT_AT: 0.7 },
     },
@@ -160,16 +160,22 @@ export const CONFIG = {
       RETREAT_Z: -50
     },
     BOSS_2: {
-      HP: 500,
+      // HP: 500,
+      HP: 600,
       LASER_DAMAGE: 15,
-      REINFORCE_HP: 250,
-      REINFORCE_DAMAGE: 25,
-      SPAWN_QUAI_COUNT: 3
+      //REINFORCE_HP: 250,
+      //REINFORCE_DAMAGE: 25,
+      BULLET_SPEED: 0.6,
+      SPREAD_DAMAGE: 20,
+      SPAWN_QUAI_COUNT: 3,
+      SPAWN_INTERVAL: 10
     },
     BOSS_3: {
-      HP: 600,
+      // HP: 600,
+      HP: 1000,
       DODGE: 0.4,
-      SHOCK_TRIGGER: 300,
+      //SHOCK_TRIGGER: 300,
+      SHOCKWAVE_COOLDOWN: 6,
       SLOW: 0.5,
       DAMAGE_PER_HIT: 45
     }
