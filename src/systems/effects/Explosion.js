@@ -24,9 +24,9 @@ export class ExplosionSystem {
     });
 
     // ==============================
-    // WARNING overlay (plane đỏ trước camera)
+    // WARNING overlay (viền đỏ quanh màn hình bằng DOM)
     // ==============================
-    this.warningMesh = null;
+    this.warningDOM = null;
     this.warningTime = 0;
     this.warningDuration = 0;
     this.warningActive = false;
@@ -49,25 +49,30 @@ export class ExplosionSystem {
   // WARNING overlay
   // ====================================================
   createWarningOverlay() {
-    const geo = new THREE.PlaneGeometry(10, 10);
-
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xff0000,
-      transparent: true,
-      opacity: 0,
-      depthTest: false,
-    });
-
-    this.warningMesh = new THREE.Mesh(geo, mat);
-    this.warningMesh.position.set(0, 0, -2);
-
-    this.camera.add(this.warningMesh);
+    this.warningDOM = document.getElementById("flash-red");
+    if (!this.warningDOM) {
+        this.warningDOM = document.createElement("div");
+        this.warningDOM.id = "flash-red-combat";
+        Object.assign(this.warningDOM.style, {
+            position: "absolute",
+            top: 0, left: 0, width: "100%", height: "100%",
+            background: "radial-gradient(circle, transparent 60%, rgba(255, 0, 0, 0.4) 100%)",
+            boxShadow: "inset 0 0 150px rgba(255, 0, 0, 0.6)",
+            opacity: 0,
+            pointerEvents: "none",
+            zIndex: 20
+        });
+        document.body.appendChild(this.warningDOM);
+    }
   }
 
   startWarning(duration = 2.5) {
     this.warningActive = true;
     this.warningTime = 0;
     this.warningDuration = duration;
+    if (!this.warningDOM) {
+      this.warningDOM = document.getElementById("flash-red") || document.getElementById("flash-red-combat");
+    }
   }
 
   // ====================================================
@@ -452,12 +457,16 @@ export class ExplosionSystem {
     if (this.warningActive) {
       this.warningTime += delta;
 
-      const blink = Math.sin(this.warningTime * 15) * 0.2 + 0.2; // Nhấp nháy nhẹ nhàng hơn
-      this.warningMesh.material.opacity = blink;
+      const blink = Math.sin(this.warningTime * 15) * 0.3 + 0.3; // Nhấp nháy rõ hơn
+      if (this.warningDOM) {
+          this.warningDOM.style.opacity = blink;
+      }
  
       if (this.warningTime >= this.warningDuration) {
         this.warningActive = false;
-        gsap.to(this.warningMesh.material, { opacity: 0, duration: 0.5 });
+        if (this.warningDOM) {
+            gsap.to(this.warningDOM, { opacity: 0, duration: 0.5 });
+        }
       }
     }
 

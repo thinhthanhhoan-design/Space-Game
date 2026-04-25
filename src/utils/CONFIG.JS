@@ -16,8 +16,8 @@ export const CONFIG = {
       PLAYER_V3: "PROCEDURAL",
       ENEMY_1: "/models/Monster 1.glb",
       BOSS_1: "/models/Boss 1.2.glb",
-      BOSS_2: "PROCEDURAL",
-      BOSS_3: "PROCEDURAL",
+      BOSS_2: "/models/Boss 2.glb",
+      BOSS_3: "/models/Boss 3.glb",
       ASTEROID: "PROCEDURAL",
     },
     TEXTURES: {
@@ -29,6 +29,8 @@ export const CONFIG = {
       ITEM_DAN: "/textures/dan.png",
       ITEM_KHOA_VK: "/textures/khoa_vk.png",
       ITEM_THIEN_THACH: "/textures/thien_thach.png",
+      ITEM_Sung2: "/textures/sung_2.png",
+      ITEM_Sung3: "/textures/sung_3.png",
     },
     SOUNDS: {
       BGM_INTRO: "/sounds/mysterious_space.mp3",
