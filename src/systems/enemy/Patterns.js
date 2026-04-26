@@ -2,22 +2,21 @@ import * as THREE from 'three';
 import { CONFIG } from '../../utils/CONFIG.JS';
 
 export const Patterns = {
-    // Wave 1: Formation (e.g., an inverted V or Grid)
-    FORMATION_WAVE_1: (index, total) => { // Nhận vào số thứ tự của quái (index) và tổng số quái (total)
-        const spacing = 4; // Khoảng cách giữa các con quái là 4 đơn vị
-        const rowSize = 5; // Quy định mỗi hàng sẽ có 5 con quái
+    // Wave 1: Đội hình lưới, tự động tính kích thước dựa trên tổng số quái
+    FORMATION_WAVE_1: (index, total) => {
+        const spacing = 3; // Khoảng cách giữa các con quái
+        // Tự tính số cột dựa trên tổng số quái (vd: 7 con → 3 cột, 10 con → 4 cột)
+        const rowSize = Math.ceil(Math.sqrt(total));
         
-        // Tính toán tọa độ X: 
-        // (index % rowSize) giúp quái lặp lại vị trí từ 0 đến 4 trong mỗi hàng
-        // Trừ đi (rowSize - 1) / 2 để căn giữa đội hình vào chính diện màn hình
-        const x = (index % rowSize - (rowSize - 1) / 2) * spacing;
+        // Tọa độ X: căn giữa đội hình
+        const col = index % rowSize;
+        const x = (col - (rowSize - 1) / 2) * spacing;
         
-        // Tính toán tọa độ Y:
-        // Math.floor(index / rowSize) xác định quái đang ở hàng thứ mấy (hàng 0, hàng 1...)
-        // + 5 để đẩy đội hình lên cao hơn mặt đất
-        const y = (Math.floor(index / rowSize) - 0.5) * spacing + 5;
+        // Tọa độ Y: hàng ngang, đẩy lên cao
+        const row = Math.floor(index / rowSize);
+        const totalRows = Math.ceil(total / rowSize);
+        const y = (row - (totalRows - 1) / 2) * spacing + 5;
         
-        // Trả về một Vector3: X và Y đã tính, Z = -150 (xuất hiện từ rất xa phía chân trời)
         return new THREE.Vector3(x, y, -150);
     },
 

@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CONFIG } from '../../utils/CONFIG.JS';
 import { Enemy } from './Enemy.js';
+import { assetLoader } from '../../utils/AssetLoader.js';
+import gsap from 'gsap';
 
 export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Enemy
-    constructor(scene, projectileSystem, itemSystem) { // Thêm itemSystem vào tham số
-        // Lỗi cũ: super(scene, projectileSystem, 'BOSS_1'); -> Truyền nhầm 'BOSS_1' vào chỗ của itemSystem!
-        super(scene, projectileSystem, itemSystem, 'BOSS_1');
-        this.hp = CONFIG.ENEMIES.BOSS_1?.HP || 500;
+    constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1') { 
+        super(scene, projectileSystem, itemSystem, type);
+        this.hp = CONFIG.ENEMIES[type]?.HP || 500;
         this.moveDirection = 1; // Hướng di chuyển ngang (1 là sang phải, -1 là sang trái)
         this.moveSpeed = 0.1; // Tốc độ di chuyển cơ bản của Boss
 
@@ -23,23 +24,22 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
     }
 
     loadModel() { // Hàm để tải hình ảnh 3D cho Boss
-        const modelPath = CONFIG.ASSETS.MODELS.BOSS_1; // Lấy đường dẫn file 3D từ cấu hình
-        this.loader.load(modelPath, (glb) => { // Bắt đầu tải model
-            this.mesh = glb.scene; // Gán mô hình đã tải vào biến this.mesh
-            this.mesh.scale.set(13, 13, 13); // Phóng to Boss lên 10 lần
-            this.mesh.position.set(0, 10, -40); // Đặt vị trí ban đầu (cao 10, cách xa người chơi 40 đơn vị)
-            this.scene.add(this.mesh); // Thêm Boss vào cảnh 3D để nhìn thấy được
-            this.isLoaded = true; // Đánh dấu đã tải xong để bắt đầu cập nhật logic
-        }, undefined, (err) => { // Nếu tải file 3D bị lỗi (sai đường dẫn, mất mạng...)
-            console.error("Lỗi khi tải model Boss 1.2:", err);
-            // Fallback: Tạo một khối hình nút thắt (TorusKnot) màu hồng để thay thế nếu không tải được model
-            // const geo = new THREE.TorusKnotGeometry(2, 0.5, 100, 16);
-            // const mat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
-            // this.mesh = new THREE.Mesh(geo, mat);
-            // this.mesh.position.set(0, 10, -40);
-            // this.scene.add(this.mesh);
-            // this.isLoaded = true;
-        });
+        const cachedModel = assetLoader.cloneModel('boss_1');
+        if (cachedModel) {
+            this.mesh = cachedModel;
+            this.mesh.scale.set(13, 13, 13);
+            this.mesh.position.set(0, 10, -40);
+            this.scene.add(this.mesh);
+            this.isLoaded = true;
+        } else {
+            console.warn("[Boss 1] Model chưa nạp, dùng fallback.");
+            const geo = new THREE.TorusKnotGeometry(2, 0.5, 100, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xff00ff });
+            this.mesh = new THREE.Mesh(geo, mat);
+            this.mesh.position.set(0, 10, -40);
+            this.scene.add(this.mesh);
+            this.isLoaded = true;
+        }
     }
     // 4. Logic cập nhật mỗi khung hình
     update(delta, playerPos) { // Hàm chạy liên tục để cập nhật vị trí Boss (delta là thời gian trôi qua giữa 2 khung hình)
@@ -90,17 +90,18 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         // Cập nhật vị trí X dựa trên hướng, tốc độ và thời gian delta (đảm bảo mượt ở mọi tốc độ khung hình)
         this.mesh.position.x += this.moveDirection * this.moveSpeed * delta * 60;
 
-        // --- KIỂM TRA BIÊN NGANG TƯƠNG ĐỐI (GIỮ BOSS TRONG MÀN HÌNH) ---
-        const viewLimitX = 18; // Bán kính di chuyển ngang của Boss so với Player
-        const minX = playerPos.x - viewLimitX;
-        const maxX = playerPos.x + viewLimitX;
+        // --- GIỚI HẠN VÙNG DI CHUYỂN HÌNH ELÍP (Boss 1 - Đã làm mượt) ---
+        const limitX = 35; 
+        const limitY = 20;
+        const distSq = Math.pow(this.mesh.position.x / limitX, 2) + Math.pow(this.mesh.position.y / limitY, 2);
 
-        if (this.mesh.position.x > maxX) {
-            this.mesh.position.x = maxX;
-            this.moveDirection = -1; // Đổi hướng sang trái
-        } else if (this.mesh.position.x < minX) {
-            this.mesh.position.x = minX;
-            this.moveDirection = 1; // Đổi hướng sang phải
+        if (distSq > 1) {
+            const angle = Math.atan2(this.mesh.position.y, this.mesh.position.x);
+            const tx = Math.cos(angle) * limitX * 0.95;
+            const ty = Math.sin(angle) * limitY * 0.95;
+            this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, tx, 0.05);
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, ty, 0.05);
+            this.moveDirection *= -1;
         }
 
         // Hiệu ứng "nhấp nhô": Dùng hàm Sin để Boss bay lên xuống nhẹ nhàng như đang thở
@@ -184,24 +185,23 @@ export class Boss2 extends Enemy {
     }
 
     loadModel() {
-        const modelPath = CONFIG.ASSETS.MODELS.BOSS_2;
-        this.loader.load(modelPath, (glb) => {
-            this.mesh = glb.scene;
-            // File Boss_2.glb có thể rất to nên không scale lên 10 như Boss 1 nữa
+        const cachedModel = assetLoader.cloneModel('boss_2');
+        if (cachedModel) {
+            this.mesh = cachedModel;
             this.mesh.scale.set(1.5, 1.5, 1.5);
             this.mesh.rotation.y = Math.PI; // Quay mặt về phía người chơi
-            this.mesh.position.set(0, 10, -50); // Lùi ra xa hơn một chút khi vừa spawn
+            this.mesh.position.set(0, 10, -50); 
             this.scene.add(this.mesh);
             this.isLoaded = true;
-        }, undefined, (err) => {
-            console.error("Lỗi khi tải model Boss 2:", err);
+        } else {
+            console.warn("[Boss 2] Model chưa nạp, dùng fallback.");
             const geo = new THREE.BoxGeometry(4, 4, 4);
             const mat = new THREE.MeshBasicMaterial({ color: 0xff8800 });
             this.mesh = new THREE.Mesh(geo, mat);
             this.mesh.position.set(0, 10, -40);
             this.scene.add(this.mesh);
             this.isLoaded = true;
-        });
+        }
     }
 
     update(delta, playerPos) {
@@ -218,17 +218,18 @@ export class Boss2 extends Enemy {
         // DI CHUYỂN X
         this.mesh.position.x += this.moveDirection * this.moveSpeed * delta * 80;
 
-        // Giới hạn bay trong FLIGHT_ENVELOPE của tàu
-        const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
-        const minX = -envX;
-        const maxX = envX;
+        // --- GIỚI HẠN VÙNG DI CHUYỂN HÌNH ELÍP (Boss 2 - Đã làm mượt) ---
+        const limitX = 40; 
+        const limitY = 25;
+        const distSq = Math.pow(this.mesh.position.x / limitX, 2) + Math.pow(this.mesh.position.y / limitY, 2);
 
-        if (this.mesh.position.x > maxX) {
-            this.mesh.position.x = maxX;
-            this.moveDirection = -1;
-        } else if (this.mesh.position.x < minX) {
-            this.mesh.position.x = minX;
-            this.moveDirection = 1;
+        if (distSq > 1) {
+            const angle = Math.atan2(this.mesh.position.y, this.mesh.position.x);
+            const tx = Math.cos(angle) * limitX * 0.95;
+            const ty = Math.sin(angle) * limitY * 0.95;
+            this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, tx, 0.05);
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, ty, 0.05);
+            this.moveDirection *= -1;
         }
 
         // NHẤP NHÔ
@@ -243,7 +244,7 @@ export class Boss2 extends Enemy {
 
         // ĐẺ QUÁI (Mỗi SPAWN_INTERVAL s)
         this.spawnTimer += delta;
-        const spawnInterval = CONFIG.ENEMIES.BOSS_2?.SPAWN_INTERVAL || 10;
+        const spawnInterval = CONFIG.ENEMIES.BOSS_2?.SPAWN_INTERVAL || 15;
         if (this.spawnTimer >= spawnInterval && this.enemyManager) {
             this.spawnTimer = 0;
             this.spawnMinions();
@@ -283,7 +284,7 @@ export class Boss2 extends Enemy {
             // Sử dụng class Enemy có sẵn qua EnemyManager
             const minion = new Enemy(this.scene, this.projectileSystem, this.itemSystem);
 
-            const offsetX = (i - Math.floor(count / 2)) * 6; // Xếp dàn ngang hẹp hơn để che chắn tốt hơn
+            const offsetX = (i - Math.floor(count / 2)) * 3; // Xếp dàn ngang hẹp hơn (3 thay vì 6) để tập trung bảo vệ Boss
             minion.shieldTarget = this; // Đặt mục tiêu bảo vệ là chính Boss 2
             minion.shieldOffsetX = offsetX;
 
@@ -337,22 +338,22 @@ export class Boss3 extends Enemy {
     }
 
     loadModel() {
-        const modelPath = CONFIG.ASSETS.MODELS.BOSS_3;
-        this.loader.load(modelPath, (glb) => {
-            this.mesh = glb.scene;
+        const cachedModel = assetLoader.cloneModel('boss_3');
+        if (cachedModel) {
+            this.mesh = cachedModel;
             this.mesh.scale.set(7, 7, 7); // Boss 3 nhỏ gọn, khó bắn hơn
             this.mesh.position.set(0, 10, -60);
             this.scene.add(this.mesh);
             this.isLoaded = true;
-        }, undefined, (err) => {
-            console.error("Lỗi khi tải model Boss 3:", err);
+        } else {
+            console.warn("[Boss 3] Model chưa nạp, dùng fallback.");
             const geo = new THREE.OctahedronGeometry(3.5, 2);
             const mat = new THREE.MeshPhongMaterial({ color: 0x440088, shininess: 100 });
             this.mesh = new THREE.Mesh(geo, mat);
             this.mesh.position.set(0, 10, -80);
             this.scene.add(this.mesh);
             this.isLoaded = true;
-        });
+        }
     }
 
     update(delta, playerPos) {
@@ -374,31 +375,19 @@ export class Boss3 extends Enemy {
         // --- DI CHUYỂN NGANG (X) ---
         this.mesh.position.x += this.moveDirection * this.moveSpeed * delta * 60;
 
-        // Giới hạn biên
-        const viewLimitX = 25;
-        const minX = playerPos.x - viewLimitX;
-        const maxX = playerPos.x + viewLimitX;
+        // --- GIỚI HẠN VÙNG DI CHUYỂN HÌNH ELÍP (Boss 3 - Đã làm mượt) ---
+        const limitX = 40; 
+        const limitY = 25;
+        const distSq = Math.pow(this.mesh.position.x / limitX, 2) + Math.pow(this.mesh.position.y / limitY, 2);
 
-        if (this.mesh.position.x > maxX) {
-            this.mesh.position.x = maxX;
-            this.moveDirection = -1;
-        } else if (this.mesh.position.x < minX) {
-            this.mesh.position.x = minX;
-            this.moveDirection = 1;
-        }
-
-        // --- DI CHUYỂN DỌC (Y) ---
-        this.mesh.position.y += this.moveDirectionY * this.moveSpeedY * delta * 60;
-
-        // Giới hạn độ cao (Bay trong khoảng từ 0 đến 35 - rộng hơn cũ)
-        const minY = 0;
-        const maxY = 35;
-        if (this.mesh.position.y > maxY) {
-            this.mesh.position.y = maxY;
-            this.moveDirectionY = -1;
-        } else if (this.mesh.position.y < minY) {
-            this.mesh.position.y = minY;
-            this.moveDirectionY = 1;
+        if (distSq > 1) {
+            const angle = Math.atan2(this.mesh.position.y, this.mesh.position.x);
+            const tx = Math.cos(angle) * limitX * 0.95;
+            const ty = Math.sin(angle) * limitY * 0.95;
+            this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, tx, 0.05);
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, ty, 0.05);
+            this.moveDirection *= -1;
+            this.moveDirectionY *= -1;
         }
 
         // Thỉnh thoảng đổi hướng dọc ngẫu nhiên để khó bắn hơn

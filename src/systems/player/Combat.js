@@ -150,7 +150,7 @@ export class Combat {
                             if (explosionSystem) explosionSystem.spawnAsteroidImpact(astMesh.position);
 
                             // Rơi đồ từ thiên thạch
-                            const astDropChance = CONFIG.ITEMS.DROP_CHANCE.ASTEROID || 0.2;
+                            const astDropChance = CONFIG.ITEMS.TYPES.ASTEROID_ITEM ? (CONFIG.ITEMS.DROP_CHANCE?.ASTEROID || 0.2) : 0.2;
                             if (player.itemSystem && Math.random() < astDropChance) {
                                 const type = Math.random() > 0.5 ? 'HEALTH' : 'AMMO';
                                 player.itemSystem.spawnItem(type, astMesh.position.clone());
@@ -167,8 +167,31 @@ export class Combat {
 
                 if (hit) continue;
 
-                // 3.3 Đạn trúng Item (Bỏ qua va chạm để item không bị mất khi bị bắn)
-                // Logic va chạm đạn-item đã bị xóa theo yêu cầu người dùng.
+                // 3.3 Đạn trúng Item (Làm vỡ và làm mất vật phẩm nếu bị bắn trúng)
+                if (player.itemSystem && player.itemSystem.activeItems) {
+                    const items = player.itemSystem.activeItems;
+                    for (let l = items.length - 1; l >= 0; l--) {
+                        const item = items[l];
+                        if (item.userData.collected) continue;
+
+                        if (MathUtils.checkSphereCollisionSq(bulletPos, item.position, this.bulletHitboxRadiusSq, 4.0)) {
+                            // Tạo hiệu ứng vỡ vụn nhưng KHÔNG thu thập (không hồi máu/đạn)
+                            if (particleSystem) {
+                                particleSystem.explodeAt(item.position, 0x888888); // Màu xám vỡ vụn
+                            }
+                            
+                            // Xóa vật phẩm ngay lập tức khỏi màn hình
+                            item.userData.collected = true; // Đánh dấu để không bị tàu nhặt nữa
+                            if (item.parent) player.itemSystem.scene.remove(item);
+                            items.splice(l, 1);
+                            
+                            // Phá hủy đạn
+                            bullet.userData.markedForDeletion = true;
+                            hit = true;
+                            break;
+                        }
+                    }
+                }
 
                 // 4. Va chạm Người chơi vs Vật phẩm (Items)
                 if (player.itemSystem && player.itemSystem.activeItems) {
@@ -191,8 +214,9 @@ export class Combat {
                             const isBuff = ['HEALTH', 'AMMO', 'SHIELD'].includes(itemType);
 
                             // --- VISUAL SEQUENCE ---
-                            // Bước 1: Gọi hiệu ứng chuyển màu từ ItemSystem
-                            player.itemSystem.triggerCollisionEffect(item, isBuff ? 'Buff' : 'Debuff');
+                            if (player.itemSystem.triggerCollisionEffect) {
+                                player.itemSystem.triggerCollisionEffect(item, isBuff ? 'Buff' : 'Debuff');
+                            }
 
                             // Bước 2: Ẩn Sprite ngay lập tức
                             if (item.children) {

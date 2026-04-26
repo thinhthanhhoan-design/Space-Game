@@ -156,7 +156,7 @@ export class Intro {
                 const animObj = { progress: 0 };
 
                 // Kế thừa PHẦN 1 & PHẦN 2 từ luồng làm việc mới của chúng ta
-                const introTL = gsap.timeline({
+                this.introTL = gsap.timeline({
                     onComplete: () => {
                         this.isIntroActive = false;
                         if (callback) callback(this.particleSystem); // Gửi cờ gọi Phần 3 (GSA Hội tụ)
@@ -165,7 +165,7 @@ export class Intro {
 
                 // PHẦN 1: KÍCH NỔ LOGO UET
                 // Sử dụng thời lượng từ CONFIG (ví dụ INTRO_DURATION hoặc giá trị mặc định)
-                introTL.to(animObj, {
+                this.introTL.to(animObj, {
                     progress: 1, 
                     duration: 8.0, 
                     ease: "power3.out",
@@ -179,7 +179,7 @@ export class Intro {
 
                 // PHẦN 2: LIA CAMERA TỪ NGOÀI VÀO TRONG (Đến tọa độ Gameplay từ CONFIG)
                 const camOffset = CONFIG.CAMERA.OFFSET;
-                introTL.to(camera.position, {
+                this.introTL.to(camera.position, {
                     x: camOffset.x, y: camOffset.y, z: camOffset.z, 
                     duration: 2.0, 
                     ease: "power2.inOut"
@@ -208,22 +208,61 @@ export class Intro {
         // Quét siêu phân luồng mảng điểm Mesh của Tàu. Yêu cầu lấy đủ 100 ngàn điểm Target
         const targetPoints = GSA.getModelPoints(playerModel);
         
-        const tl = gsap.timeline();
+        this.gsaTL = gsap.timeline();
         
         // Gọi lệnh GPU Shader, gồng hạt bụi 4.1 giây cho tới khi gắn thẳng mặt boong tàu
-        tl.add(GSA.animateToTarget(gsap, logoParticles, targetPoints, {
+        this.gsaTL.add(GSA.animateToTarget(gsap, logoParticles, targetPoints, {
             duration: 3.5, 
             ease: "power2.out", 
         }), 0);
 
         // Đứng im tại trục Gameplay ngắm sự thành công 2 giây
-        tl.to({}, { duration: 2.0 });
+        this.gsaTL.to({}, { duration: 2.0 });
 
-        tl.call(() => {
+        this.gsaTL.call(() => {
             // Đóng ánh sáng 3D ảo và thay bằng lưới Polygon xịn của phi thuyền
             logoParticles.visible = false;
             playerModel.visible = true;
             if (onComplete) onComplete();
         });
+    }
+
+    // Hàm huỷ bỏ Intro ngay lập tức (Skip)
+    abort() {
+        this.isIntroActive = false;
+        
+        // Kill specifically the timelines for the intro
+        if (this.introTL) this.introTL.kill();
+        if (this.gsaTL) this.gsaTL.kill();
+        
+        // Kill all tweens running on this object and camera just in case
+        gsap.killTweensOf(this);
+        if (this.sceneController && this.sceneController.camera) {
+            gsap.killTweensOf(this.sceneController.camera.position);
+            // Snap camera back to gameplay position immediately
+            const camOffset = CONFIG.CAMERA.OFFSET;
+            if (camOffset) {
+                this.sceneController.camera.position.set(camOffset.x, camOffset.y, camOffset.z);
+            }
+        }
+        
+        // Cực kỳ quan trọng: Kill toàn bộ các tác vụ của gsap đang delay
+        gsap.globalTimeline.clear();
+
+        // Ẩn các thực thể 3D của Intro
+        if (this.logoMesh) {
+            this.logoMesh.visible = false;
+            this.sceneController.scene.remove(this.logoMesh);
+        }
+        if (this.particleSystem) {
+            this.particleSystem.visible = false;
+            this.sceneController.scene.remove(this.particleSystem);
+        }
+
+        // Ẩn nút Start nếu còn tồn tại
+        const startBtn = document.getElementById('start-btn');
+        if (startBtn) startBtn.style.display = 'none';
+
+        console.log("Intro aborted and all background tasks stopped.");
     }
 }

@@ -102,7 +102,7 @@ export const CONFIG = {
   // ===============================
   ENGINE: {
     TYPE: "FORWARD_PROGRESSION",
-    FORWARD_SPEED: 0.75, // Tăng lên 0.75 để tàu linh hoạt hơn với hệ thống velocity mới
+    FORWARD_SPEED: 1, // Tăng lên 1 để tàu linh hoạt hơn với hệ thống velocity mới
     FLIGHT_ENVELOPE: {
       X: 70, // Mở rộng không gian bay ngang ra xa hơn để thoải mái né đạn
       Y: 30, // Khôn gian bay lên xuống tha hồ lạng lách
@@ -136,14 +136,12 @@ export const CONFIG = {
   PLAYER: {
     INITIAL_HP: 300,
     MODELS: {
-      V1: { hp_limit: 300, name: "UETE-3637", next_model: null },
-      V2: { hp_limit: 300, name: "Asterum-Enemy-Mod", next_model: "V1", REVERT_AT: 0.7 },
-      V3: { hp_limit: 350, name: "UETE-Final-Form", next_model: "V2", REVERT_AT: 0.7 },
+      V1: { hp_limit: 300, name: "Minh Kiên đzai", next_model: null },
     },
     WEAPONS: {
-      GUN_1: { damage: 25, ammo: 100, fireRate: 0.4, ammo_per_shot: 1 },
-      GUN_2: { damage: 50, ammo: 200, fireRate: 0.3, ammo_per_shot: 2 },
-      GUN_3: { damage: 45, ammo: 500, fireRate: 0.2, ammo_per_shot: 3 },
+      GUN_1: { damage: 25, ammo: 100, fireRate: 0.4, ammo_per_shot: 1, bullet_speed: 1.5 },
+      GUN_2: { damage: 75, ammo: 200, fireRate: 0.3, ammo_per_shot: 3, bullet_count: 3, spread_angle: 15 },
+      GUN_3: { damage: 75, ammo: 500, fireRate: 0.2, ammo_per_shot: 3, bullet_count: 3, parallel_offset: 2.8, bullet_speed: 2.25 },
     }
   },
 
@@ -151,12 +149,13 @@ export const CONFIG = {
   // 👾 ENEMIES & BOSSES
   // ===============================
   ENEMIES: {
-    QUAI_1: { HP: 50, DAMAGE: 10, BULLET_SPEED: 0.8 },
+    QUAI_1: { HP: 50, DAMAGE: 15, BULLET_SPEED: 2.5, MOVE_SPEED: 3.5 },
     BOSS_1: {
       HP: 300,
       ATTACK_INTERVAL: 5,
       DAMAGE: 30,
       BULLET_SPEED: 1.5,      // Tốc độ bắn đạn thường/cầu
+      MOVE_SPEED: 3.0,        // Tốc độ di chuyển của boss
       HOMING_SPEED: 5,      // Tốc độ bắn đạn tự nhắm
       LIMIT: 1,
       RETREAT_Z: -50
@@ -202,13 +201,13 @@ export const CONFIG = {
       }
     },
     LEVEL_2: {
-      asteroid_speed: 0.03,
-      asteroid_density: 15,
+      asteroid_speed: 0.06,
+      asteroid_density: 50,
       bubble_dmg: 5
     },
     LEVEL_3: {
-      asteroid_speed: 0.05,
-      asteroid_density: 25
+      asteroid_speed: 0.1,
+      asteroid_density: 60
     }
   },
 
@@ -219,51 +218,43 @@ export const CONFIG = {
     SPAWN_INTERVAL: 4.5,      // Cứ 4.5s spawn 1 item ngẫu nhiên (Giảm thêm để súng xuất hiện nhanh hơn)
     SPEED_FACTOR: 0.5,        // Tốc độ bay (0.5 = chậm hơn thiên thạch 1 nửa)
     SCALE_BASE: 3.0,          // Tăng gấp đôi kích thước cơ bản (cũ: 1.5)
-    GLOW_OPACITY: 1.0,        // Tăng độ rực tối đa (cũ: 0.8)
-    EDGE_GLOW_OPACITY: 0.8,   // Tăng độ sáng viền trắng (cũ: 0.5)
-    LIGHT_INTENSITY: 10,      // Cường độ ánh sáng (cũ: 5)
+    GLOW_OPACITY: 0.6,        // Giảm độ chói (cũ: 1.0)
+    EDGE_GLOW_OPACITY: 0.4,   // Giảm độ sáng viền (cũ: 0.8)
+    LIGHT_INTENSITY: 5,       // Giảm cường độ ánh sáng (cũ: 10)
     LIGHT_RANGE: 25,          // Tầm chiếu sáng (cũ: 10)
     COLLECTION_RADIUS: 4,   // Bán kính va chạm nhặt đồ (Tăng lên 3.5 để nhặt đồ dễ hơn)
 
-    // --- Chỉ số Buff ---
-    HEALTH_VALUE: 100,        // Máu hồi phục
-    AMMO_REFILL_PERCENT: 0.5, // Nạp lại 50% số lượng đạn tối đa
-    SHIELD_DURATION: 10000,   // Thời gian giáp bảo vệ (10 giây)
-
-    // --- Chỉ số Debuff ---
-    WEAPON_LOCK_DURATION: 7000, // Thời gian khóa súng (7 giây)
-    DOUBLE_FIRE_DURATION: 10000, // Thời gian bắn đôi (10 giây)
-    ENV_DISORDER_DURATION: 10000, // Thời gian rối loạn môi trường (10 giây)
-    ASTEROID_STORM: {
-      SPEED_MULT: 2.5,      // Thiên thạch bay nhanh gấp 2.5 lần
-      DENSITY_MULT: 5.0      // Mật độ thiên thạch dày gấp 5 lần
+    // --- Định nghĩa các loại Item ---
+    TYPES: {
+      HEALTH: { value: 100, texture: "ITEM_HP", chance: 0.3 },
+      AMMO: { refill_percent: 0.5, texture: "ITEM_DAN", chance: 0.3 },
+      SHIELD: { duration: 10000, texture: "ITEM_SECURITY", chance: 0.1 },
+      // --- Vật phẩm nâng cấp Vũ khí ---
+      WEAPON_2: { gun_key: "GUN_2", texture: "ITEM_Sung2", min_level: "LEVEL_2", duration: 10 }, // Chỉ xuất hiện từ Màn 2, duy trì 10s
+      WEAPON_3: { gun_key: "GUN_3", texture: "ITEM_Sung3", min_level: "LEVEL_3", duration: 13 }, // Chỉ xuất hiện từ Màn 3, duy trì 13s
+      WEAPON_LOCK: { duration: 7000, texture: "ITEM_KHOA_VK", chance: 0.05 },
+      ASTEROID_ITEM: { duration: 10000, texture: "ITEM_THIEN_THACH", SPEED_MULT: 2.5, DENSITY_MULT: 5.0, chance: 0.1 }
     },
 
-    SPAWN_RANGE_FACTOR: 1.8,  // Hệ số thu hẹp vùng spawn (X, Y)
-    ANIM_DURATION: 0.2,       // Thời gian chuyển màu GSAP
-    SHAKE_INTENSITY: 1.5,     // Độ mạnh rung camera
+    SPAWN_RANGE_FACTOR: 1.8,  // Hệ số thu hẹp vùng spawn (X, Y) – kiểm soát độ rộng khu vực sinh vật phẩm
+    ANIM_DURATION: 0.2,       // Thời gian chuyển màu GSAP – ảnh hưởng đến hiệu ứng item
+    SHAKE_INTENSITY: 1.5,     // Độ mạnh rung camera – dùng trong các cảnh bối cảnh mạnh
 
     COLORS: {
-      BUFF: 0x00ff00,
-      DEBUFF: 0xff2200,
-      NEUTRAL: 0xaaaaaa       // Dùng khi đạn bắn trúng item
-    },
-
-    DROP_CHANCE: {
-      ENEMY_BUFF: 0.3,        // 30% quái rơi đồ xịn
-      ENEMY_DEBUFF: 0.1,      // 10% quái rơi đồ dỏm
-      ASTEROID: 0.2           // 20% thiên thạch rơi đồ
-    }
-  },
+      BUFF: 0x00ff00, // Màu xanh cho buff items
+      DEBUFF: 0xff2200, // Màu đỏ cho debuff items
+      NEUTRAL: 0xaaaaaa // Màu trung tính khi đạn chạm item
+    } // End of COLORS config
+  }, // End of ITEMS config
 
   // ===============================
   // 🎮 GAME STATES
   // ===============================
   STATE: {
-    MENU: "START_MENU",
-    INTRO: "CINEMATIC_INTRO",
-    PLAYING: "GAME_PLAYING",
-    ENDING: "GAME_ENDING",
-    GAMEOVER: "GAME_OVER"
-  }
+    MENU: "START_MENU", // Trạng thái menu chính
+    INTRO: "CINEMATIC_INTRO", // Intro cinematic
+    PLAYING: "GAME_PLAYING", // Trò chơi đang chạy
+    ENDING: "GAME_ENDING", // Kết thúc level / cutscene
+    GAMEOVER: "GAME_OVER" // Khi người chơi thua
+  } // End of STATE
 };

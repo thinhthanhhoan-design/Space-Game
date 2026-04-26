@@ -3,24 +3,17 @@ import { CONFIG } from '../../utils/CONFIG.JS';
 
 function createBulletTexture() {
     const canvas = document.createElement('canvas');
-    canvas.width = 16;
-    canvas.height = 256;
+    canvas.width = 16; canvas.height = 256;
     const ctx = canvas.getContext('2d');
-
-    // Nền trong suốt
     ctx.clearRect(0, 0, 16, 256);
-    
-    // Gradient dọc từ đầu đến đuôi
     const gradient = ctx.createLinearGradient(0, 0, 0, 256);
-    gradient.addColorStop(0.0, 'rgba(255, 255, 255, 1)');   // Đầu đạn: Trắng chói
-    gradient.addColorStop(0.1, 'rgba(255, 255, 150, 1)');   // Vàng sáng
-    gradient.addColorStop(0.3, 'rgba(255, 120, 0, 0.9)');   // Thân: Cam
-    gradient.addColorStop(0.7, 'rgba(150, 0, 0, 0.3)');     // Đuôi mờ dần: Đỏ tối
-    gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0)');         // Trong suốt hoàn toàn
-
+    gradient.addColorStop(0.0, 'rgba(255, 255, 255, 1)');
+    gradient.addColorStop(0.1, 'rgba(255, 255, 150, 1)');
+    gradient.addColorStop(0.3, 'rgba(255, 120, 0, 0.9)');
+    gradient.addColorStop(0.7, 'rgba(150, 0, 0, 0.3)');
+    gradient.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 16, 256);
-
     return new THREE.CanvasTexture(canvas);
 }
 
@@ -30,20 +23,11 @@ export class Weapon {
         this.player = player;
         this.bullets = [];
         
-        // Thiết lập súng mặc định 1 dựa trên CONFIG
-        this.config = CONFIG.PLAYER.WEAPONS.GUN_1;
-        this.damage = this.config.damage; // 25hp
-        this.fireRate = this.config.fireRate; // 0.4s
-        this.ammoPerShot = this.config.ammo_per_shot; // Mỗi lần bắn tiêu tốn bao nhiêu viên
+        this.currentGun = 'GUN_1';
+        this.updateConfig();
         
         this.lastFireTime = 0;
-        
-        // Tạo hình khối 3D cho đạn: Đầu to (0.6), đuôi nhọn (0.05), dài 6.0
-        // Khối 3D giúp đạn không bị dẹt khi nhìn từ góc chéo (sửa lỗi đạn phẳng)
         this.bulletGeometry = new THREE.CylinderGeometry(0.6, 0.05, 6.0, 12);
-        
-        // Xoay khối 3D sao cho đầu to (+Y) hướng về phía trước (-Z) 
-        // Điều này giúp đạn "lao về phía trước" trong không gian 3D thay vì "chĩa lên trời"
         this.bulletGeometry.rotateX(-Math.PI / 2);
 
         this.bulletMaterial = new THREE.MeshBasicMaterial({ 
@@ -51,76 +35,85 @@ export class Weapon {
             color: 0xffffff, 
             transparent: true,
             opacity: 1.0, 
-            blending: THREE.AdditiveBlending, // Hiệu ứng phát sáng
-            depthWrite: false, // Ngăn lỗi che khuất Alpha
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
             side: THREE.DoubleSide
         }); 
 
-        this.isLocked = false; // Trạng thái bị khóa súng (do Debuff)
+        this.isLocked = false;
     }
 
-    fire() {
-        // Nếu súng bị khóa (do Debuff), không thể bắn
-        if (this.isLocked) return;
+    updateConfig() {
+        this.config = CONFIG.PLAYER.WEAPONS[this.currentGun];
+        this.damage = this.config.damage;
+        this.fireRate = this.config.fireRate;
+        this.ammoPerShot = this.config.ammo_per_shot;
+        this.bulletSpeed = this.config.bullet_speed || 1.5;
+    }
 
-        // Kiểm tra thời gian hồi chiêu giữa 2 lần bắn (Fire Rate)
-        const now = performance.now() / 1000;
-        if (now - this.lastFireTime < this.fireRate) return;
-
-        // Cơ chế giới hạn đạn
-        if (this.player.ammo >= this.ammoPerShot) {
-            // Trừ đạn của Player
-            this.player.ammo -= this.ammoPerShot;
-            console.log(`Bắn đạn! Sát thương: ${this.damage} HP | Số đạn còn: ${this.player.ammo}/${this.player.maxAmmo}`);
-            
-            // Cập nhật mốc thời gian bắn bắn gần nhất
-            this.lastFireTime = now;
-
-            // --- LOGIC BẮN ĐẠN (HỖ TRỢ CỘNG DỒN NHIỀU TIA) ---
-            const count = this.player.bulletCount || 1;
-            const spacing = 2.2; // Khoảng cách giữa các tia đạn (Tăng lên để dàn rộng hơn)
-
-            for (let i = 0; i < count; i++) {
-                const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial);
-                bullet.position.copy(this.player.mesh.position);
-                
-                // Tính toán vị trí dàn hàng ngang cho các tia đạn
-                if (count > 1) {
-                    const offsetX = (i - (count - 1) / 2) * spacing;
-                    const sideVector = new THREE.Vector3(1, 0, 0).applyQuaternion(this.player.mesh.quaternion);
-                    bullet.position.add(sideVector.multiplyScalar(offsetX));
-                }
-                
-                bullet.position.z -= 1.5;
-                
-                bullet.userData = {
-                    damage: this.damage,
-                    speed: 0.5,
-                    markedForDeletion: false
-                };
-                this.scene.add(bullet);
-                this.bullets.push(bullet);
-            }
-
-            // Tùy chọn: Thêm hiệu ứng âm thanh bắn tại đây
-            // const sfx = new Audio(CONFIG.ASSETS.SOUNDS.SFX_LASER); 
-            // sfx.play();
-        } else {
-            // Hết đạn, nếu đè phím Space có thể kêu tạch tạch báo hiệu
-            // console.log("Hết đạn!");
+    setGun(gunKey) {
+        if (CONFIG.PLAYER.WEAPONS[gunKey]) {
+            this.currentGun = gunKey;
+            this.updateConfig();
         }
     }
 
-    update(enemies = []) {
-        // Di chuyển đạn mỗi khung hình
+    fire() {
+        if (this.isLocked) return;
+
+        const now = performance.now() / 1000;
+        if (now - this.lastFireTime < this.fireRate) return;
+
+        if (this.player.ammo >= this.ammoPerShot) {
+            this.player.ammo -= this.ammoPerShot;
+            this.lastFireTime = now;
+
+            const bulletCount = this.config.bullet_count || 1;
+            
+            for (let i = 0; i < bulletCount; i++) {
+                const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial.clone());
+                bullet.position.copy(this.player.mesh.position);
+                
+                let vx = 0;
+                let vz = -this.bulletSpeed;
+
+                if (this.currentGun === 'GUN_2') {
+                    // SÚNG 2: 3 tia cách nhau 15 độ
+                    const angleOffset = this.config.spread_angle || 15;
+                    const angle = THREE.MathUtils.degToRad((i - 1) * angleOffset); 
+                    vx = -Math.sin(angle) * this.bulletSpeed;
+                    vz = -Math.cos(angle) * this.bulletSpeed;
+                    bullet.rotation.y = angle;
+                    bullet.material.color.setHex(0x00ff00); // Màu xanh cho súng 2
+                } else if (this.currentGun === 'GUN_3') {
+                    // SÚNG 3: 3 tia SONG SONG
+                    const offset = (i - 1) * (this.config.parallel_offset || 2.8); 
+                    bullet.position.x += offset;
+                    bullet.material.color.setHex(0xff4500); // Màu cam đỏ cho súng 3
+                }
+
+                bullet.userData = {
+                    damage: this.damage,
+                    vx: vx,
+                    vz: vz,
+                    markedForDeletion: false
+                };
+                
+                this.scene.add(bullet);
+                this.bullets.push(bullet);
+            }
+        }
+    }
+
+    update(delta) {
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
             
-            // Đạn bay tiến sâu vào trong màn hình theo trục -Z
-            bullet.position.z -= bullet.userData.speed;
+            // Di chuyển đạn dựa trên vx và vz từ userData
+            bullet.position.x += bullet.userData.vx * (delta * 60);
+            bullet.position.z += bullet.userData.vz * (delta * 60);
 
-            // Dọn dẹp đạn nếu bay quá khỏi tầm nhìn (World spawn distance) hoặc đã va chạm trúng đích
-            if (bullet.position.z < CONFIG.WORLD.SPAWN_DISTANCE_Z || bullet.userData.markedForDeletion) {
+            if (bullet.position.z < -200 || bullet.userData.markedForDeletion) {
                 this.scene.remove(bullet);
                 this.bullets.splice(i, 1);
             }

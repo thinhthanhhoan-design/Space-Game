@@ -16,6 +16,7 @@ import { UIManager } from '../ui/UIManager.js';
 import { ExplosionSystem } from '../effects/Explosion.js';
 import { ParticleSystem } from '../effects/ParticleSystem.js';
 
+import { assetLoader } from '../../utils/AssetLoader.js';
 import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập đối tượng cấu hình trung tâm cho toàn bộ dự án
 
 export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng chỉ huy của trò chơi
@@ -54,15 +55,113 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         // --- DEBUG SHORTCUTS ---
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyK') {
-                this.enemyManager.clearAllEnemies(); // Diệt sạch quái thường
-                if (this.boss) {
-                    this.boss.takeDamage(9999); // Diệt luôn Boss nếu đang có
-                }
+                this.handleSkip();
             }
         });
-    } // Kết thúc quá trình lắp ráp các module
+    }
+
+    handleSkip() {
+        const now = Date.now();
+        if (this.lastSkipTime && now - this.lastSkipTime < 1500) return; // Chống spam phím K (Tăng lên 1.5s để tránh skip đúp)
+        this.lastSkipTime = now;
+
+        console.log(">>> [K] SMART SKIP TRIGGERED");
+
+        // KIỂM TRA TẢI TÀI NGUYÊN (Asset Guard)
+        if (!assetLoader.isLoaded) {
+            console.warn("[K] Chờ chút, tài nguyên đang nạp...");
+            if (this.uiManager) this.uiManager.showMessage("Đang tải dữ liệu, vui lòng đợi...", "#ffaa00", 2000);
+            return;
+        }
+        
+        // 1. Skip Intro Cinematic
+        if (!this.stateManager.isGameStarted) {
+            console.log("[K] Skipping Intro...");
+            if (this.cinematicEffects) this.cinematicEffects.stopAll();
+            if (this.intro) this.intro.abort();
+            
+            this.stateManager.setGameStarted(true);
+            this.uiManager.show();
+            if (this.player.mesh) this.player.mesh.visible = true;
+            this.player.resetControls(); // Reset phím và góc nghiêng ngay khi vào game
+            
+            this.currentLevelKey = 'LEVEL_1';
+            this.player.itemSystem.setLevel(this.currentLevelKey);
+            this.gamePlayState = 'WAVES';
+            this.enemyManager.startWaveSystem(2, 1);
+            return;
+        }
+
+        // 2. Skip Waves -> Boss
+        if (this.gamePlayState === 'WAVES') {
+            console.log("[K] Skipping Waves to Boss...");
+            this.player.resetControls(); // Reset để tránh bị trôi khi chuyển phase
+            this.enemyManager.clearAllEnemies(true);
+            // update() của GameManager sẽ tự động spawn Boss ở frame tiếp theo
+            return;
+        }
+
+        // 3. Skip Boss -> Next Level
+        if (this.gamePlayState === 'BOSS' && this.boss) {
+            console.log("[K] Killing Boss...");
+            this.boss.takeDamage(99999); // Diệt Boss
+            return;
+        }
+
+        // 4. Skip Transition/Tunnel
+        if (this.gamePlayState === 'TRANSITION') {
+            console.log("[K] Skipping Tunnel...");
+            if (this.cinematicEffects) this.cinematicEffects.stopAll();
+            this.finishTransition(); // Hàm này sẽ được gọi sau khi tunnel kết thúc
+            return;
+        }
+    }
+
+    nextLevel() {
+        if (this.currentLevelKey === 'LEVEL_1') {
+            this.currentLevelKey = 'LEVEL_2';
+        } else if (this.currentLevelKey === 'LEVEL_2') {
+            this.currentLevelKey = 'LEVEL_3';
+        } else {
+            this.gamePlayState = 'VICTORY';
+            return;
+        }
+
+        this.uiManager.showMessage(`TIẾN VÀO ${this.currentLevelKey}...`, "#00ffff", 3000);
+        this.gamePlayState = 'TRANSITION';
+        if (this.asteroidSystem) this.asteroidSystem.setLevel(this.currentLevelKey);
+        if (this.player.itemSystem) this.player.itemSystem.setLevel(this.currentLevelKey);
+
+        // Hồi máu và đạn như phần thưởng thắng Boss
+        this.player.hp = Math.min(this.player.hp + 100, CONFIG.PLAYER.MAX_HP || 300);
+        this.player.ammo = this.player.maxAmmo;
+        if (this.uiManager) this.uiManager.update(this.player, this.currentLevelKey);
+        
+        if (this.cinematicEffects) {
+            this.cinematicEffects.startTunnelEffect(this.player.mesh, () => {
+                this.finishTransition();
+            });
+        }
+    }
+
+    finishTransition() {
+        this.gamePlayState = 'WAVES';
+        if (this.boss) {
+            this.boss.die(true); // Xóa mesh của boss cũ khỏi scene
+            this.boss = null;
+        }
+        const levelNum = parseInt(this.currentLevelKey.split('_')[1]);
+        this.enemyManager.resetAndStartWaveSystem(2, levelNum);
+    }
 
     init() { // Hàm khởi tạo chính để nạp tài nguyên và bắt đầu khởi chạy luồng game
+        // Bắt đầu nạp ngầm toàn bộ Model (Background Preloading)
+        assetLoader.preloadAllModels(() => {
+            console.log("--- TẤT CẢ MODEL ĐÃ SẴN SÀNG ---");
+            // Sau khi nạp xong model tàu, mới khởi tạo mesh cho Player
+            if (this.player) this.player.initMesh();
+        });
+
         const bgUrl = CONFIG.ASSETS.TEXTURES.SPACE_BG; // Lấy đường dẫn ảnh nền vũ trụ từ file cấu hình chung
         this.background.init(this.sceneController.scene, bgUrl); // Truyền cảnh và đường dẫn ảnh để Background nạp textures
 
@@ -123,7 +222,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         if (!this.stateManager.isGameStarted) {
             this.intro.update(elapsedTime); // Chỉ cập nhật Intro khi game chưa bắt đầu
         } else { // Khi game đã bắt đầu (PLAYING)
-            if (this.player.mesh) { // Đảm bảo mô hình tàu đã sẵn sàng
+            if (this.player && this.player.mesh) { // Đảm bảo mô hình tàu đã sẵn sàng
                 this.player.mesh.visible = true;
                 let currentEnemies = [];
                 if (this.gamePlayState === 'WAVES') {
@@ -165,10 +264,10 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                         'HEALTH', 'HEALTH', 
                         'AMMO', 
                         'SHIELD', 'SHIELD', 'SHIELD', 
+                        'WEAPON_2', 'WEAPON_2', // Tăng tỉ lệ Súng 2
+                        'WEAPON_3', 'WEAPON_3', // Tăng tỉ lệ Súng 3
                         'WEAPON_LOCK', 
-                        'ASTEROID_ITEM', 
-                        'DOUBLE_FIRE', 'DOUBLE_FIRE', 
-                        'TRIPLE_FIRE', 'TRIPLE_FIRE'
+                        'ASTEROID_ITEM'
                     ];
                     const type = itemTypes[Math.floor(Math.random() * itemTypes.length)];
                     this.player.itemSystem.spawnItem(type);
@@ -178,9 +277,9 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     this.enemyManager.update(delta, this.player.mesh.position);
                     this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem, this.sceneController);
                     
-                    if (this.enemyManager.isAllWavesCleared) {
+                    if (this.enemyManager.isAllWavesCleared && this.enemyManager.enemies.length === 0) {
                         this.gamePlayState = 'BOSS';
-                        if (!this.boss) {
+                        if (!this.boss || this.boss.isDead) {
                             if (this.currentLevelKey === 'LEVEL_1') {
                                 this.boss = new Boss(this.sceneController.scene, this.projectileSystem, this.player.itemSystem);
 
@@ -242,24 +341,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                             this.uiManager.hideBossHP();
                             this.explosionSystem.spawnBossExplosion(this.boss.mesh.position);
                             this.sceneController.triggerShake(1.5, 0.8);
-                            
-                            if (this.currentLevelKey === 'LEVEL_1') {
-                                console.log("Tiến vào LEVEL 2!");
-                                this.currentLevelKey = 'LEVEL_2';
-                                this.gamePlayState = 'WAVES';
-                                this.boss = null;
-                                this.enemyManager.resetAndStartWaveSystem(2, 2); // 2 wave ở Màn 2
-                                if (this.cinematicEffects) this.cinematicEffects.showText("LEVEL 2 - CẨN THẬN!", 3);
-                            } else if (this.currentLevelKey === 'LEVEL_2') {
-                                console.log("Tiến vào LEVEL 3!");
-                                this.currentLevelKey = 'LEVEL_3';
-                                this.gamePlayState = 'WAVES';
-                                this.boss = null;
-                                this.enemyManager.resetAndStartWaveSystem(2, 3); // 2 wave ở Màn 3
-                                if (this.cinematicEffects) this.cinematicEffects.showText("LEVEL 3 - ĐỊA NGỤC!", 3);
-                            } else {
-                                this.gamePlayState = 'VICTORY';
-                            }
+                            this.nextLevel();
                         }
                     }
                 }
@@ -268,7 +350,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         } // Kết thúc khối phân nhánh trạng thái
 
         // --- CẬP NHẬT CAMERA (Camera Update) ---
-        if (this.stateManager.isGameStarted) {
+        if (this.stateManager.isGameStarted && this.player && this.player.mesh) {
             this.sceneController.update(delta, this.player.mesh);
             this.background.update(delta, this.player.mesh.position);
         } else {

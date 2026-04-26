@@ -1,141 +1,115 @@
-import * as THREE from 'three'; // Nhập thư viện Three.js để xử lý đồ họa 3D
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; // Nhập bộ tải mô hình GLTF từ thư viện Three.js mở rộng
-import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập hằng số cấu hình từ CONFIG.JS
+import * as THREE from 'three'; 
+import { CONFIG } from '../../utils/CONFIG.JS'; 
+import { assetLoader } from '../../utils/AssetLoader.js';
 
-export class AsteroidSystem { // Khai báo lớp AsteroidSystem quản lý việc tạo và cập nhật thiên thạch
-    constructor(scene) { // Hàm khởi tạo, nhận vào scene 3D
-        this.scene = scene; // Lưu tham chiếu đến scene
-        this.asteroids = []; // Mảng chứa danh sách các thiên thạch đang hiện diện trong cảnh
-        this.loader = new GLTFLoader(); // Khởi tạo bộ tải GLTF
-        this.asteroidModel = null; // Biến lưu trữ mô hình thiên thạch gốc sau khi tải xong
+export class AsteroidSystem { 
+    constructor(scene) { 
+        this.scene = scene; 
+        this.asteroids = []; 
         
-        // Phương án dự phòng (Fallback): Tạo vật thể hình khối đa diện nếu không tải được file model .glb
-        this.fallbackGeometry = new THREE.IcosahedronGeometry(1, 0); // Tạo hình khối 20 mặt (Icosahedron) để làm giả đá
-        this.fallbackMaterial = new THREE.MeshPhongMaterial({ // Vật liệu có khả năng phản xạ ánh sáng (Phong)
-            color: 0x888888, // Màu xám đá
-            flatShading: true, // Bật đổ bóng phẳng để khối đá trông góc cạnh hơn
-            shininess: 0 // Độ bóng bằng 0 để bề mặt đá trông thô ráp
+        this.fallbackGeometry = new THREE.IcosahedronGeometry(1, 0); 
+        this.fallbackMaterial = new THREE.MeshPhongMaterial({ 
+            color: 0x888888, 
+            flatShading: true, 
+            shininess: 0 
         });
 
-        // Kiểm tra đường dẫn tài sản trong CONFIG, nếu không phải "PROCEDURAL" thì mới tiến hành tải
-        const assetPath = CONFIG.ASSETS.MODELS.ASTEROID;
-        
-        if (assetPath !== "PROCEDURAL") {
-            this.loader.load( // Bắt đầu tải mô hình 3D
-                assetPath, 
-                (glb) => { // Hàm callback khi tải thành công
-                    this.asteroidModel = glb.scene; // Lưu scene của mô hình vào biến asteroidModel
-                    console.log("Đã tải xong model thiên thạch!"); // Log thông báo thành công
-                },
-                undefined, // Bỏ qua theo dõi tiến độ (onProgress)
-                (err) => { // Hàm callback xử lý lỗi tải
-                    console.warn("Lỗi khi tải model asteroid.glb. Đang sử dụng fallback."); // Cảnh báo lỗi
-                }
-            );
-        } else { // Nếu cấu hình là Procedural (tự sinh bằng mã)
-            console.log("Hệ thống: Đang sử dụng thiên thạch Procedural (Code-generated).");
-        }
-
-        this.spawnTimer = 0; // Bộ đếm thời gian để kiểm soát nhịp độ sinh thiên thạch
-
-        // --- MULTIPLIERS FOR EFFECTS (e.g. ASTEROID STORM) ---
+        this.spawnTimer = 0; 
         this.speedMultiplier = 1.0;
         this.densityMultiplier = 1.0;
-    } // Kết thúc constructor
+        this.currentLevelKey = 'LEVEL_1';
+        this.updateConfig();
+    }
 
-    // Hàm tạo (spawn) một thiên thạch mới đưa vào cảnh
+    setLevel(levelKey) {
+        if (CONFIG.WORLD[levelKey]) {
+            this.currentLevelKey = levelKey;
+            this.updateConfig();
+        }
+    }
+
+    updateConfig() {
+        this.levelConfig = CONFIG.WORLD[this.currentLevelKey] || CONFIG.WORLD.LEVEL_1;
+        this.baseDensity = this.levelConfig.asteroid_density || 10;
+        this.baseSpeed = this.levelConfig.asteroid_speed || 0.015;
+        this.baseDamage = this.levelConfig.asteroid_damage || 50;
+    }
+
     spawn() {
-        let asteroid; // Biến tạm lưu thiên thạch sắp được tạo
+        // Sử dụng AssetLoader để lấy bản sao (clone) từ cache ngầm
+        const cachedModel = assetLoader.cloneModel('asteroid');
+        let asteroid;
         
-        if (this.asteroidModel) { // Nếu đã tải xong mô hình 3D từ file
-            asteroid = this.asteroidModel.clone(); // Sao chép (clone) từ mô hình gốc
-        } else { // Nếu chưa có mô hình (dùng fallback)
-            // Tạo một Mesh mới từ hình dáng 20 mặt và vật liệu đá xám
+        if (cachedModel) { 
+            asteroid = cachedModel; 
+        } else { 
             asteroid = new THREE.Mesh(this.fallbackGeometry, this.fallbackMaterial);
         }
         
-        // Thiết lập vị trí xuất hiện dựa trên 'Flight Envelope' trong CONFIG
         const envX = CONFIG.ENGINE.FLIGHT_ENVELOPE.X;
         const envY = CONFIG.ENGINE.FLIGHT_ENVELOPE.Y;
         
-        // Đặt vị trí X và Y ngẫu nhiên trong khoảng rộng gấp 3 lần vùng bay để tạo mật độ bao phủ
         asteroid.position.x = (Math.random() - 0.5) * envX * 3;
         asteroid.position.y = (Math.random() - 0.5) * envY * 3;
-        // Đặt vị trí Z ở xa (tầm -150) theo cấu hình SPAWN_DISTANCE_Z
         asteroid.position.z = CONFIG.WORLD.SPAWN_DISTANCE_Z;
 
-        // Thiết lập kích thước tỉ lệ (scale) lớn hơn (từ 1.5 đến 4.5)
         const scale = 1.5 + Math.random() * 3.0;
         asteroid.scale.set(scale, scale, scale);
         
-        // Đặt góc xoay ban đầu ngẫu nhiên quanh các trục X và Y
         asteroid.rotation.x = Math.random() * Math.PI;
         asteroid.rotation.y = Math.random() * Math.PI;
         
-        // Gán vận tốc xoay tự thân ngẫu nhiên để thiên thạch quay lộn nhào trong không gian
         asteroid.userData.rotationSpeed = {
             x: (Math.random() - 0.5) * 0.05,
             y: (Math.random() - 0.5) * 0.05
         };
-        asteroid.userData.damage = CONFIG.WORLD.LEVEL_1.asteroid_damage || 50; // Set sát thương của asteroid
+        asteroid.userData.damage = this.baseDamage;
 
-        this.scene.add(asteroid); // Thêm thiên thạch vào scene chính để hiển thị
-        this.asteroids.push(asteroid); // Lưu vào mảng quản lý để cập nhật logic sau này
-    } // Kết thúc phương thức spawn
+        this.scene.add(asteroid); 
+        this.asteroids.push(asteroid); 
+    }
 
-    update(delta) { // Phương thức cập nhật chuyển động của toàn bộ thiên thạch mỗi khung hình
-        // 1. Quản lý thời điểm Sinh (Spawn)
-        this.spawnTimer += delta; // Tăng dần bộ đếm theo thời gian delta
+    update(delta) { 
+        this.spawnTimer += delta; 
         
-        // Áp dụng densityMultiplier khi có bão thiên thạch
-        const baseDensity = CONFIG.WORLD.LEVEL_1.asteroid_density || 10;
-        const density = baseDensity * this.densityMultiplier; 
-        const spawnInterval = 1 / density; // Tính toán khoảng cách thời gian giữa mỗi lần sinh
+        const density = this.baseDensity * this.densityMultiplier; 
+        const spawnInterval = 1 / density; 
         
-        if (this.spawnTimer > spawnInterval) { // Nếu bộ đếm vượt qua khoảng thời gian spawn
-            this.spawn(); // Gọi hàm sinh thiên thạch mới
-            this.spawnTimer = 0; // Đặt lại bộ đếm về 0
+        if (this.spawnTimer > spawnInterval) { 
+            this.spawn(); 
+            this.spawnTimer = 0; 
         }
 
-        // 2. Cập nhật Vị trí và Xoay cho từng thiên thạch
-        const configSpeed = CONFIG.WORLD.LEVEL_1.asteroid_speed || 0.015;
-        // Áp dụng speedMultiplier khi có bão thiên thạch
-        const speedMultiplier = (configSpeed * 4000) * this.speedMultiplier;
+        const speedMultiplier = (this.baseSpeed * 4000) * this.speedMultiplier;
         
-        for (let i = this.asteroids.length - 1; i >= 0; i--) { // Duyệt mảng từ dưới lên để an toàn khi xóa phần tử
+        for (let i = this.asteroids.length - 1; i >= 0; i--) { 
             const asteroid = this.asteroids[i];
+            asteroid.position.z += delta * speedMultiplier; 
             
-            asteroid.position.z += delta * speedMultiplier; // Di chuyển thiên thạch lao về phía camera
-            
-            // Cập nhật góc quay tự thân dựa trên vận tốc xoay đã lưu trong userData
             asteroid.rotation.x += asteroid.userData.rotationSpeed.x;
             asteroid.rotation.y += asteroid.userData.rotationSpeed.y;
 
-            // Kiểm tra nếu thiên thạch đã bay vượt quá giới hạn phía sau người chơi (Z dương)
             if (asteroid.position.z > CONFIG.WORLD.DESPAWN_DISTANCE_Z) {
-                this.scene.remove(asteroid); // Gỡ bỏ khỏi scene 3D
-                this.asteroids.splice(i, 1); // Xóa khỏi mảng quản lý để giải phóng bộ nhớ
+                this.scene.remove(asteroid); 
+                this.asteroids.splice(i, 1); 
             }
         }
-    } // Kết thúc phương thức update
+    } 
 
-    checkCollisions(playerMesh, onCollide) { // Phương thức kiểm tra va chạm giữa người chơi và thiên thạch
-        if (!playerMesh || this.asteroids.length === 0) return; // Bỏ qua nếu chưa có tàu hoặc chưa có thiên thạch
+    checkCollisions(playerMesh, onCollide) { 
+        if (!playerMesh || this.asteroids.length === 0) return; 
 
-        const playerPos = playerMesh.position; // Lấy vị trí tâm của tàu người chơi
-        // Thiết lập bán kính va chạm ảo của người chơi (vùng bao quanh tàu)
+        const playerPos = playerMesh.position; 
         const playerRadius = 0.3; 
 
-        this.asteroids.forEach(asteroid => { // Duyệt qua từng thiên thạch
-            const dist = playerPos.distanceTo(asteroid.position); // Tính khoảng cách Euclid giữa tâm tàu và tâm thiên thạch
-            const asteroidRadius = asteroid.scale.x * 0.6; // Tính bán kính va chạm dựa trên tỉ lệ phóng to của thiên thạch
+        this.asteroids.forEach(asteroid => { 
+            const dist = playerPos.distanceTo(asteroid.position); 
+            const asteroidRadius = asteroid.scale.x * 0.6; 
 
-            // Nếu khoảng cách giữa hai vật thể nhỏ hơn tổng bán kính va chạm của chúng
             if (dist < (playerRadius + asteroidRadius)) {
-                onCollide(asteroid); // Gọi hàm callback xử lý va chạm (ví dụ: trừ máu người chơi)
-                // Đẩy thiên thạch đi xa ngay lập tức sau va chạm để tránh việc va chạm liên tục nhiều lần trong một mili giây
+                onCollide(asteroid); 
                 asteroid.position.z = 100; 
             }
-        }); // Kết thúc duyệt mảng
-    } // Kết thúc phương thức checkCollisions
-} // Kết thúc lớp AsteroidSystem
+        }); 
+    } 
+}

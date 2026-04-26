@@ -13,6 +13,37 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
         this.initDOM(); // Gắn các thẻ HTML ảo dọn đường sẵn vào body
     }
 
+    stopAll() {
+        // 1. Dừng mọi GSAP đang chạy (bao gồm cả timeline và các tween rời)
+        gsap.killTweensOf(this);
+        gsap.killTweensOf(this.flash);
+        gsap.killTweensOf(this.whiteFlash);
+        gsap.killTweensOf(this.textDiv);
+        if (this.targetMesh) {
+            gsap.killTweensOf(this.targetMesh.position);
+            gsap.killTweensOf(this.targetMesh.scale);
+            gsap.killTweensOf(this.targetMesh.rotation);
+        }
+        gsap.killTweensOf(this.camera.position);
+
+        // 2. Ẩn các lớp UI
+        if (this.flash) this.flash.style.opacity = 0;
+        if (this.whiteFlash) this.whiteFlash.style.opacity = 0;
+        if (this.textDiv) this.textDiv.style.opacity = 0;
+
+        // 3. Xoá hố đen nếu đang tồn tại
+        if (this.blackHoleGroup) {
+            this.scene.remove(this.blackHoleGroup);
+            this.blackHoleGroup = null;
+        }
+
+        // 4. Xoá đường hầm nếu đang tồn tại
+        this.stopTunnelEffect();
+
+        // 5. Tắt Speed Lines
+        this.stopSpeedLines();
+    }
+
     createGlowTexture(colorStr = 'rgba(255, 255, 255, 1)') {
         const canvas = document.createElement('canvas');
         canvas.width = 64; canvas.height = 64;
