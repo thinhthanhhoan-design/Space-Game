@@ -33,3 +33,4 @@ dist-ssr/
 # AI / Custom
 scratch/
 .gemini/
+.vercel

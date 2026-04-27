@@ -172,11 +172,14 @@ export const CONFIG = {
       SPAWN_INTERVAL: 10
     },
     BOSS_3: {
-      // HP: 600,
       HP: 1000,
       DODGE: 0.4,
-      //SHOCK_TRIGGER: 300,
-      SHOCKWAVE_COOLDOWN: 6,
+      SHOCKWAVE_COOLDOWN: 10,
+      SHOCKWAVE_COUNT: 5,           // Số lượng vòng sóng mỗi đợt
+      SHOCKWAVE_INTERVAL: 0.5,      // Khoảng cách giữa các vòng (giây)
+      SHOCKWAVE_Z_SPEED: 40,        // Tốc độ bay về phía màn hình
+      SHOCKWAVE_GROWTH_SPEED: 80,   // Tốc độ nở to của vòng
+      SHOCKWAVE_MAX_RADIUS: 150,    // Bán kính tối đa trước khi biến mất
       SLOW: 0.5,
       DAMAGE_PER_HIT: 45
     }

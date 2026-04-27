@@ -41,6 +41,7 @@ export class Weapon {
         }); 
 
         this.isLocked = false;
+        this.fireRateMultiplier = 1.0; // Hệ số nhân tốc độ bắn (1.0 là bình thường, >1 là chậm đi)
     }
 
     updateConfig() {
@@ -62,7 +63,8 @@ export class Weapon {
         if (this.isLocked) return;
 
         const now = performance.now() / 1000;
-        if (now - this.lastFireTime < this.fireRate) return;
+        const actualFireRate = this.fireRate * this.fireRateMultiplier;
+        if (now - this.lastFireTime < actualFireRate) return;
 
         if (this.player.ammo >= this.ammoPerShot) {
             this.player.ammo -= this.ammoPerShot;
