@@ -64,44 +64,44 @@ export class Weapon {
         const now = performance.now() / 1000;
         if (now - this.lastFireTime < this.fireRate) return;
 
-        if (this.player.ammo >= this.ammoPerShot) {
-            this.player.ammo -= this.ammoPerShot;
-            this.lastFireTime = now;
+        // Kiểm tra đạn
+        if (this.player.ammo < this.ammoPerShot) return;
 
-            const bulletCount = this.config.bullet_count || 1;
+        this.lastFireTime = now;
+        
+        // Trừ đạn của người chơi
+        this.player.ammo -= this.ammoPerShot;
+
+        const bulletCount = this.config.bullet_count || 1;
+        
+        for (let i = 0; i < bulletCount; i++) {
+            const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial.clone());
+            bullet.position.copy(this.player.mesh.position);
             
-            for (let i = 0; i < bulletCount; i++) {
-                const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial.clone());
-                bullet.position.copy(this.player.mesh.position);
-                
-                let vx = 0;
-                let vz = -this.bulletSpeed;
+            let vx = 0;
+            let vz = -this.bulletSpeed;
 
-                if (this.currentGun === 'GUN_2') {
-                    // SÚNG 2: 3 tia cách nhau 15 độ
-                    const angleOffset = this.config.spread_angle || 15;
-                    const angle = THREE.MathUtils.degToRad((i - 1) * angleOffset); 
-                    vx = -Math.sin(angle) * this.bulletSpeed;
-                    vz = -Math.cos(angle) * this.bulletSpeed;
-                    bullet.rotation.y = angle;
-                    bullet.material.color.setHex(0x00ff00); // Màu xanh cho súng 2
-                } else if (this.currentGun === 'GUN_3') {
-                    // SÚNG 3: 3 tia SONG SONG
-                    const offset = (i - 1) * (this.config.parallel_offset || 2.8); 
-                    bullet.position.x += offset;
-                    bullet.material.color.setHex(0xff4500); // Màu cam đỏ cho súng 3
-                }
-
-                bullet.userData = {
-                    damage: this.damage,
-                    vx: vx,
-                    vz: vz,
-                    markedForDeletion: false
-                };
-                
-                this.scene.add(bullet);
-                this.bullets.push(bullet);
+            if (this.currentGun === 'GUN_2') {
+                // SÚNG 2: Bắn SONG SONG
+                const offset = (i - (bulletCount - 1) / 2) * (this.config.parallel_offset || 2.0); 
+                bullet.position.x += offset;
+                bullet.material.color.setHex(0x00ff00); 
+            } else if (this.currentGun === 'GUN_3') {
+                // SÚNG 3: Tia bắn SONG SONG
+                const offset = (i - (bulletCount - 1) / 2) * (this.config.parallel_offset || 2.8); 
+                bullet.position.x += offset;
+                bullet.material.color.setHex(0xff4500); 
             }
+
+            bullet.userData = {
+                damage: this.damage,
+                vx: vx,
+                vz: vz,
+                markedForDeletion: false
+            };
+            
+            this.scene.add(bullet);
+            this.bullets.push(bullet);
         }
     }
 

@@ -6,9 +6,10 @@ import { assetLoader } from '../../utils/AssetLoader.js';
 import gsap from 'gsap';
 
 export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Enemy
-    constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1') { 
+    constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1') {
         super(scene, projectileSystem, itemSystem, type);
         this.hp = CONFIG.ENEMIES[type]?.HP || 500;
+        this.maxHP = this.hp;
         this.moveDirection = 1; // Hướng di chuyển ngang (1 là sang phải, -1 là sang trái)
         this.moveSpeed = 0.1; // Tốc độ di chuyển cơ bản của Boss
 
@@ -91,7 +92,7 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         this.mesh.position.x += this.moveDirection * this.moveSpeed * delta * 60;
 
         // --- GIỚI HẠN VÙNG DI CHUYỂN HÌNH ELÍP (Boss 1 - Đã làm mượt) ---
-        const limitX = 35; 
+        const limitX = 35;
         const limitY = 20;
         const distSq = Math.pow(this.mesh.position.x / limitX, 2) + Math.pow(this.mesh.position.y / limitY, 2);
 
@@ -125,8 +126,8 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
             return; // Dừng các hành động khác
         }
 
-        // --- LOGIC RÚT LUI KHI MÁU <= 200 ---
-        if (this.state === 'FIGHTING' && this.hp <= 200 && !this.hasRetreated) {
+        // --- LOGIC RÚT LUI KHI MÁU <= 50% ---
+        if (this.state === 'FIGHTING' && this.hp <= this.maxHP * 0.5 && !this.hasRetreated) {
             this.state = 'RETREATING'; // Rút lui
             this.hasRetreated = true; // Đánh dấu để lần sau quay lại không bỏ chạy nữa
         }
@@ -170,7 +171,7 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
 export class Boss2 extends Enemy {
     constructor(scene, projectileSystem, itemSystem, enemyManager) {
         super(scene, projectileSystem, itemSystem, 'BOSS_2');
-        this.hp = CONFIG.ENEMIES.BOSS_2?.HP || 1000;
+        this.hp = CONFIG.ENEMIES.BOSS_2?.HP || 800;
         this.maxHP = this.hp;
         this.moveDirection = 1;
         this.moveSpeed = 0.15; // Nhanh hơn Boss 1
@@ -178,7 +179,7 @@ export class Boss2 extends Enemy {
         this.state = 'FIGHTING';
         this.shootTimer = 0;
         this.spreadTimer = 0;
-        this.spawnTimer = -5.0; // Bắt đầu từ số âm để trì hoãn đợt đẻ quái đầu tiên (đợi 5s + spawnInterval)
+        this.spawnTimer = 0;
         this.enemyManager = enemyManager; // Tham chiếu đến EnemyManager để đẻ quái
 
         this.targetZ = -30; // Boss 2 tiến lại gần hơn Boss 1 (-35) một chút
@@ -190,7 +191,7 @@ export class Boss2 extends Enemy {
             this.mesh = cachedModel;
             this.mesh.scale.set(1.5, 1.5, 1.5);
             this.mesh.rotation.y = Math.PI; // Quay mặt về phía người chơi
-            this.mesh.position.set(0, 10, -50); 
+            this.mesh.position.set(0, 10, -50);
             this.scene.add(this.mesh);
             this.isLoaded = true;
         } else {
@@ -219,7 +220,7 @@ export class Boss2 extends Enemy {
         this.mesh.position.x += this.moveDirection * this.moveSpeed * delta * 80;
 
         // --- GIỚI HẠN VÙNG DI CHUYỂN HÌNH ELÍP (Boss 2 - Đã làm mượt) ---
-        const limitX = 40; 
+        const limitX = 40;
         const limitY = 25;
         const distSq = Math.pow(this.mesh.position.x / limitX, 2) + Math.pow(this.mesh.position.y / limitY, 2);
 
@@ -235,9 +236,9 @@ export class Boss2 extends Enemy {
         // NHẤP NHÔ
         this.mesh.position.y += Math.sin(Date.now() * 0.002) * 0.08;
 
-        // BẮN ĐẠN TỎA (Mỗi 3.5s)
+        // BẮN ĐẠN TỎA (Mỗi 3.5s - Tăng lên để giảm độ khó)
         this.spreadTimer += delta;
-        if (this.spreadTimer >= 1.5) {
+        if (this.spreadTimer >= 3.5) {
             this.spreadTimer = 0;
             this.shootSpread(playerPos);
         }
@@ -278,27 +279,25 @@ export class Boss2 extends Enemy {
 
     spawnMinions() {
         if (!this.enemyManager || !this.scene) return;
-        const count = CONFIG.ENEMIES.BOSS_2?.SPAWN_QUAI_COUNT || 3;
 
-        for (let i = 0; i < count; i++) {
-            // Sử dụng class Enemy có sẵn qua EnemyManager
-            const minion = new Enemy(this.scene, this.projectileSystem, this.itemSystem);
+        // Truyền vị trí của Boss vào ngay khi khởi tạo để quái xuất hiện từ Boss chui ra
+        const minion = new Enemy(this.scene, this.projectileSystem, this.itemSystem, 'QUAI_1', this.mesh.position);
 
-            const offsetX = (i - Math.floor(count / 2)) * 3; // Xếp dàn ngang hẹp hơn (3 thay vì 6) để tập trung bảo vệ Boss
-            minion.shieldTarget = this; // Đặt mục tiêu bảo vệ là chính Boss 2
-            minion.shieldOffsetX = offsetX;
+        minion.isOrbitalShield = true; // Kích hoạt chế độ lá chắn bảo vệ
+        minion.shieldTarget = this;
 
-            minion.onLoadComplete = () => {
-                minion.mesh.position.set(this.mesh.position.x + offsetX, this.mesh.position.y, this.mesh.position.z + 5);
-            };
+        minion.onLoadComplete = () => {
+            // Vị trí khởi tạo phía trước boss
+            minion.mesh.position.set(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z + 6);
+        };
 
-            // Quái do boss sinh ra máu ít hơn nhưng đủ để làm lá chắn
-            minion.maxHP = 30;
-            minion.hp = 30;
-            minion.isBossMinion = true; // Quái Boss tạo ra
+        // Quái làm lá chắn có lượng máu vừa phải
+        minion.maxHP = 40;
+        minion.hp = 40;
+        minion.isBossMinion = true;
 
-            this.enemyManager.enemies.push(minion);
-        }
+        this.enemyManager.enemies.push(minion);
+        console.log("🛡️ Boss 2: Đã đẻ 1 quái lá chắn!");
     }
 
     die() {
@@ -319,7 +318,7 @@ export class Boss3 extends Enemy {
     constructor(scene, projectileSystem, itemSystem, player) {
         super(scene, projectileSystem, itemSystem, 'BOSS_3');
         this.player = player; // Lưu tham chiếu đến người chơi để làm chậm
-        this.hp = CONFIG.ENEMIES.BOSS_3?.HP || 600;
+        this.hp = CONFIG.ENEMIES.BOSS_3?.HP || 1200;
         this.maxHP = this.hp;
 
         this.moveDirection = 1;
@@ -376,7 +375,7 @@ export class Boss3 extends Enemy {
         this.mesh.position.x += this.moveDirection * this.moveSpeed * delta * 60;
 
         // --- GIỚI HẠN VÙNG DI CHUYỂN HÌNH ELÍP (Boss 3 - Đã làm mượt) ---
-        const limitX = 40; 
+        const limitX = 40;
         const limitY = 25;
         const distSq = Math.pow(this.mesh.position.x / limitX, 2) + Math.pow(this.mesh.position.y / limitY, 2);
 
@@ -397,8 +396,8 @@ export class Boss3 extends Enemy {
         this.mesh.position.y += Math.sin(Date.now() * 0.003) * 0.05;
 
         // --- CƠ CHẾ SÓNG ÂM (SHOCKWAVE) ---
-        // Kích hoạt khi máu dưới 700 HP
-        if (this.hp <= 700) {
+        // Kích hoạt khi máu dưới 840 HP
+        if (this.hp <= 840) {
             this.shockwaveTimer += delta;
             const cooldown = CONFIG.ENEMIES.BOSS_3?.SHOCKWAVE_COOLDOWN || 6;
             if (this.shockwaveTimer >= cooldown) {

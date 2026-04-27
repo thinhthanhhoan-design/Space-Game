@@ -5,18 +5,19 @@ import { assetLoader } from '../../utils/AssetLoader.js';
 import { MathUtils } from '../../utils/Math.js';
 import { SwarmMovement } from './SwarmMovement.js';
 export class Enemy {
-    constructor(scene, projectileSystem, itemSystem, type = 'QUAI_1') {
-        this.scene = scene; 
-        this.projectileSystem = projectileSystem; 
-        this.itemSystem = itemSystem; 
-        this.type = type; 
-        this.maxHP = CONFIG.ENEMIES[type]?.HP || 50; 
+    constructor(scene, projectileSystem, itemSystem, type = 'QUAI_1', spawnPos = null) {
+        this.scene = scene;
+        this.projectileSystem = projectileSystem;
+        this.itemSystem = itemSystem;
+        this.type = type;
+        this.spawnPos = spawnPos; // Lưu vị trí spawn để gán ngay khi load model
+        this.maxHP = CONFIG.ENEMIES[type]?.HP || 50;
         this.hp = this.maxHP;
-        this.damage = CONFIG.ENEMIES[type]?.DAMAGE || 10; 
+        this.damage = CONFIG.ENEMIES[type]?.DAMAGE || 10;
 
-        this.mesh = null; 
-        this.isDead = false; 
-        this.isLoaded = false; 
+        this.mesh = null;
+        this.isDead = false;
+        this.isLoaded = false;
 
         this.randomVel = {
             x: (Math.random() - 0.5) * 6,
@@ -33,8 +34,8 @@ export class Enemy {
             x: Math.random() * Math.PI * 2,
             y: Math.random() * Math.PI * 2
         };
-        this.moveFreq = 0.5 + Math.random(); 
-        this.moveAmp = 1 + Math.random() * 2; 
+        this.moveFreq = 0.5 + Math.random();
+        this.moveAmp = 1 + Math.random() * 2;
 
         this.targetZ = -15 - Math.random() * 20;
 
@@ -44,10 +45,16 @@ export class Enemy {
     loadModel() {
         // Sử dụng AssetLoader để lấy bản sao (clone) từ cache
         const cachedModel = assetLoader.cloneModel('enemy_1');
-        
+
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(1.5, 1.5, 1.5);
+            
+            // Nếu có vị trí spawn, gán ngay lập tức trước khi add vào scene
+            if (this.spawnPos) {
+                this.mesh.position.copy(this.spawnPos);
+            }
+
             this.scene.add(this.mesh);
             this.isLoaded = true;
             if (this.onLoadComplete) this.onLoadComplete();
@@ -64,6 +71,56 @@ export class Enemy {
 
     update(delta, playerPos) {
         if (!this.isLoaded || !this.mesh || this.isDead) return;
+
+        // ---------------------------------------------------
+        // 0️⃣ LOGIC LÁ CHẮN BAY LƯỢN MƯỢT MÀ (Smooth Orbital Shield)
+        // ---------------------------------------------------
+        if (this.isOrbitalShield && this.shieldTarget && !this.shieldTarget.isDead) {
+            this.shieldRandomTimer = (this.shieldRandomTimer || 0) + delta;
+
+            // Khởi tạo các biến offset nếu chưa có
+            if (!this.currentShieldOffset) this.currentShieldOffset = new THREE.Vector3(0, 0, 6);
+            if (!this.targetShieldOffset) this.targetShieldOffset = new THREE.Vector3(0, 0, 6);
+
+            // Mỗi 1.5 giây chọn một vị trí ngẫu nhiên mới (tăng thời gian để bay mượt hơn)
+            if (this.shieldRandomTimer >= 1.5) {
+                this.shieldRandomTimer = 0;
+                this.targetShieldOffset.set(
+                    (Math.random() - 0.5) * 30, // Độ rộng X
+                    (Math.random() - 0.5) * 20, // Độ rộng Y
+                    7                           // Khoảng cách Z phía trước Boss
+                );
+            }
+
+            // 1. Nội suy offset để điểm mục tiêu di chuyển mượt mà
+            this.currentShieldOffset.lerp(this.targetShieldOffset, delta * 2);
+
+            // 2. Thêm hiệu ứng bồng bềnh (Sine drift)
+            const time = performance.now() * 0.0015;
+            const drift = new THREE.Vector3(
+                Math.sin(time) * 3,
+                Math.cos(time * 0.8) * 3,
+                Math.sin(time * 0.5) * 2
+            );
+
+            const targetWorldPos = this.shieldTarget.mesh.position.clone()
+                .add(this.currentShieldOffset)
+                .add(drift);
+
+            // 3. Cho quái lướt tới vị trí mục tiêu cuối cùng
+            this.mesh.position.lerp(targetWorldPos, delta * 6);
+
+            // (Đã xóa cơ chế lookAt theo yêu cầu)
+
+            // Vẫn cho phép quái này bắn đạn như quái thường
+            this._shootTimer += delta;
+            if (this._shootTimer >= this._shootCooldown) {
+                this.shootLaser(playerPos);
+                this._shootTimer = 0;
+            }
+            return; // Thoát sớm để SwarmMovement không ghi đè vị trí
+        }
+
         // ---------------------------------------------------
         // 1️⃣ Shooting logic (only for normal enemies QUAI_1)
         // ---------------------------------------------------
@@ -80,8 +137,8 @@ export class Enemy {
     }
 
     takeDamage(amount) {
-        this.hp -= amount; 
-        if (this.hp <= 0) this.die(); 
+        this.hp -= amount;
+        if (this.hp <= 0) this.die();
     }
 
     shootLaser(playerPos) {
@@ -94,9 +151,9 @@ export class Enemy {
 
     die(silent = false) {
         if (this.isDead) return;
-        this.isDead = true; 
+        this.isDead = true;
         if (this.mesh) {
-            this.scene.remove(this.mesh); 
+            this.scene.remove(this.mesh);
 
             if (this.itemSystem && !silent) {
                 const isBoss = this.type && this.type.startsWith('BOSS');
@@ -152,7 +209,7 @@ export class EnemyManager {
         this.waveConfig = {
             1: { waves: [[10]] },           // Level 1: 1 wave, 10 con
             2: { waves: [[7], [10]] },      // Level 2: 2 wave → đợt 1: 7 con, đợt 2: 10 con
-            3: { waves: [[10], [10]] },     // Level 3: 2 wave, mỗi đợt 10 con
+            3: { waves: [[10], [15]] },     // Level 3: 2 wave, đợt 2 có 15 con
         };
     }
 
@@ -221,26 +278,21 @@ export class EnemyManager {
             }
 
             const enemy = new Enemy(this.scene, this.projectileSystem, this.itemSystem);
+
+            // Cài đặt độ khó dựa trên Level
+            if (this.currentLevel === 1) {
+                enemy.speedMultiplier = 1.0;
+                enemy._shootCooldown = 2.5; // Bắn chậm ở lv1
+            } else if (this.currentLevel === 2) {
+                enemy.speedMultiplier = 1.3; // Bay nhanh hơn xíu
+                enemy._shootCooldown = 1.8; // Bắn nhanh hơn
+            } else if (this.currentLevel === 3) {
+                enemy.speedMultiplier = 1.7; // Bay nhanh hơn hẳn
+                enemy._shootCooldown = 1.0; // Bắn liên tục (1 giây 1 phát)
+            }
+
             this.swarm.register(enemy);
             const index = this.spawnedInWave;
-
-            // Tăng độ khó cho Level 3
-            if (this.currentLevel === 3) {
-                enemy.moveFreq *= 1.5;
-                enemy.moveAmp *= 1.2;
-                enemy.shootCooldownMultiplier = 0.35;
-                enemy.randomVel.x *= 1.5;
-                enemy.randomVel.y *= 1.5;
-            }
-            // Tăng nhẹ cho Wave 2 (mọi level)
-            if (waveNum >= 2) {
-                enemy.isRandomTopMove = true;
-                enemy.moveFreq *= 1.2;
-                enemy.moveAmp *= 1.1;
-                enemy.shootCooldownMultiplier = 0.5;
-                enemy.randomVel.x *= 1.2;
-                enemy.randomVel.y *= 1.2;
-            }
 
             // Đặt vị trí xuất hiện
             const setPosition = () => {

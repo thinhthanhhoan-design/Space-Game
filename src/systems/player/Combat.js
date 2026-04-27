@@ -167,23 +167,51 @@ export class Combat {
 
                 if (hit) continue;
 
-                // 3.3 Đạn trúng Item (Làm vỡ và làm mất vật phẩm nếu bị bắn trúng)
+                // 3.3 Đạn trúng Item (Bắn trúng cũng nhặt được đồ!)
                 if (player.itemSystem && player.itemSystem.activeItems) {
                     const items = player.itemSystem.activeItems;
+                    const itemColors = CONFIG.ITEMS.COLORS || { BUFF: 0x00ff00, DEBUFF: 0xff2200 };
+
                     for (let l = items.length - 1; l >= 0; l--) {
                         const item = items[l];
-                        if (item.userData.collected) continue;
+                        if (item.userData.isCollected) continue;
 
-                        if (MathUtils.checkSphereCollisionSq(bulletPos, item.position, this.bulletHitboxRadiusSq, 4.0)) {
-                            // Tạo hiệu ứng vỡ vụn nhưng KHÔNG thu thập (không hồi máu/đạn)
-                            if (particleSystem) {
-                                particleSystem.explodeAt(item.position, 0x888888); // Màu xám vỡ vụn
-                            }
+                        if (MathUtils.checkSphereCollisionSq(bulletPos, item.position, this.bulletHitboxRadiusSq, 6.0)) {
+                            console.log(`🎯 Đạn bắn trúng Item: ${item.userData.type}`);
+                            item.userData.isCollected = true;
                             
-                            // Xóa vật phẩm ngay lập tức khỏi màn hình
-                            item.userData.collected = true; // Đánh dấu để không bị tàu nhặt nữa
-                            if (item.parent) player.itemSystem.scene.remove(item);
-                            items.splice(l, 1);
+                            const itemType = item.userData.type;
+                            const isBuff = ['HEALTH', 'AMMO', 'SHIELD', 'WEAPON_2', 'WEAPON_3'].includes(itemType);
+
+                            // --- VISUAL SEQUENCE ---
+                            if (player.itemSystem.triggerCollisionEffect) {
+                                player.itemSystem.triggerCollisionEffect(item, isBuff ? 'Buff' : 'Debuff');
+                            }
+
+                            // Ẩn Sprite
+                            if (item.children) {
+                                item.children.forEach(child => {
+                                    if (child.material) child.material.opacity = 0;
+                                });
+                            }
+
+                            // Tạo vụ nổ hạt
+                            if (particleSystem) {
+                                const explodeColor = isBuff ? itemColors.BUFF : itemColors.DEBUFF;
+                                particleSystem.explodeAt(item.position, explodeColor);
+                            }
+
+                            // --- LOGIC ACTION ---
+                            player.itemSystem.collectItem(itemType);
+
+                            // Xóa item sau khi hiệu ứng hoàn tất
+                            setTimeout(() => {
+                                if (item.parent) {
+                                    player.itemSystem.scene.remove(item);
+                                    const idx = player.itemSystem.activeItems.indexOf(item);
+                                    if (idx > -1) player.itemSystem.activeItems.splice(idx, 1);
+                                }
+                            }, 1200);
                             
                             // Phá hủy đạn
                             bullet.userData.markedForDeletion = true;
@@ -200,18 +228,17 @@ export class Combat {
 
                     for (let i = items.length - 1; i >= 0; i--) {
                         const item = items[i];
-                        if (item.userData.collected) continue;
+                        if (item.userData.isCollected) continue;
 
                         // Tăng mạnh phạm vi nhặt đồ: Dựa trên tỷ lệ scale hiện tại của item
-                        // Nếu item to (scale ~9), vùng nhặt sẽ cực rộng. 
                         const baseRadius = CONFIG.ITEMS.COLLECTION_RADIUS || 5;
                         const dynamicRadius = (item.scale.x * 1.2) + baseRadius;
                         const dynamicRadiusSq = dynamicRadius * dynamicRadius;
 
                         if (MathUtils.checkSphereCollisionSq(playerPos, item.position, this.playerHitboxRadiusSq, dynamicRadiusSq)) {
-                            item.userData.collected = true;
+                            item.userData.isCollected = true;
                             const itemType = item.userData.type;
-                            const isBuff = ['HEALTH', 'AMMO', 'SHIELD'].includes(itemType);
+                            const isBuff = ['HEALTH', 'AMMO', 'SHIELD', 'WEAPON_2', 'WEAPON_3'].includes(itemType);
 
                             // --- VISUAL SEQUENCE ---
                             if (player.itemSystem.triggerCollisionEffect) {

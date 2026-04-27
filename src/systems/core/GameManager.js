@@ -92,12 +92,11 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
             return;
         }
 
-        // 2. Skip Waves -> Boss
+        // 2. Skip Waves -> Next Wave (Hoặc Boss nếu là wave cuối)
         if (this.gamePlayState === 'WAVES') {
-            console.log("[K] Skipping Waves to Boss...");
-            this.player.resetControls(); // Reset để tránh bị trôi khi chuyển phase
-            this.enemyManager.clearAllEnemies(true);
-            // update() của GameManager sẽ tự động spawn Boss ở frame tiếp theo
+            console.log("[K] Skipping Current Wave...");
+            this.player.resetControls(); 
+            this.enemyManager.clearAllEnemies(false); // Đổi thành false để chỉ bỏ qua 1 đợt
             return;
         }
 

@@ -183,12 +183,6 @@ export class ItemSystem {
             case 'WEAPON_3':
                 if (this.uiManager) this.uiManager.showMessage(`🔫 NEW WEAPON: ${itemConfig.gun_key}`, "#00ff00", 2000);
                 if (this.player.weapon) this.player.weapon.setGun(itemConfig.gun_key);
-                // Revert to default after duration (seconds)
-                const revertAfter = (itemConfig.duration || 5) * 1000;
-                setTimeout(() => {
-                    if (this.player.weapon) this.player.weapon.setGun('GUN_1');
-                    if (this.uiManager) this.uiManager.showMessage('🔫 Weapon reverted to default', "#aaaaaa", 1500);
-                }, revertAfter);
                 break;
             case 'WEAPON_LOCK':
                 if (this.uiManager) this.uiManager.showMessage("⚠️ WEAPON LOCKED!", "#ff0000", 3000);

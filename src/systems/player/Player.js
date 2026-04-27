@@ -170,6 +170,13 @@ export class Player {
     takeDamage(amount) {
         if (this.isShieldActive) return;
         this.hp -= amount;
+
+        // Nếu bị trúng đạn thì mất chức năng súng nâng cấp (về lại GUN_1)
+        if (this.weapon && this.weapon.currentGun !== 'GUN_1') {
+            this.weapon.setGun('GUN_1');
+            console.log("💥 Player damaged: Weapon downgraded to GUN_1");
+        }
+
         if (this.hp <= 0) {
             console.log("PLAYER DIED");
         }
