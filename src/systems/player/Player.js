@@ -189,8 +189,15 @@ export class Player {
 
     applyJam(duration) {
         if (this.weapon) {
-            this.weapon.isLocked = true;
-            setTimeout(() => { this.weapon.isLocked = false; }, duration * 1000);
+            // Thay vì khóa súng hoàn toàn (isLocked), ta làm chậm tốc độ bắn đi 2 lần
+            this.weapon.fireRateMultiplier = 3.0; 
+            
+            // Hiển thị cảnh báo nhỏ cho người chơi nếu cần
+            console.log("⚠️ CẢNH BÁO: Vũ khí bị nhiễu sóng! Tốc độ bắn giảm 3 lần.");
+
+            setTimeout(() => { 
+                this.weapon.fireRateMultiplier = 1.0; 
+            }, duration * 1000);
         }
     }
 

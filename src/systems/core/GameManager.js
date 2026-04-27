@@ -18,7 +18,7 @@ import { ParticleSystem } from '../effects/ParticleSystem.js';
 
 import { assetLoader } from '../../utils/AssetLoader.js';
 import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập đối tượng cấu hình trung tâm cho toàn bộ dự án
-
+import { MusicSystem } from '../audio/music.js';
 export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng chỉ huy của trò chơi
     constructor() { // Hàm khởi tạo thực thể GameManager
         this.sceneController = new SceneController(); // Khởi tạo bộ điều khiển đồ họa (scene, máy ảnh, renderer)
@@ -51,7 +51,16 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         // --- ITEM SPAWN SYSTEM ---
         this.itemSpawnTimer = 0;
         this.itemSpawnInterval = CONFIG.ITEMS.SPAWN_INTERVAL || 6.5;
-
+        // --- AUDIO SYSTEM (THÊM MỚI Ở ĐÂY) ---
+        // ==========================================
+        // Dùng camera từ sceneController vì nó đã được khởi tạo ở đầu hàm
+        this.musicSystem = new MusicSystem(this.sceneController.camera); 
+        this.musicSystem.init(); // Tải file nhạc nền
+        
+        // Bắt sự kiện click để phát nhạc (Tránh bị trình duyệt chặn Autoplay)
+        window.addEventListener('click', () => {
+            this.musicSystem.play();
+        }, { once: true });
         // --- DEBUG SHORTCUTS ---
         window.addEventListener('keydown', (e) => {
             if (e.code === 'KeyK') {
@@ -357,3 +366,4 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         }
     }
 }
+

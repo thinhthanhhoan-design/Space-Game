@@ -451,15 +451,18 @@ export class Boss3 extends Enemy {
 
     triggerShockwave() {
         console.log("🔊 Boss 3: PHÁT SÓNG ÂM SONAR!");
+        const bossConfig = CONFIG.ENEMIES.BOSS_3;
+        const count = bossConfig?.SHOCKWAVE_COUNT || 5;
+        const interval = (bossConfig?.SHOCKWAVE_INTERVAL || 0.25) * 1000;
 
-        // Tạo 5 vòng sóng lan tỏa liên tiếp để tạo hiệu ứng Sonar (giống trong phim)
-        for (let i = 0; i < 5; i++) {
+        // Tạo chuỗi vòng sóng dựa trên cấu hình
+        for (let i = 0; i < count; i++) {
             setTimeout(() => {
                 if (this.isDead || !this.scene) return;
 
                 const geometry = new THREE.RingGeometry(0.95, 1.0, 64);
                 const material = new THREE.MeshBasicMaterial({
-                    color: 0x398080, // Đổi sang màu xanh lục lam (ngả xanh lá hơn)
+                    color: 0x398080,
                     transparent: true,
                     opacity: 1.0,
                     side: THREE.DoubleSide,
@@ -474,15 +477,15 @@ export class Boss3 extends Enemy {
                     geometry: geometry,
                     material: material,
                     radius: 0,
-                    maxRadius: 150, // Độ xa tối đa của sóng
-                    speed: 80,      // Tốc độ nở của vòng sóng
+                    maxRadius: bossConfig?.SHOCKWAVE_MAX_RADIUS || 150,
+                    growthSpeed: bossConfig?.SHOCKWAVE_GROWTH_SPEED || 80,
+                    zSpeed: bossConfig?.SHOCKWAVE_Z_SPEED || 60,
                     opacity: 1.0
                 };
                 this.shockwaves.push(wave);
-            }, i * 250); // Mỗi vòng cách nhau 0.25 giây để tạo hiệu ứng sóng đuổi nhau
+            }, i * interval);
         }
 
-        // Reset bộ đếm shockwave
         this.shockwaveTimer = 0;
     }
 
@@ -490,35 +493,31 @@ export class Boss3 extends Enemy {
         if (!this.player || !this.shockwaves.length) return;
 
         this.shockwaves.forEach((wave, index) => {
-            // 1. Tăng bán kính vòng sóng
-            wave.radius += wave.speed * delta;
-            wave.opacity -= 0.5 * delta; // Làm mờ dần
+            // 1. Cập nhật kích thước và độ mờ dựa trên config
+            wave.radius += wave.growthSpeed * delta;
+            wave.opacity -= 0.5 * delta;
 
-            // Cập nhật hiển thị (Bắt buộc phải có để thấy được trong 3D)
             wave.mesh.scale.set(wave.radius, wave.radius, 1);
             wave.material.opacity = Math.max(0, wave.opacity);
 
-            // Di chuyển sóng về phía người chơi (Trục Z) để có hiệu ứng "Sonar bắn về phía màn hình"
-            wave.mesh.position.z += delta * 60;
+            // 2. Di chuyển về phía người chơi dựa trên config
+            wave.mesh.position.z += delta * wave.zSpeed;
 
-            // 2. Tính khoảng cách từ Player đến vòng sóng hiện tại (để logic làm chậm chính xác)
+            // 3. Logic va chạm
             const dist = this.player.mesh.position.distanceTo(wave.mesh.position);
-
-            // 3. Logic làm chậm & Kẹt súng: Nếu Player chạm vào mặt sóng
-            // Khi khoảng cách gần bằng bán kính sóng, coi như bị trúng sóng chấn động
             if (!wave.hasHit && Math.abs(dist - wave.radius) < 8 && wave.radius < wave.maxRadius) {
-                this.player.applySlow(3.0, 0.05); // Chậm lại 3 giây (gần như chết cứng)
-                this.player.applyJam(3.0);       // Không thể bắn trong 3 giây
+                this.player.applySlow(3.0, 0.05);
+                this.player.applyJam(3.0);
                 wave.hasHit = true;
             }
 
-            // 4. Xóa sóng khi quá xa hoặc mờ hẳn
+            // 4. Xóa sóng
             if (wave.radius > wave.maxRadius || wave.opacity <= 0) {
                 this.scene.remove(wave.mesh);
                 wave.geometry.dispose();
                 wave.material.dispose();
                 this.shockwaves.splice(index, 1);
-                this.player.slowMultiplier = 1.0; // Đảm bảo reset tốc độ
+                this.player.slowMultiplier = 1.0;
             }
         });
     }

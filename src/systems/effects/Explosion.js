@@ -318,55 +318,86 @@ export class ExplosionSystem {
   }
 
   // ====================================================
-  // BOSS EXPLOSION EFFECT (Cực kỳ hoành tráng)
-  // ====================================================
-  spawnBossExplosion(position) {
-    // 1. Sóng xung kích khổng lồ (Cyan/White)
-    this.spawnShockwave(position, 0x00ffff, 30);
-    this.spawnShockwave(position, 0xffffff, 15);
+// ====================================================
+// BOSS EXPLOSION EFFECT 
+// - Radius rộng hơn
+// - Điểm sáng nhiều gấp bội
+// - Fade lâu hơn
+// ====================================================
+spawnBossExplosion(position) {
+  // 1) Shockwave cực lớn (2 lớp)
+  this.spawnShockwave(position, 0x00ffff, 60);
+  this.spawnShockwave(position, 0xffffff, 35);
 
-    // 2. Chớp sáng màn hình
-    this.spawnHitFlash(position, 10.0);
+  // 2) Flash mạnh
+  this.spawnHitFlash(position, 20.0);
 
-    // 3. Chuỗi vụ nổ liên hoàn (Daisy Chain)
-    for (let i = 0; i < 8; i++) {
-        setTimeout(() => {
-            const offset = new THREE.Vector3(
-                (Math.random() - 0.5) * 12,
-                (Math.random() - 0.5) * 12,
-                (Math.random() - 0.5) * 12
-            );
-            const p = position.clone().add(offset);
-            
-            this.spawnAsteroidImpact(p);
-            this.spawnSparks(p, 60, 4.0);
-            
-            // Hiệu ứng hạt lửa tung tóe
-            this.spawnFireDust(p, 40);
-        }, i * 150);
+  // 3) Nổ trung tâm cực mạnh (điểm sáng cực nhiều)
+  // (tăng số lượng sparks + power)
+  this.spawnSparks(position, 600, 14.0);
+  this.spawnFireDust(position, 250);
+
+  // 4) Daisy Chain - nhiều vụ nổ hơn + radius rộng hơn
+  for (let i = 0; i < 14; i++) {
+    setTimeout(() => {
+      const offset = new THREE.Vector3(
+        (Math.random() - 0.5) * 30,  // rộng hơn nhiều
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 30
+      );
+
+      const p = position.clone().add(offset);
+
+      this.spawnAsteroidImpact(p);
+
+      // Sparks nhiều hơn + mạnh hơn
+      this.spawnSparks(p, 180, 8.0);
+
+      // FireDust nhiều hơn để tạo cảm giác cháy nổ kéo dài
+      this.spawnFireDust(p, 120);
+
+    }, i * 120); // nhanh hơn -> cảm giác dồn dập
+  }
+
+  // 5) Debris cực nhiều (mảnh vỡ)
+  this.spawnDebris(position, 60);
+
+  // 6) Final Explosion cực đại sau 1.6 giây (fade lâu hơn)
+  setTimeout(() => {
+    this.spawnHitFlash(position, 30.0);
+
+    // shockwave cuối siêu lớn
+    this.spawnShockwave(position, 0xffaa00, 100);
+
+    // điểm sáng gấp bội
+    this.spawnSparks(position, 1200, 20.0);
+
+    // bụi lửa dày
+    this.spawnFireDust(position, 500);
+
+    // thêm debris lần nữa
+    this.spawnDebris(position, 40);
+
+    // camera shake mạnh
+    if (this.camera) {
+      gsap.to(this.camera.position, {
+        x: "+=2.5",
+        y: "+=2.0",
+        duration: 0.08,
+        repeat: 18,
+        yoyo: true,
+        ease: "power1.inOut"
+      });
     }
 
-    // 4. Mảnh vỡ bay ra
-    this.spawnDebris(position, 30);
+  }, 1600);
 
-    // 5. Cú nổ cuối cùng cực lớn
-    setTimeout(() => {
-        this.spawnSparks(position, 300, 10.0);
-        this.spawnHitFlash(position, 20.0);
-        this.spawnShockwave(position, 0xffaa00, 50);
-        
-        // Rung lắc camera cực mạnh qua GSAP (nếu có tham chiếu camera)
-        if (this.camera) {
-            gsap.to(this.camera.position, {
-                x: "+=1.5",
-                y: "+=1.5",
-                duration: 0.1,
-                repeat: 10,
-                yoyo: true
-            });
-        }
-    }, 1200);
-  }
+  // 7) Bonus: dư chấn (aftershock) để kéo dài cảm giác nổ
+  setTimeout(() => {
+    this.spawnShockwave(position, 0xffffff, 50);
+    this.spawnSparks(position, 300, 6.0);
+  }, 2400);
+}
 
   // ====================================================
   // HEAT DISTORTION
