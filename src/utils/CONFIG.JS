@@ -139,7 +139,7 @@ export const CONFIG = {
       V1: { hp_limit: 300, name: "Minh Kiên đzai", next_model: null },
     },
     WEAPONS: {
-      GUN_1: { damage: 25, ammo: 100, fireRate: 0.4, ammo_per_shot: 1, bullet_speed: 1.5 },
+      GUN_1: { damage: 25, ammo: 150, fireRate: 0.4, ammo_per_shot: 1, bullet_speed: 1.5 },
       GUN_2: { damage: 75, ammo: 200, fireRate: 0.3, ammo_per_shot: 3, bullet_count: 3, spread_angle: 15 },
       GUN_3: { damage: 75, ammo: 500, fireRate: 0.2, ammo_per_shot: 3, bullet_count: 3, parallel_offset: 2.8, bullet_speed: 2.25 },
     }
