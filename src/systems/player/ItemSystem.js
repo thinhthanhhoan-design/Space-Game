@@ -119,7 +119,21 @@ export class ItemSystem {
         return group;
     }
 
+    // Bộ đếm cho việc tự động thả đạn khi hết
+    updateEmergencyAmmo(delta) {
+        if (this.player.ammo <= 0) {
+            this.emergencyAmmoTimer = (this.emergencyAmmoTimer || 0) + delta;
+            if (this.emergencyAmmoTimer >= 8.0) { // Mỗi 8 giây thả 1 hòm đạn nếu đã hết sạch
+                this.spawnItem('AMMO');
+                this.emergencyAmmoTimer = 0;
+            }
+        } else {
+            this.emergencyAmmoTimer = 0;
+        }
+    }
+
     update(delta) {
+        this.updateEmergencyAmmo(delta);
         // Cố định tốc độ bay của Item thay vì phụ thuộc vào FORWARD_SPEED (vì config này đã được tối ưu lại cho tàu)
         const speed = 60.0 * (CONFIG.ITEMS.SPEED_FACTOR || 0.5);
         for (let i = this.activeItems.length - 1; i >= 0; i--) {

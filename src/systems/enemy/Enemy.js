@@ -49,7 +49,7 @@ export class Enemy {
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(1.5, 1.5, 1.5);
-            
+
             // Nếu có vị trí spawn, gán ngay lập tức trước khi add vào scene
             if (this.spawnPos) {
                 this.mesh.position.copy(this.spawnPos);
@@ -109,8 +109,6 @@ export class Enemy {
 
             // 3. Cho quái lướt tới vị trí mục tiêu cuối cùng
             this.mesh.position.lerp(targetWorldPos, delta * 6);
-
-            // (Đã xóa cơ chế lookAt theo yêu cầu)
 
             // Vẫn cho phép quái này bắn đạn như quái thường
             this._shootTimer += delta;
