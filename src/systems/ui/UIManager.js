@@ -5,6 +5,12 @@ export class UIManager {
   constructor() {
     this.isVisible = false;
 
+    // ===== HIỆU ỨNG WARNING LV2 -> LV3 =====
+    this.warningActive = false;
+    this.warningTime = 0;
+    this.warningDuration = 0;
+
+    this.createWarningOverlay(); // Gọi hàm tạo DOM 
 
     // ===== CONTAINER =====
     this.container = document.createElement("div");
@@ -205,6 +211,44 @@ export class UIManager {
     document.body.appendChild(this.messageContainer);
   }
 
+  // Tạo lớp nền đỏ ẩn dưới HUD
+createWarningOverlay() {
+    this.warningDOM = document.createElement("div");
+    this.warningDOM.id = "flash-red-overlay";
+    Object.assign(this.warningDOM.style, {
+        position: "fixed",
+        top: 0, left: 0, width: "100%", height: "100%",
+        background: "radial-gradient(circle, transparent 60%, rgba(255, 0, 0, 0.4) 100%)",
+        boxShadow: "inset 0 0 150px rgba(255, 0, 0, 0.6)",
+        opacity: 0,
+        pointerEvents: "none",
+        zIndex: 10
+    });
+    document.body.appendChild(this.warningDOM);
+}
+
+// Hàm để GameManager gọi khi bắt đầu Story
+startWarning(duration = 2.5) {
+    this.warningActive = true;
+    this.warningTime = 0;
+    this.warningDuration = duration;
+}
+
+// Hàm tính toán logic nhấp nháy
+updateWarning(delta) {
+    if (!this.warningActive || !this.warningDOM) return;
+
+    this.warningTime += delta;
+    // Nhấp nháy theo hàm Sin
+    const flash = Math.abs(Math.sin(this.warningTime * 12)); 
+    this.warningDOM.style.opacity = (flash * 0.7).toString();
+
+    if (this.warningTime > this.warningDuration) {
+        this.warningActive = false;
+        this.warningDOM.style.opacity = "0";
+    }
+}
+
   // Hiển thị thông báo trên màn hình
   showMessage(text, color = "#ffffff", duration = 2000) {
     this.messageContainer.innerText = text;
@@ -233,7 +277,8 @@ export class UIManager {
   }
 
 
-  update(player, levelKey = 'LEVEL_1') {
+  update(player, levelKey = 'LEVEL_1', delta = 0) {
+    if (delta > 0) this.updateWarning(delta);
     if (!this.isVisible || !player) return;
 
     // HP
