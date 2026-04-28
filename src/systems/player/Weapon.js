@@ -74,6 +74,8 @@ export class Weapon {
         // Trừ đạn của người chơi
         this.player.ammo -= this.ammoPerShot;
 
+        if (window.GameAudio) window.GameAudio.playSound('SFX_LASER', true);
+
         const bulletCount = this.config.bullet_count || 1;
         
         for (let i = 0; i < bulletCount; i++) {

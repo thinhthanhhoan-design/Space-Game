@@ -18,7 +18,7 @@ export const CONFIG = {
       BOSS_1: "/models/Boss 1.2.glb",
       BOSS_2: "/models/Boss_2.glb",
       BOSS_3: "/models/Boss_3.glb",
-      ASTEROID: "PROCEDURAL",
+      ASTEROID: "/models/meteorite.glb",
     },
     TEXTURES: {
       SPACE_BG: "/textures/nebula_dark.jpg",
@@ -249,19 +249,27 @@ export const CONFIG = {
   // 🎵 AUDIO SETTINGS
   // ===============================
   AUDIO: {
-    NEN_GAME: 0.1,         // Nhạc nền (nen_game.mp3)
+    NEN_GAME: 0.5,         // Nhạc nền (nen_game.mp3)
     LEVEL_UP: 0.5,         // Âm thanh lên cấp (level_up.mp3)
     VICTORY: 0.6,          // Âm thanh chiến thắng (victory.mp3)
     GAMEOVER: 0.6,         // Âm thanh thất bại (gameover.mp3)
     NEXT_LEVEL: 0.5,       // Âm thanh chuyển màn (next_level.mp3)
     NEXT_LEVEL_UP: 0.5,    // Âm thanh nâng cấp đặc biệt (next_level_up.mp3)
+    SFX_LASER: 0.2,        // Âm thanh bắn laze
+    SFX_CLICK: 0.8,        // Âm thanh bấm nút
+    SFX_EXPLOSION: 0.4,    // Âm thanh nổ quái/thiên thạch
+    SFX_HIT: 0.6,          // Âm thanh tàu trúng đạn
     PATHS: {
       NEN_GAME: '/audio/sound/nen_game.mp3',
       LEVEL_UP: '/audio/sound/level_up.mp3',
       VICTORY: '/audio/sound/victory.mp3',
       GAMEOVER: '/audio/sound/gameover.mp3',
       NEXT_LEVEL: '/audio/sound/next_level.mp3',
-      NEXT_LEVEL_UP: '/audio/sound/next_level_up.mp3'
+      NEXT_LEVEL_UP: '/audio/sound/next_level_up.mp3',
+      SFX_LASER: '/audio/sound/hieu_ung_laze_ban.mp3',
+      SFX_CLICK: '/audio/sound/hieu_ung_bam_bat_dau.mp3',
+      SFX_EXPLOSION: '/audio/sound/hieu_ung_quai_thien_thach_no.mp3',
+      SFX_HIT: '/audio/sound/hieu_ung_tau_trung_don.mp3'
     }
   },
 

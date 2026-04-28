@@ -36,6 +36,7 @@ export class Combat {
                         player.takeDamage(enemy.damage || 15);
                         if (explosionSystem) explosionSystem.startWarning(0.4);
                         if (sceneController) sceneController.triggerShake(0.4, 0.2);
+                        if (window.GameAudio) window.GameAudio.playSound('SFX_HIT', true);
                     }
                     if (explosionSystem) explosionSystem.spawnShipImpact(playerPos);
                     enemy.die();
@@ -52,6 +53,7 @@ export class Combat {
                         player.takeDamage(ast.userData?.damage || 10);
                         if (explosionSystem) explosionSystem.startWarning(0.4);
                         if (sceneController) sceneController.triggerShake(0.4, 0.2);
+                        if (window.GameAudio) window.GameAudio.playSound('SFX_HIT', true);
                     }
                     if (explosionSystem) explosionSystem.spawnAsteroidImpact(ast.position);
                     ast.userData.markedForDeletion = true;
@@ -96,6 +98,9 @@ export class Combat {
                             } else {
                                 enemy.die();
                             }
+                            if (enemy.isDead) {
+                                if (window.GameAudio) window.GameAudio.playSound('SFX_EXPLOSION', true);
+                            }
                             bullet.userData.markedForDeletion = true;
                             hit = true;
                             break;
@@ -111,6 +116,7 @@ export class Combat {
                     if (ast && !ast.userData?.markedForDeletion) {
                         if (MathUtils.checkSphereCollisionSq(bulletPos, ast.position, this.bulletHitboxRadiusSq, this.asteroidHitboxRadiusSq)) {
                             if (explosionSystem) explosionSystem.spawnAsteroidImpact(ast.position);
+                            if (window.GameAudio) window.GameAudio.playSound('SFX_EXPLOSION', true);
                             
                             const dropChance = 0.2;
                             if (player.itemSystem && Math.random() < dropChance) {

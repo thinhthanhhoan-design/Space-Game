@@ -62,6 +62,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
 
         // --- AUDIO SYSTEM ---
         this.musicSystem = new MusicSystem(this.sceneController.camera);
+        window.GameAudio = this.musicSystem;
         this.musicSystem.init(); // Tải file nhạc nền
 
         // --- SPLASH SCREEN & LAUNCH LOGIC ---
@@ -117,6 +118,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                                             this.stateManager.setGameStarted(true);
                                             this.uiManager.show(); // Hiển thị HUD người chơi
                                             this.enemyManager.startWaveSystem(1); // Màn 1
+                                            if (this.musicSystem) this.musicSystem.play(); // CHẠY LẠI NHẠC NỀN
                                         });
                                     });
                                 }, 1500);
@@ -160,6 +162,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
             this.player.itemSystem.setLevel(this.currentLevelKey);
             this.gamePlayState = 'WAVES';
             this.enemyManager.startWaveSystem(1); // Màn 1
+            if (this.musicSystem) this.musicSystem.play(); // CHẠY LẠI NHẠC NỀN
             return;
         }
 

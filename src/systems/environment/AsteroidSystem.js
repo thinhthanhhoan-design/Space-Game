@@ -66,7 +66,7 @@ export class AsteroidSystem {
             CONFIG.WORLD.SPAWN_DISTANCE_Z
         );
 
-        const scale = 1.5 + Math.random() * 3;
+        const scale = 0.15 + Math.random() * 0.3;
         asteroid.scale.set(scale, scale, scale);
 
         // ⭐ Tính toán đường kính thực tế của Model
