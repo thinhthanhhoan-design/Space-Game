@@ -16,7 +16,7 @@ export class Combat {
     /**
      * Cập nhật logic va chạm tổng thể.
      */
-    update(player, enemies = [], asteroids = [], explosionSystem = null, particleSystem = null, sceneController = null) {
+    update(player, enemies = [], asteroids = [], explosionSystem = null, particleSystem = null, sceneController = null, bubbles = []) {
         if (!player.mesh) return;
 
         const playerPos = player.mesh.position;
@@ -271,6 +271,31 @@ export class Combat {
                             }, 1200);
                         }
                     }
+                }
+            }
+        }
+
+        // =====================================================
+        // 5. Va chạm Người chơi vs Bong bóng khí độc (Level 2)
+        // =====================================================
+        if (bubbles && bubbles.length > 0) {
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                const bubble = bubbles[i];
+                if (!bubble.alive || !bubble.mesh) continue;
+
+                const dist = playerPos.distanceTo(bubble.mesh.position);
+                const hitRadius = bubble.radius + 0.8; // Hitbox = radius bong bóng + biên player
+
+                if (dist < hitRadius) {
+                    if (player.hasShield) {
+                        console.log('🛡️ Shield chặn bong bóng độc!');
+                    } else {
+                        player.takeDamage(bubble.damage || 5);
+                        if (sceneController) sceneController.triggerShake(0.2, 0.1);
+                        if (explosionSystem) explosionSystem.startWarning(0.2);
+                        console.log(`☠️ Bong bóng độc gây ${bubble.damage} sát thương!`);
+                    }
+                    bubble.destroy(); // Bong bóng nổ sau khi chạm
                 }
             }
         }
