@@ -262,7 +262,6 @@ export const CONFIG = {
     // --- BGM (Music) ---
     NEN_INTRO: 0.7,        // Nhạc nền intro lúc tụ hạt
     NEN_GAME: 0.5,         // Nhạc nền game chính
-    NHAC_NEN_CHIEN_DAU: 0.6,
     NHAC_NEN_INTRO_MAT_TIN_HIEU_1: 0.6,
     NHAC_NEN_INTRO_MAT_TIN_HIEU_2: 0.6,
 
@@ -294,7 +293,6 @@ export const CONFIG = {
       NEN_GAME: '/audio/sound/nen_game.mp3',
       NEN_INTRO: '/audio/sound/nen_intro.mp3',
       LEVEL_3: '/audio/sound/level3.mp3',
-      NHAC_NEN_CHIEN_DAU: '/audio/sound/nhac_nen_chien_dau.mp3',
       PLAYER_BAN: '/audio/sound/player_ban.mp3',
       NHAC_NEN_INTRO_MAT_TIN_HIEU_1: '/audio/sound/nhac_nen_intro_mat_tin_hieu_1.mp3',
       NHAC_NEN_INTRO_MAT_TIN_HIEU_2: '/audio/sound/nhac_nen_intro_mat_tin_hieu_2.mp3',

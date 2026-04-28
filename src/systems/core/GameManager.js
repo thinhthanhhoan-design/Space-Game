@@ -217,7 +217,6 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     this.hasPlayedStoryLV2 = true;
                     const story = new Story();
                     story.play('LV1_INTRO', () => {
-                        this.musicSystem.playLevelUpSound();
                         this.startLevelTransition('LEVEL_2');
                         this.cinematicEffects?.showText("LEVEL 2 - CẨN THẬN!", 3);
                     });
@@ -226,7 +225,6 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 console.log("Tiến vào LEVEL 3!");
                 const story = new Story();
                 story.playLevel3Transition(this, () => {
-                    this.musicSystem.playLevelUpSound();
                     this.startLevelTransition('LEVEL_3');
                     this.cinematicEffects?.showText(CONFIG.STORY.LV2_TRANSITION.ui_text, 3);
                 });

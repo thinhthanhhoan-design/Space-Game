@@ -201,7 +201,7 @@ export class MusicSystem {
     // Giúp các file khác không bị lỗi khi gọi tên hàm cũ
 
     playLevelUpSound() {
-        this.playSound('LEVEL_UP');
+        this.playSound('CHUYEN_MAN');
     }
 
     playVictorySound() {
