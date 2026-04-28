@@ -1,14 +1,15 @@
 import * as THREE from 'three';
 import { CONFIG } from '../../utils/CONFIG.JS';
 import { Patterns } from './Patterns.js';
-import { assetLoader } from '../../utils/AssetLoader.js';
+import { modelCache } from '../../utils/ModelCache.js';
 import { MathUtils } from '../../utils/Math.js';
 import { SwarmMovement } from './SwarmMovement.js';
 export class Enemy {
-    constructor(scene, projectileSystem, itemSystem, type = 'QUAI_1', spawnPos = null) {
+    constructor(scene, projectileSystem, itemSystem, type = 'QUAI_1', spawnPos = null, musicSystem = null) {
         this.scene = scene;
         this.projectileSystem = projectileSystem;
         this.itemSystem = itemSystem;
+        this.musicSystem = musicSystem;
         this.type = type;
         this.spawnPos = spawnPos; // Lưu vị trí spawn để gán ngay khi load model
         this.maxHP = CONFIG.ENEMIES[type]?.HP || 50;
@@ -43,8 +44,8 @@ export class Enemy {
     }
 
     loadModel() {
-        // Sử dụng AssetLoader để lấy bản sao (clone) từ cache
-        const cachedModel = assetLoader.cloneModel('enemy_1');
+        // Sử dụng modelCache để lấy bản sao (clone) từ cache
+        const cachedModel = modelCache.getModel('enemy_1');
 
         if (cachedModel) {
             this.mesh = cachedModel;
@@ -152,6 +153,14 @@ export class Enemy {
     die(silent = false) {
         if (this.isDead) return;
         this.isDead = true;
+
+        // Phát âm thanh nổ (chỉ khi không ở chế độ silent)
+        if (!silent && this.musicSystem) {
+            const isBoss = this.type && this.type.startsWith('BOSS');
+            const soundKey = isBoss ? 'HIEU_UNG_BOSS_NO_TUNG' : 'HIEU_UNG_QUAI_THIEN_THACH_NO';
+            this.musicSystem.playSound(soundKey);
+        }
+
         if (this.mesh) {
             this.scene.remove(this.mesh);
 
@@ -187,10 +196,11 @@ export class Enemy {
 }
 
 export class EnemyManager {
-    constructor(scene, projectileSystem, itemSystem) {
+    constructor(scene, projectileSystem, itemSystem, musicSystem) {
         this.scene = scene;
         this.projectileSystem = projectileSystem;
         this.itemSystem = itemSystem;
+        this.musicSystem = musicSystem;
         this.enemies = [];
         this.currentWave = 0;
         this.waveInProgress = false;
@@ -269,7 +279,7 @@ export class EnemyManager {
                 return;
             }
 
-            const enemy = new Enemy(this.scene, this.projectileSystem, this.itemSystem);
+            const enemy = new Enemy(this.scene, this.projectileSystem, this.itemSystem, 'QUAI_1', null, this.musicSystem);
 
             // Cài đặt độ khó dựa trên Level (Lấy từ CONFIG)
             const levelCfg = CONFIG.LEVELS[this.currentLevel];

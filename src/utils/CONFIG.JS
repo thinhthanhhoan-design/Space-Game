@@ -149,7 +149,7 @@ export const CONFIG = {
   // 👾 ENEMIES & BOSSES
   // ===============================
   ENEMIES: {
-    QUAI_1: { HP: 50, DAMAGE: 15, BULLET_SPEED: 2.5, MOVE_SPEED: 1.5 },
+    QUAI_1: { HP: 50, DAMAGE: 15, BULLET_SPEED: 2.5, MOVE_SPEED: 1.5, POINTS: 100 }, // Sẽ lấy từ SCORING.ENEMY_DEFAULT
     BOSS_1: {
       HP: 2000, // Tăng từ 500 lên 2000
       ATTACK_INTERVAL: 5,
@@ -158,7 +158,8 @@ export const CONFIG = {
       MOVE_SPEED: 3.0,        // Tốc độ di chuyển của boss
       HOMING_SPEED: 5,      // Tốc độ bắn đạn tự nhắm
       LIMIT: 1,
-      RETREAT_Z: -50
+      RETREAT_Z: -50,
+      POINTS: 5000
     },
     BOSS_2: {
       HP: 5000, // Tăng từ 800 lên 5000
@@ -168,7 +169,8 @@ export const CONFIG = {
       BULLET_SPEED: 0.6,
       SPREAD_DAMAGE: 20,
       SPAWN_QUAI_COUNT: 3,
-      SPAWN_INTERVAL: 5
+      SPAWN_INTERVAL: 5,
+      POINTS: 10000
     },
     BOSS_3: {
       HP: 10000, // Tăng từ 1200 lên 10000
@@ -176,7 +178,8 @@ export const CONFIG = {
       //SHOCK_TRIGGER: 300,
       SHOCKWAVE_COOLDOWN: 8,
       SLOW: 0.5,
-      DAMAGE_PER_HIT: 45
+      DAMAGE_PER_HIT: 45,
+      POINTS: 20000
     }
   },
 
@@ -210,6 +213,19 @@ export const CONFIG = {
   },
 
   // ===============================
+  // 📈 SCORING SYSTEM (Hệ thống tính điểm)
+  // ===============================
+  SCORING: {
+    ASTEROID: 0,           // Điểm khi phá hủy thiên thạch (đã bỏ theo yêu cầu)
+    ITEM_GOOD: 50,         // Điểm cộng khi nhặt vật phẩm có lợi
+    ITEM_BAD: -60,         // Điểm trừ khi nhặt vật phẩm có hại
+    ENEMY_DEFAULT: 100,    // Điểm mặc định cho quái thường
+    BOSS_1: 5000,
+    BOSS_2: 10000,
+    BOSS_3: 20000
+  },
+
+  // ===============================
   // 🎁 ITEMS & POWERUPS
   // ===============================
   ITEMS: {
@@ -224,14 +240,14 @@ export const CONFIG = {
 
     // --- Định nghĩa các loại Item ---
     TYPES: {
-      HEALTH: { value: 100, texture: "ITEM_HP", chance: 0.3 },
-      AMMO: { refill_percent: 0.5, texture: "ITEM_DAN", chance: 0.3 },
-      SHIELD: { duration: 10000, texture: "ITEM_SECURITY", chance: 0.1 },
+      HEALTH: { value: 100, texture: "ITEM_HP", chance: 0.3, POINTS: 50 },
+      AMMO: { refill_percent: 0.5, texture: "ITEM_DAN", chance: 0.3, POINTS: 50 },
+      SHIELD: { duration: 10000, texture: "ITEM_SECURITY", chance: 0.1, POINTS: 50 },
       // --- Vật phẩm nâng cấp Vũ khí ---
-      WEAPON_2: { gun_key: "GUN_2", texture: "ITEM_Sung2", min_level: "LEVEL_2", duration: 10 }, // Chỉ xuất hiện từ Màn 2, duy trì 10s
-      WEAPON_3: { gun_key: "GUN_3", texture: "ITEM_Sung3", min_level: "LEVEL_3", duration: 13 }, // Chỉ xuất hiện từ Màn 3, duy trì 13s
-      WEAPON_LOCK: { duration: 7000, texture: "ITEM_KHOA_VK", chance: 0.05 },
-      ASTEROID_ITEM: { duration: 10000, texture: "ITEM_THIEN_THACH", SPEED_MULT: 2.5, DENSITY_MULT: 5.0, chance: 0.1 }
+      WEAPON_2: { gun_key: "GUN_2", texture: "ITEM_Sung2", min_level: "LEVEL_2", duration: 10, POINTS: 50 },
+      WEAPON_3: { gun_key: "GUN_3", texture: "ITEM_Sung3", min_level: "LEVEL_3", duration: 13, POINTS: 50 },
+      WEAPON_LOCK: { duration: 7000, texture: "ITEM_KHOA_VK", chance: 0.05, POINTS: -60 },
+      ASTEROID_ITEM: { duration: 10000, texture: "ITEM_THIEN_THACH", SPEED_MULT: 2.5, DENSITY_MULT: 5.0, chance: 0.1, POINTS: -60 }
     },
 
     SPAWN_RANGE_FACTOR: 1.8,  // Hệ số thu hẹp vùng spawn (X, Y) – kiểm soát độ rộng khu vực sinh vật phẩm
@@ -244,24 +260,34 @@ export const CONFIG = {
       NEUTRAL: 0xaaaaaa // Màu trung tính khi đạn chạm item
     } // End of COLORS config
   }, // End of ITEMS config
-  
+
   // ===============================
   // 🎵 AUDIO SETTINGS
   // ===============================
   AUDIO: {
-    NEN_GAME: 0.1,         // Nhạc nền (nen_game.mp3)
+    NEN_GAME: 0.5,         // Nhạc nền (nen_game.mp3)
     LEVEL_UP: 0.5,         // Âm thanh lên cấp (level_up.mp3)
     VICTORY: 0.6,          // Âm thanh chiến thắng (victory.mp3)
     GAMEOVER: 0.6,         // Âm thanh thất bại (gameover.mp3)
     NEXT_LEVEL: 0.5,       // Âm thanh chuyển màn (next_level.mp3)
     NEXT_LEVEL_UP: 0.5,    // Âm thanh nâng cấp đặc biệt (next_level_up.mp3)
+    HIEU_UNG_START: 1.0,   // Âm thanh khi bấm bắt đầu
+    NEN_INTRO: 0.7,        // Nhạc nền intro lúc tụ hạt (nen_intro.mp3)
     PATHS: {
-      NEN_GAME: '/audio/sound/nen_game.mp3',
-      LEVEL_UP: '/audio/sound/level_up.mp3',
-      VICTORY: '/audio/sound/victory.mp3',
       GAMEOVER: '/audio/sound/gameover.mp3',
-      NEXT_LEVEL: '/audio/sound/next_level.mp3',
-      NEXT_LEVEL_UP: '/audio/sound/next_level_up.mp3'
+      HIEU_UNG_START: '/audio/sound/hieu_ung_start.mp3',
+      HIEU_UNG_BOSS_NO_TUNG: '/audio/sound/hieu_ung_boss_no_tung.mp3',
+      HIEU_UNG_LAZE_BAN: '/audio/sound/hieu_ung_laze_ban.mp3',
+      HIEU_UNG_QUAI_THIEN_THACH_NO: '/audio/sound/hieu_ung_quai_thien_thach_no.mp3',
+      HIEU_UNG_TAU_TRUNG_DON: '/audio/sound/hieu_ung_tau_trung_don.mp3',
+      LEVEL_UP: '/audio/sound/level_up.mp3',
+      NEN_GAME: '/audio/sound/nen_game.mp3',
+      NEN_INTRO: '/audio/sound/nen_intro.mp3',
+      NEXT_LEVEL_UP: '/audio/sound/next_level_up.mp3',
+      NHAC_NEN_CHIEN_DAU: '/audio/sound/nhac_nen_chien_dau.mp3',
+      NHAC_NEN_INTRO_MAT_TIN_HIEU_1: '/audio/sound/nhac_nen_intro_mat_tin_hieu_1.mp3',
+      NHAC_NEN_INTRO_MAT_TIN_HIEU_2: '/audio/sound/nhac_nen_intro_mat_tin_hieu_2.mp3',
+      VICTORY: '/audio/sound/victory.mp3'
     }
   },
 
@@ -271,7 +297,10 @@ export const CONFIG = {
   STRINGS: {
     WARNING_BLACKHOLE: "CẢNH BÁO: Phát hiện lỗ hổng không gian khổng lồ!",
     LOADING_DATA: "Đang tải dữ liệu, vui lòng đợi...",
-    BOSS_APPROACHING: "PHÁT HIỆN THỰC THỂ KHỔNG LỒ ĐANG ĐẾN GẦN!"
+    BOSS_APPROACHING: "PHÁT HIỆN THỰC THỂ KHỔNG LỒ ĐANG ĐẾN GẦN!",
+    YOUR_SCORE: "YOUR SCORE",
+    TOP_SCORES: "TOP 5 HIGHEST SCORE",
+    RESTART_BTN: "RESTART"
   },
 
   // ===============================
@@ -323,7 +352,7 @@ export const CONFIG = {
       "Lõi năng lượng của chúa tể bóng tối đã vỡ vụn...",
       "Hệ thống quét cho thấy không gian đang dần ổn định.",
       "Tín hiệu lạ đã biến mất.",
-      "Chúc mừng phi công, bạn đã sống sót!",
+      "Chúc mừng phi hành đoàn, bạn đã sống sót!",
       "Tàu UETE-3637 đang trở về căn cứ...",
     ]
   },

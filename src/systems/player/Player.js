@@ -5,7 +5,7 @@ import { MathUtils } from '../../utils/Math.js';
 import { Weapon } from './Weapon.js'; 
 import { ItemSystem } from './ItemSystem.js'; 
 import { Crosshair } from '../ui/Crosshair.js'; 
-import { assetLoader } from '../../utils/AssetLoader.js';
+import { modelCache } from '../../utils/ModelCache.js';
 
 export class Player { 
     constructor(scene) {
@@ -69,7 +69,7 @@ export class Player {
     initMesh() {
         if (this.mesh) return; 
 
-        const cachedModel = assetLoader.cloneModel('ship');
+        const cachedModel = modelCache.getModel('ship');
         if (cachedModel) {
             this.mesh = new THREE.Group();
             const innerMesh = cachedModel;

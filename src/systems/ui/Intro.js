@@ -217,7 +217,7 @@ export class Intro {
     }
 
     // PHẦN 3: HIỆU ỨNG GSA (GEOMETRY SAMPLE & ANIMATE) -> Tụ Hạt vào lưới Tàu
-    startTransition(logoParticles, playerModel, cam, onComplete) {
+    startTransition(logoParticles, playerModel, cam, musicSystem, onComplete) {
         if (!logoParticles || !playerModel) {
             if (onComplete) onComplete();
             return; // Lỗi thiếu hệ hạt trươc khi chạy

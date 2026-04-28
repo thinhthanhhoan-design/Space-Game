@@ -17,10 +17,11 @@ import { UIManager } from '../ui/UIManager.js';
 import { EndingUI } from '../ui/EndingUI.js';
 import { ExplosionSystem } from '../effects/Explosion.js';
 import { ParticleSystem } from '../effects/ParticleSystem.js';
+import { Crosshair } from '../ui/Crosshair.js';
+import { ScoreSystem } from '../player/Score.js';
 import { Splash } from '../ui/Splash.js';
-
-import { assetLoader } from '../../utils/AssetLoader.js';
-import { CONFIG } from '../../utils/CONFIG.JS'; // Nhập đối tượng cấu hình trung tâm cho toàn bộ dự án
+import { modelCache } from '../../utils/ModelCache.js';
+import { CONFIG } from '../../utils/CONFIG.JS';
 import { MusicSystem } from '../audio/music.js';
 
 export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng chỉ huy của trò chơi
@@ -33,9 +34,11 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.player = new Player(this.sceneController.scene); // Khởi tạo tàu người chơi và đặt nó vào không gian 3D của scene
         this.background = new Background(); // Khởi tạo đối tượng quản lý nền trời vũ trụ và các vì sao
 
+        this.musicSystem = new MusicSystem(this.sceneController.camera);
+        
         this.cinematicEffects = new CinematicEffects(this.sceneController.scene, this.sceneController.camera);
         this.projectileSystem = new ProjectileSystem(this.sceneController.scene);
-        this.enemyManager = new EnemyManager(this.sceneController.scene, this.projectileSystem, this.player.itemSystem);
+        this.enemyManager = new EnemyManager(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.musicSystem);
         this.asteroidSystem = new AsteroidSystem(this.sceneController.scene);
         this.combat = new Combat();
         this.explosionSystem = new ExplosionSystem(this.sceneController.scene, this.sceneController.camera);
@@ -47,6 +50,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.player.itemSystem.setUIManager(this.uiManager);
         this.player.itemSystem.setCamera(this.sceneController.camera);
         this.player.itemSystem.setAsteroidSystem(this.asteroidSystem);
+        this.player.itemSystem.setScoreCallback((amt) => this.scoreSystem.addScore(amt));
 
         this.boss = null;
         this._bossHandled = false;
@@ -55,19 +59,21 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.isGameOver = false;
         this._victoryTriggered = false;
         this.hasPlayedStoryLV2 = false;
+        
+        this.scoreSystem = new ScoreSystem(); // Khởi tạo hệ thống điểm mới
 
         // --- ITEM SPAWN SYSTEM ---
         this.itemSpawnTimer = 0;
         this.itemSpawnInterval = CONFIG.ITEMS.SPAWN_INTERVAL || 6.5;
 
-        // --- AUDIO SYSTEM ---
-        this.musicSystem = new MusicSystem(this.sceneController.camera);
-        this.musicSystem.init(); // Tải file nhạc nền
 
         // --- SPLASH SCREEN & LAUNCH LOGIC ---
         new Splash(() => {
             // Callback này chạy ngay khi người dùng click vào màn hình Splash
-            if (this.musicSystem) this.musicSystem.play();
+            if (this.musicSystem) {
+                // Chỉ kích hoạt nhạc nền, hiệu ứng Start sẽ để dành cho nút START thực sự
+                this.musicSystem.play();
+            }
             this.startIntroSequence();
         });
 
@@ -88,15 +94,14 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
             const checkModel = setInterval(() => {
                 if (this.player.mesh) {
                     clearInterval(checkModel);
-                    if (this.stateManager.isGameStarted) return;
-
-                    this.intro.startTransition(logoPoints, this.player.mesh, this.sceneController.camera, () => {
+                    if (this.musicSystem) this.musicSystem.fadeOut('NEN_GAME', 3.5); // Giảm dần nhạc nền trong suốt 3.5 giây tụ hạt
+                    this.intro.startTransition(logoPoints, this.player.mesh, this.sceneController.camera, this.musicSystem, () => {
                         if (this.stateManager.isGameStarted) return;
                         this.player.mesh.visible = true;
-                        
-                        // DỪNG NHẠC KHI TÀU TỤ XONG ĐỂ VÀO ĐOẠN PHIM DẪN TRUYỆN
-                        if (this.musicSystem) this.musicSystem.stop();
-                        
+
+                        // PHÁT NHẠC HÀO HÙNG KHI TÀU ĐÃ TỤ XONG
+                        if (this.musicSystem) this.musicSystem.playIntroMusic();
+
                         this.cinematicEffects.startSpeedLines();
                         setTimeout(() => {
                             if (this.stateManager.isGameStarted) return;
@@ -117,6 +122,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                                             this.stateManager.setGameStarted(true);
                                             this.uiManager.show(); // Hiển thị HUD người chơi
                                             this.enemyManager.startWaveSystem(1); // Màn 1
+                                            if (this.musicSystem) this.musicSystem.play(); // Bắt đầu nhạc nền game
                                         });
                                     });
                                 }, 1500);
@@ -126,8 +132,11 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 }
             }, 100);
         }, () => {
-            // Callback này sẽ chạy NGAY LẬP TỨC khi bấm nút Start
-            if (this.musicSystem) this.musicSystem.play();
+            // Callback này sẽ chạy NGAY LẬP TỨC khi người dùng bấm nút "START" trên Logo
+            if (this.musicSystem) {
+                this.musicSystem.playStartSound(); // Phát hiệu ứng Start đúng lúc này!
+                this.musicSystem.play(); // Đảm bảo nhạc nền tiếp tục phát
+            }
         });
     }
 
@@ -139,7 +148,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         console.log(">>> [K] SMART SKIP TRIGGERED");
 
         // KIỂM TRA TẢI TÀI NGUYÊN (Asset Guard)
-        if (!assetLoader.isLoaded) {
+        if (!modelCache.isReady) {
             console.warn("[K] Chờ chút, tài nguyên đang nạp...");
             if (this.uiManager) this.uiManager.showMessage(CONFIG.STRINGS.LOADING_DATA, "#ffaa00", 2000);
             return;
@@ -229,7 +238,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 const victoryStory = new Story();
                 this.musicSystem.playVictorySound(); // Chạy nhạc thắng cuộc
                 victoryStory.playVictoryEnding(() => {
-                    this.endingUI.show('WIN'); 
+                    this.endingUI.show('WIN', this.scoreSystem.getScore(), this.scoreSystem.getTime());
                 });
             }
         }, explosionDelay);
@@ -265,22 +274,33 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.enemyManager.resetAndStartWaveSystem(levelNum);
     }
 
-    init() { // Hàm khởi tạo chính để nạp tài nguyên và bắt đầu khởi chạy luồng game
-        // Bắt đầu nạp ngầm toàn bộ Model (Background Preloading)
-        assetLoader.preloadAllModels(() => {
-            console.log("--- TẤT CẢ MODEL ĐÃ SẴN SÀNG ---");
-            if (this.player) this.player.initMesh();
+    async init() { // Hàm khởi tạo chính để nạp tài nguyên và bắt đầu khởi chạy luồng game
+        console.log("🛠️ [GameManager] Đang chuẩn bị nạp tài nguyên tuần tự...");
+
+        // 1. NẠP TÀI NGUYÊN (Audio trước, Model sau)
+        await modelCache.preloadAll((progress) => {
+            // Có thể hiển thị loading bar ở đây nếu muốn
+            // console.log(`Loading: ${Math.round(progress * 100)}%`);
         });
 
-        const bgUrl = CONFIG.ASSETS.TEXTURES.SPACE_BG; // Lấy đường dẫn ảnh nền vũ trụ từ file cấu hình chung
-        this.background.init(this.sceneController.scene, bgUrl); // Truyền cảnh và đường dẫn ảnh để Background nạp textures
+        // 2. KHỞI TẠO CÁC HỆ THỐNG SAU KHI TÀI NGUYÊN SẴN SÀNG
+        console.log("✅ [GameManager] Tài nguyên đã sẵn sàng. Khởi tạo mesh...");
+        if (this.player) this.player.initMesh();
+        if (this.musicSystem) this.musicSystem.init();
 
+        const bgUrl = CONFIG.ASSETS.TEXTURES.SPACE_BG;
+        this.background.init(this.sceneController.scene, bgUrl);
 
-        this.gameLoop.start(); // Chính thức kích hoạt vòng lặp game liên tục (requestAnimationFrame)
+        this.gameLoop.start(); // Chính thức kích hoạt vòng lặp game
     }
 
     update(elapsedTime, delta) { // Hàm cập nhật logic game
         this.uiManager.updateFPS(delta); // Luôn cập nhật FPS ở mọi trạng thái
+
+        // Cập nhật điểm và thời gian chơi thông qua ScoreSystem
+        if (!this.isGameOver && !this._victoryTriggered) {
+            this.scoreSystem.updateTime(delta);
+        }
 
         if (!this.stateManager.isGameStarted) {
             this.intro.update(elapsedTime); // Chỉ cập nhật Intro khi game chưa bắt đầu
@@ -294,7 +314,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 this.isGameOver = true;
                 this.uiManager.hide(); // Ẩn các thanh máu, đạn
                 this.musicSystem.playGameOverSound(); // Chạy nhạc thất bại
-                this.endingUI.show('GAME_OVER'); // Hiện màn hình thua
+                this.endingUI.show('GAME_OVER', this.scoreSystem.getScore(), this.scoreSystem.getTime()); // Hiện màn hình thua
                 return;
             }
 
@@ -324,6 +344,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
             const dmg = this.projectileSystem.checkCollision(this.player.mesh, 1.2);
             if (dmg) {
                 this.player.takeDamage(dmg);
+                if (this.musicSystem) this.musicSystem.playSound('HIEU_UNG_TAU_TRUNG_DON');
                 this.sceneController.triggerShake(0.3, 0.2); // Rung camera nhẹ khi trúng đạn
                 if (this.explosionSystem) {
                     this.explosionSystem.spawnShipImpact(this.player.mesh.position);
@@ -351,14 +372,14 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
 
             if (this.gamePlayState === 'WAVES') {
                 this.enemyManager.update(delta, this.player.mesh.position);
-                this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem, this.sceneController);
+                this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem, this.sceneController, this.musicSystem, (amt) => this.scoreSystem.addScore(amt));
 
                 if (this.enemyManager.isAllWavesCleared && this.enemyManager.enemies.length === 0) {
                     this.gamePlayState = 'BOSS';
                     if (!this.boss || this.boss.isDead) {
                         this._bossHandled = false;
                         if (this.currentLevelKey === 'LEVEL_1') {
-                            this.boss = new Boss(this.sceneController.scene, this.projectileSystem, this.player.itemSystem);
+                            this.boss = new Boss(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, 'BOSS_1', this.musicSystem);
                             this.explosionSystem.startWarning(3.0);
                             this.sceneController.triggerShake(0.35, 3.0);
                             if (this.uiManager.showBossHP) this.uiManager.showBossHP("TRÙM KHÔNG GIAN V1");
@@ -369,12 +390,12 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                                 this.enemyManager.resetAndStartWaveSystem(1, 1);
                             };
                         } else if (this.currentLevelKey === 'LEVEL_2') {
-                            this.boss = new Boss2(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.enemyManager);
+                            this.boss = new Boss2(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.enemyManager, this.musicSystem);
                             this.explosionSystem.startWarning(3.0);
                             this.sceneController.triggerShake(0.5, 3.0);
                             if (this.uiManager.showBossHP) this.uiManager.showBossHP("KẺ HỦY DIỆT V2");
                         } else if (this.currentLevelKey === 'LEVEL_3') {
-                            this.boss = new Boss3(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.player);
+                            this.boss = new Boss3(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.player, this.musicSystem);
                             this.explosionSystem.startWarning(3.0);
                             this.sceneController.triggerShake(0.6, 3.0);
                             if (this.uiManager.showBossHP) this.uiManager.showBossHP("CHÚA TỂ BÓNG TỐI V3");
@@ -398,7 +419,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     this.enemyManager.update(delta, this.player.mesh.position);
 
                     const combatEnemies = [this.boss, ...this.enemyManager.enemies];
-                    this.combat.update(this.player, combatEnemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem);
+                    this.combat.update(this.player, combatEnemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem, null, this.musicSystem, (amt) => this.scoreSystem.addScore(amt));
                     this.uiManager.updateBossHP(this.boss.hp, this.boss.maxHP);
 
                     if (this.boss.state === 'RETREATING') {
@@ -410,7 +431,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                     }
                 }
             }
-            this.uiManager.update(this.player, this.currentLevelKey, delta);
+            this.uiManager.update(this.player, this.currentLevelKey, delta, this.scoreSystem.getScore());
         }
 
         // --- CẬP NHẬT CAMERA ---

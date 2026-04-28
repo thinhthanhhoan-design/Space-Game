@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../../utils/CONFIG.JS';
-import { assetLoader } from '../../utils/AssetLoader.js';
+import { modelCache } from '../../utils/ModelCache.js';
 
 export class AsteroidSystem {
     constructor(scene, particleSystem, player, camera) {
@@ -50,7 +50,7 @@ export class AsteroidSystem {
     }
 
     spawn() {
-        const cachedModel = assetLoader.cloneModel('asteroid');
+        const cachedModel = modelCache.getModel('asteroid');
 
         let asteroid = cachedModel || new THREE.Mesh(
             new THREE.IcosahedronGeometry(1, 0),

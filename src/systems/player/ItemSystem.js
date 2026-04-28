@@ -9,6 +9,7 @@ export class ItemSystem {
         this.scene = scene;
         this.inventory = [];
         this.activeItems = []; 
+        this.onCollectScore = null; // Callback để cập nhật điểm số
 
         this.textureLoader = new THREE.TextureLoader();
         
@@ -53,6 +54,10 @@ export class ItemSystem {
 
     setAsteroidSystem(asteroidSystem) {
         this.asteroidSystem = asteroidSystem;
+    }
+
+    setScoreCallback(callback) {
+        this.onCollectScore = callback;
     }
 
     spawnItem(type = null, position = null) {
@@ -158,6 +163,17 @@ export class ItemSystem {
     collectItem(type) {
         const itemConfig = CONFIG.ITEMS.TYPES[type];
         if (!itemConfig) return;
+
+        // Cộng hoặc trừ điểm dựa trên CONFIG
+        if (this.onCollectScore) {
+            let pts = itemConfig.POINTS;
+            if (pts === undefined) {
+                // Fallback nếu không định nghĩa POINTS riêng cho từng loại
+                const isBad = type === 'WEAPON_LOCK' || type === 'ASTEROID_ITEM';
+                pts = isBad ? CONFIG.SCORING.ITEM_BAD : CONFIG.SCORING.ITEM_GOOD;
+            }
+            this.onCollectScore(pts);
+        }
 
         switch (type) {
             case 'HEALTH':

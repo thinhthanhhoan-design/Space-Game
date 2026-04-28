@@ -1,13 +1,12 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CONFIG } from '../../utils/CONFIG.JS';
 import { Enemy } from './Enemy.js';
-import { assetLoader } from '../../utils/AssetLoader.js';
+import { modelCache } from '../../utils/ModelCache.js';
 import gsap from 'gsap';
 
 export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Enemy
-    constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1') {
-        super(scene, projectileSystem, itemSystem, type);
+    constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1', musicSystem = null) {
+        super(scene, projectileSystem, itemSystem, type, null, musicSystem);
         this.hp = CONFIG.ENEMIES[type]?.HP || 500;
         this.maxHP = this.hp;
         this.moveDirection = 1; // Hướng di chuyển ngang (1 là sang phải, -1 là sang trái)
@@ -25,7 +24,7 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
     }
 
     loadModel() { // Hàm để tải hình ảnh 3D cho Boss
-        const cachedModel = assetLoader.cloneModel('boss_1');
+        const cachedModel = modelCache.getModel('boss_1');
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(13, 13, 13);
@@ -151,6 +150,10 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
 
     shootLaser(playerPos) { // Hàm bắn Laser
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
+        
+        // Phát âm thanh bắn Laser
+        if (this.musicSystem) this.musicSystem.playSound('HIEU_UNG_LAZE_BAN');
+
         // Bắt buộc hướng tia Laser phải luôn chĩa thẳng tắp xuống màn hình (Trục Z) 
         // để khi gắn vào Boss trông không bị lệch 
         const direction = new THREE.Vector3(0, 0, 1);
@@ -169,8 +172,8 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
 }
 
 export class Boss2 extends Enemy {
-    constructor(scene, projectileSystem, itemSystem, enemyManager) {
-        super(scene, projectileSystem, itemSystem, 'BOSS_2');
+    constructor(scene, projectileSystem, itemSystem, enemyManager, musicSystem = null) {
+        super(scene, projectileSystem, itemSystem, 'BOSS_2', null, musicSystem);
         this.hp = CONFIG.ENEMIES.BOSS_2?.HP || 800;
         this.maxHP = this.hp;
         this.moveDirection = 1;
@@ -186,7 +189,7 @@ export class Boss2 extends Enemy {
     }
 
     loadModel() {
-        const cachedModel = assetLoader.cloneModel('boss_2');
+        const cachedModel = modelCache.getModel('boss_2');
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(1.5, 1.5, 1.5);
@@ -315,8 +318,8 @@ export class Boss2 extends Enemy {
 }
 
 export class Boss3 extends Enemy {
-    constructor(scene, projectileSystem, itemSystem, player) {
-        super(scene, projectileSystem, itemSystem, 'BOSS_3');
+    constructor(scene, projectileSystem, itemSystem, player, musicSystem = null) {
+        super(scene, projectileSystem, itemSystem, 'BOSS_3', null, musicSystem);
         this.player = player; // Lưu tham chiếu đến người chơi để làm chậm
         this.hp = CONFIG.ENEMIES.BOSS_3?.HP || 1200;
         this.maxHP = this.hp;
@@ -337,7 +340,7 @@ export class Boss3 extends Enemy {
     }
 
     loadModel() {
-        const cachedModel = assetLoader.cloneModel('boss_3');
+        const cachedModel = modelCache.getModel('boss_3');
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(7, 7, 7); // Boss 3 nhỏ gọn, khó bắn hơn
