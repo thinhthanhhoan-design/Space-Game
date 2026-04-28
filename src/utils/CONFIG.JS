@@ -189,7 +189,7 @@ export const CONFIG = {
 
     LEVEL_1: {
       asteroid_speed: 0.04, // Tăng tốc độ bay hơi nhanh hơn
-      asteroid_density: 35, // Tăng mật độ lên gấp đôi
+      asteroid_density: 12, // Giảm từ 35 xuống 12 để cứu FPS
       asteroid_damage: 50, // Sát thương -50hp
       FINAL_DASH: {
         trigger: "boss_1_retreat",
@@ -244,15 +244,98 @@ export const CONFIG = {
       NEUTRAL: 0xaaaaaa // Màu trung tính khi đạn chạm item
     } // End of COLORS config
   }, // End of ITEMS config
+  
+  // ===============================
+  // 🎵 AUDIO SETTINGS
+  // ===============================
+  AUDIO: {
+    NEN_GAME: 0.1,         // Nhạc nền (nen_game.mp3)
+    LEVEL_UP: 0.5,         // Âm thanh lên cấp (level_up.mp3)
+    VICTORY: 0.6,          // Âm thanh chiến thắng (victory.mp3)
+    GAMEOVER: 0.6,         // Âm thanh thất bại (gameover.mp3)
+    NEXT_LEVEL: 0.5,       // Âm thanh chuyển màn (next_level.mp3)
+    NEXT_LEVEL_UP: 0.5,    // Âm thanh nâng cấp đặc biệt (next_level_up.mp3)
+    PATHS: {
+      NEN_GAME: '/audio/sound/nen_game.mp3',
+      LEVEL_UP: '/audio/sound/level_up.mp3',
+      VICTORY: '/audio/sound/victory.mp3',
+      GAMEOVER: '/audio/sound/gameover.mp3',
+      NEXT_LEVEL: '/audio/sound/next_level.mp3',
+      NEXT_LEVEL_UP: '/audio/sound/next_level_up.mp3'
+    }
+  },
+
+  // ===============================
+  // 💬 GAME STRINGS (Lưu trữ toàn bộ văn bản trong game)
+  // ===============================
+  STRINGS: {
+    WARNING_BLACKHOLE: "CẢNH BÁO: Phát hiện lỗ hổng không gian khổng lồ!",
+    LOADING_DATA: "Đang tải dữ liệu, vui lòng đợi...",
+    BOSS_APPROACHING: "PHÁT HIỆN THỰC THỂ KHỔNG LỒ ĐANG ĐẾN GẦN!"
+  },
+
+  // ===============================
+  // 🗺️ LEVELS & WAVES CONFIG (Cấu hình màn chơi và độ khó)
+  // ===============================
+  LEVELS: {
+    1: {
+      waves: [[10]],             // 1 wave, 10 con
+      speedMultiplier: 1.0,      // Tốc độ quái gốc
+      shootCooldown: 2.5,        // Thời gian chờ bắn (giây)
+      label: "MÀN 1: KHỞI ĐẦU"
+    },
+    2: {
+      waves: [[7], [10]],        // 2 wave: đợt 1 (7 con), đợt 2 (10 con)
+      speedMultiplier: 1.3,
+      shootCooldown: 1.8,
+      label: "MÀN 2: THỬ THÁCH"
+    },
+    3: {
+      waves: [[10], [15]],       // 2 wave: đợt 1 (10 con), đợt 2 (15 con)
+      speedMultiplier: 1.7,
+      shootCooldown: 1.0,
+      label: "MÀN 3: TRẬN CHIẾN CUỐI CÙNG"
+    }
+  },
+
+  // ===============================
+  // 📖 STORY & CUTSCENES
+  // ===============================
+  STORY: {
+    LV1_INTRO: [
+      "Boss: KẺ HỦY DIỆT - V1 đã bị tiêu diệt...",
+      "Nhưng vẫn tồn tại tín hiệu dị thường trong không gian.",
+      "Phi công, hãy chuẩn bị!",
+      "Một mối đe dọa mới đang thức tỉnh...",
+    ],
+    LV2_TRANSITION: {
+      texts: [
+        "⚠ CẢNH BÁO ⚠",
+        "Boss: KẺ HỦY DIỆT - V2 đã bị tiêu diệt...",
+        "Nhưng phát hiện dị thường trong không gian...",
+        "Tín hiệu của thực thể tối thượng đang đến gần!"
+      ],
+      shake: { intensity: 0.5, duration: 3.0 },
+      warning: 8.0,
+      ui_text: "LEVEL 3 - ĐỊA NGỤC"
+    },
+    VICTORY: [
+      "Lõi năng lượng của chúa tể bóng tối đã vỡ vụn...",
+      "Hệ thống quét cho thấy không gian đang dần ổn định.",
+      "Tín hiệu lạ đã biến mất.",
+      "Chúc mừng phi công, bạn đã sống sót!",
+      "Tàu UETE-3637 đang trở về căn cứ...",
+    ]
+  },
 
   // ===============================
   // 🎮 GAME STATES
   // ===============================
   STATE: {
-    MENU: "START_MENU", // Trạng thái menu chính
-    INTRO: "CINEMATIC_INTRO", // Intro cinematic
-    PLAYING: "GAME_PLAYING", // Trò chơi đang chạy
-    ENDING: "GAME_ENDING", // Kết thúc level / cutscene
-    GAMEOVER: "GAME_OVER" // Khi người chơi thua
-  } // End of STATE
+    MENU: "START_MENU",
+    INTRO: "CINEMATIC_INTRO",
+    PLAYING: "GAME_PLAYING",
+    ENDING: "GAME_ENDING",
+    GAMEOVER: "GAME_OVER"
+  }
 };

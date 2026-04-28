@@ -202,21 +202,12 @@ export class EnemyManager {
         this.spawnedInWave = 0;
         this._waitingNextWave = false; // Cờ chống gọi wave trùng lặp
         this.swarm = new SwarmMovement();
-
-        // =============================================
-        // BẢNG CẤU HÌNH SỐ QUÁI CHO TỪNG WAVE / LEVEL
-        // =============================================
-        this.waveConfig = {
-            1: { waves: [[10]] },           // Level 1: 1 wave, 10 con
-            2: { waves: [[7], [10]] },      // Level 2: 2 wave → đợt 1: 7 con, đợt 2: 10 con
-            3: { waves: [[10], [15]] },     // Level 3: 2 wave, đợt 2 có 15 con
-        };
     }
 
     // Lấy số quái cho wave cụ thể (waveNum bắt đầu từ 1)
     _getWaveCount(level, waveNum) {
-        const cfg = this.waveConfig[level];
-        if (!cfg) return 10;
+        const cfg = CONFIG.LEVELS[level];
+        if (!cfg || !cfg.waves) return 10;
         const idx = waveNum - 1;
         if (idx < 0 || idx >= cfg.waves.length) return 10;
         return cfg.waves[idx][0];
@@ -224,25 +215,26 @@ export class EnemyManager {
 
     // Lấy tổng số wave của level
     _getMaxWaves(level) {
-        const cfg = this.waveConfig[level];
-        if (!cfg) return 1;
-        return cfg.waves.length;
+        const cfg = CONFIG.LEVELS[level];
+        return cfg ? cfg.waves.length : 1;
     }
 
-    startWaveSystem(maxWaves, level = 1) {
+    startWaveSystem(levelId = 1) {
         if (this.waveInProgress) return;
-        this.currentLevel = level;
-        this.maxWaves = this._getMaxWaves(level);
+        this.currentLevel = levelId;
+        this.maxWaves = this._getMaxWaves(levelId);
         this.currentWave = 1;
         this.spawnedInWave = 0;
         this.isAllWavesCleared = false;
         this.waveInProgress = true;
         this._waitingNextWave = false;
-        console.log(`[EnemyManager] Bắt đầu Level ${level}, tổng ${this.maxWaves} wave.`);
+        
+        const label = CONFIG.LEVELS[levelId]?.label || `Level ${levelId}`;
+        console.log(`[EnemyManager] >>> BẮT ĐẦU: ${label} (Tổng ${this.maxWaves} wave)`);
         this.spawnWave(1);
     }
 
-    resetAndStartWaveSystem(maxWaves, level = 1) {
+    resetAndStartWaveSystem(levelId = 1) {
         // Dọn sạch trước khi bắt đầu lại
         if (this.activeInterval) { clearInterval(this.activeInterval); this.activeInterval = null; }
         this.isSpawning = false;
@@ -254,7 +246,7 @@ export class EnemyManager {
         // Xóa quái cũ khỏi scene
         this.enemies.forEach(e => { this.swarm.unregister(e); e.die(true); });
         this.enemies = [];
-        this.startWaveSystem(maxWaves, level);
+        this.startWaveSystem(levelId);
     }
 
     spawnWave(waveNum) {
@@ -279,16 +271,11 @@ export class EnemyManager {
 
             const enemy = new Enemy(this.scene, this.projectileSystem, this.itemSystem);
 
-            // Cài đặt độ khó dựa trên Level
-            if (this.currentLevel === 1) {
-                enemy.speedMultiplier = 1.0;
-                enemy._shootCooldown = 2.5; // Bắn chậm ở lv1
-            } else if (this.currentLevel === 2) {
-                enemy.speedMultiplier = 1.3; // Bay nhanh hơn xíu
-                enemy._shootCooldown = 1.8; // Bắn nhanh hơn
-            } else if (this.currentLevel === 3) {
-                enemy.speedMultiplier = 1.7; // Bay nhanh hơn hẳn
-                enemy._shootCooldown = 1.0; // Bắn liên tục (1 giây 1 phát)
+            // Cài đặt độ khó dựa trên Level (Lấy từ CONFIG)
+            const levelCfg = CONFIG.LEVELS[this.currentLevel];
+            if (levelCfg) {
+                enemy.speedMultiplier = levelCfg.speedMultiplier || 1.0;
+                enemy._shootCooldown = levelCfg.shootCooldown || 2.0;
             }
 
             this.swarm.register(enemy);

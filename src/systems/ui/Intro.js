@@ -23,7 +23,7 @@ export class Intro {
     }
 
     // Hàm khởi tạo và dựng hình Intro ban đầu (Chưa chuyển động)
-    init(callback) {
+    init(callback, onStartClick) {
         const scene = this.sceneController.scene;
         const camera = this.sceneController.camera;
         this.startBtn = document.getElementById('start-btn');
@@ -143,6 +143,8 @@ export class Intro {
         // Bắt sự kiện người dùng Click Start
         if(this.startBtn) {
             this.startBtn.addEventListener('click', () => {
+                if (onStartClick) onStartClick(); // Kích hoạt nhạc ngay lập tức
+                
                 // Xóa sổ ngay lập tức giao diện UI và ảnh Plane Mesh ảo
                 gsap.to(this.startBtn, { opacity: 0, scale: 0.8, duration: 0.4, onComplete: () => this.startBtn.style.display = 'none' });
                 if (!this.particlesGeometry || !this.logoMesh) return;
