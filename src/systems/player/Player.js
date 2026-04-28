@@ -37,6 +37,12 @@ export class Player {
         this.initEventListeners();
     }
 
+    setMusicSystem(musicSystem) {
+        this.musicSystem = musicSystem;
+        if (this.itemSystem) this.itemSystem.setMusicSystem(musicSystem);
+        if (this.weapon) this.weapon.setMusicSystem(musicSystem);
+    }
+
     initEventListeners() {
         window.addEventListener('keydown', (e) => {
             if (this.keys.hasOwnProperty(e.key)) {

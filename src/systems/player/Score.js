@@ -34,6 +34,13 @@ export class ScoreSystem {
     }
 
     /**
+     * Lấy điểm số cuối cùng sau khi tính toán (score_final = score - score * 1/3)
+     */
+    getFinalScore() {
+        return Math.floor(this.score * (2 / 3));
+    }
+
+    /**
      * Lấy thời gian chơi hiện tại
      */
     getTime() {

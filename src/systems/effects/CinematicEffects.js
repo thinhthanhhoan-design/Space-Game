@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 
 export class CinematicEffects { // Lớp quản lý các hiệu ứng điện ảnh và chuyển cảnh
-    constructor(scene, camera) { // Khởi tạo với scene và camera hiện tại
+    constructor(scene, camera, musicSystem) { // Khởi tạo với scene và camera hiện tại
         this.scene = scene; // Lưu tham chiếu cảnh 3D
         this.camera = camera; // Lưu tham chiếu góc máy quay
+        this.musicSystem = musicSystem; // Lưu hệ thống âm thanh
         this.flash = null; // Biến DOM Div cho hiệu ứng chớp đỏ báo động
         this.whiteFlash = null; // Biến DOM Div cho hiệu ứng chớp trắng loá mắt
         this.textDiv = null; // Biến DOM Div cho hiệu ứng gõ chữ phụ đề kịch bản
@@ -152,6 +153,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
     }
 
     warningEffect() {
+        if (this.musicSystem) this.musicSystem.playSound('NHAC_NEN_INTRO_MAT_TIN_HIEU_2');
         gsap.to(this.flash, { opacity: 0.6, duration: 0.1, yoyo: true, repeat: 5 });
         gsap.to(this.camera.position, { x: "+=0.2", y: "+=0.2", duration: 0.05, repeat: 10, yoyo: true });
     }
@@ -311,6 +313,11 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
             tl.call(() => {
                 this.showText(shot.text, duration - 0.5);
                 if (shot.shake) this.warningEffect();
+                
+                // Phát nhạc intro đặc biệt khi mất tín hiệu AI (Shot 4)
+                if (shot.id === 'shot4' && this.musicSystem) {
+                    this.musicSystem.playSound('NHAC_NEN_INTRO_MAT_TIN_HIEU_1');
+                }
             }, null, shot.start);
             tl.to({}, { duration: duration }, shot.start);
         });

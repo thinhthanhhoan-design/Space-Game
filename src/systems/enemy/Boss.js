@@ -21,6 +21,8 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         this.shootCount = 0;
         this.hasRetreated = false; // Đánh dấu đã từng bỏ chạy chưa
         this.onRetreatComplete = null; // Callback khi Boss chạy trốn thành công
+        this.isAimingLaser = false; // Cờ đánh dấu đang ngắm bắn (di chuyển tới player)
+        this.aimingTimer = 0; // Thời gian truy đuổi trước khi bắn
     }
 
     loadModel() { // Hàm để tải hình ảnh 3D cho Boss
@@ -64,6 +66,22 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         }
 
         if (this.state === 'HIDDEN') return; // Đang ẩn thì bỏ qua
+
+        // --- KIỂM TRA TRẠNG THÁI NGẮM BẮN (TRUY ĐUỔI) ---
+        if (this.isAimingLaser) {
+            this.aimingTimer -= delta;
+            // Di chuyển cực nhanh tới tọa độ X, Y của người chơi
+            this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, playerPos.x, 0.1);
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, playerPos.y, 0.1);
+
+            if (this.aimingTimer <= 0) {
+                this.isAimingLaser = false;
+                this.isCastingLaser = true;
+                this.laserCastTimer = 3.0; // Đứng yên gồng chiêu
+                this.shootLaser(playerPos);
+            }
+            return; // KHÔNG DI CHUYỂN TỰ DO KHI ĐANG NGẮM
+        }
 
         // --- KIỂM TRA TRẠNG THÁI BẮN LASER (ĐỨNG YÊN) ---
         if (this.isCastingLaser) {
@@ -117,12 +135,11 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
 
         // --- LOGIC BẮN LASER ---
         this.laserTimer += delta;
-        if (this.laserTimer >= 6.0) { // Mỗi 10s bắn laser thẳng
+        if (this.laserTimer >= 6.0 && !this.isAimingLaser && !this.isCastingLaser) {
+            this.isAimingLaser = true;
+            this.aimingTimer = 1.2; // Truy đuổi trong 1.2s trước khi bắn
             this.laserTimer = 0;
-            this.isCastingLaser = true;
-            this.laserCastTimer = 3.5; // Đứng yên trong 3.5s để xuất chiêu
-            this.shootLaser(playerPos);
-            return; // Dừng các hành động khác
+            if (this.uiManager) this.uiManager.showMessage("⚠️ BOSS: ĐANG KHÓA MỤC TIÊU!", "#ffcc00", 1000);
         }
 
         // --- LOGIC RÚT LUI KHI MÁU <= 50% ---

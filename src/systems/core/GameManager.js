@@ -36,7 +36,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
 
         this.musicSystem = new MusicSystem(this.sceneController.camera);
         
-        this.cinematicEffects = new CinematicEffects(this.sceneController.scene, this.sceneController.camera);
+        this.cinematicEffects = new CinematicEffects(this.sceneController.scene, this.sceneController.camera, this.musicSystem);
         this.projectileSystem = new ProjectileSystem(this.sceneController.scene);
         this.enemyManager = new EnemyManager(this.sceneController.scene, this.projectileSystem, this.player.itemSystem, this.musicSystem);
         this.asteroidSystem = new AsteroidSystem(this.sceneController.scene);
@@ -47,6 +47,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.endingUI = new EndingUI();
 
         // Kết nối ItemSystem với UI, Camera và AsteroidSystem để hiển thị thông báo và hiệu ứng
+        this.player.setMusicSystem(this.musicSystem);
         this.player.itemSystem.setUIManager(this.uiManager);
         this.player.itemSystem.setCamera(this.sceneController.camera);
         this.player.itemSystem.setAsteroidSystem(this.asteroidSystem);
@@ -117,6 +118,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                                     this.cinematicEffects.triggerBlackHole(this.player.mesh, () => {
                                         if (this.stateManager.isGameStarted) return;
 
+                                        if (this.musicSystem) this.musicSystem.playSound('CHUYEN_MAN');
                                         this.cinematicEffects.startTunnelEffect(this.player.mesh, () => {
                                             if (this.stateManager.isGameStarted) return;
                                             this.stateManager.setGameStarted(true);
@@ -238,7 +240,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 const victoryStory = new Story();
                 this.musicSystem.playVictorySound(); // Chạy nhạc thắng cuộc
                 victoryStory.playVictoryEnding(() => {
-                    this.endingUI.show('WIN', this.scoreSystem.getScore(), this.scoreSystem.getTime());
+                    this.endingUI.show('WIN', this.scoreSystem.getFinalScore(), this.scoreSystem.getTime());
                 });
             }
         }, explosionDelay);
@@ -250,6 +252,13 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
         this.gamePlayState = 'TRANSITION';
         if (this.asteroidSystem) this.asteroidSystem.setLevel(this.currentLevelKey);
         if (this.player.itemSystem) this.player.itemSystem.setLevel(this.currentLevelKey);
+
+        // Chuyển đổi nhạc nền tương ứng với Level
+        if (this.musicSystem) {
+            this.musicSystem.playSound('CHUYEN_MAN');
+            if (nextLevelKey === 'LEVEL_2') this.musicSystem.playBGM('LEVEL_2');
+            if (nextLevelKey === 'LEVEL_3') this.musicSystem.playBGM('LEVEL_3');
+        }
 
         // Hồi máu và đạn như phần thưởng thắng Boss
         this.player.hp = Math.min(this.player.hp + 100, CONFIG.PLAYER.MAX_HP || 300);
@@ -314,7 +323,7 @@ export class GameManager { // Khai báo lớp GameManager - "Bộ não" tổng c
                 this.isGameOver = true;
                 this.uiManager.hide(); // Ẩn các thanh máu, đạn
                 this.musicSystem.playGameOverSound(); // Chạy nhạc thất bại
-                this.endingUI.show('GAME_OVER', this.scoreSystem.getScore(), this.scoreSystem.getTime()); // Hiện màn hình thua
+                this.endingUI.show('GAME_OVER', this.scoreSystem.getFinalScore(), this.scoreSystem.getTime()); // Hiện màn hình thua
                 return;
             }
 

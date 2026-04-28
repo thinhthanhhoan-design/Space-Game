@@ -42,6 +42,11 @@ export class Weapon {
 
         this.isLocked = false;
         this.fireRateMultiplier = 1.0; // Hệ số nhân tốc độ bắn (1.0 là bình thường, >1 là chậm đi)
+        this.musicSystem = null;
+    }
+
+    setMusicSystem(musicSystem) {
+        this.musicSystem = musicSystem;
     }
 
     updateConfig() {
@@ -73,6 +78,11 @@ export class Weapon {
         
         // Trừ đạn của người chơi
         this.player.ammo -= this.ammoPerShot;
+
+        // Phát âm thanh bắn
+        if (this.musicSystem) {
+            this.musicSystem.playSound('PLAYER_BAN');
+        }
 
         const bulletCount = this.config.bullet_count || 1;
         

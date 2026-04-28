@@ -24,7 +24,9 @@ export class MusicSystem {
                 const audio = new THREE.Audio(this.listener);
                 audio.setBuffer(buffer);
                 
-                if (key === 'NEN_GAME' || key === 'NEN_INTRO') audio.setLoop(true);
+                if (key === 'NEN_GAME' || key === 'NEN_INTRO' || key === 'LEVEL_2' || key === 'LEVEL_3') {
+                    audio.setLoop(true);
+                }
 
                 const vol = CONFIG.AUDIO[key] !== undefined ? Number(CONFIG.AUDIO[key]) : 0.5;
                 audio.setVolume(vol);
@@ -111,7 +113,7 @@ export class MusicSystem {
      * Dừng các bản nhạc nền (không dừng hiệu ứng âm thanh)
      */
     stop() {
-        const musicKeys = ['NEN_GAME', 'NEN_INTRO'];
+        const musicKeys = ['NEN_GAME', 'NEN_INTRO', 'LEVEL_2', 'LEVEL_3'];
         musicKeys.forEach(key => {
             const audio = this.sounds[key];
             if (audio && audio.isPlaying) {
@@ -119,6 +121,43 @@ export class MusicSystem {
             }
         });
         console.log('[MusicSystem] 🔇 Đã dừng các bản nhạc nền.');
+    }
+
+    /**
+     * Phát nhạc nền chính hoặc nhạc màn chơi (Hỗ trợ chuyển đổi mượt mà)
+     */
+    playBGM(key, fadeDuration = 1.5) {
+        if (!this.sounds[key]) {
+            console.warn(`⚠️ [MusicSystem] BGM not found: ${key}`);
+            return;
+        }
+
+        // 1. Dừng/FadeOut tất cả các nhạc nền hiện tại KHÁC với key đang chọn
+        const musicKeys = ['NEN_GAME', 'NEN_INTRO', 'LEVEL_2', 'LEVEL_3'];
+        musicKeys.forEach(mKey => {
+            if (mKey !== key) {
+                this.fadeOut(mKey, fadeDuration);
+            }
+        });
+
+        // 2. Phát nhạc nền mới (nếu chưa phát)
+        const bgm = this.sounds[key];
+        if (!bgm.isPlaying) {
+            const vol = CONFIG.AUDIO[key] !== undefined ? Number(CONFIG.AUDIO[key]) : 0.5;
+            bgm.setVolume(0); // Bắt đầu từ 0 để fadeIn
+            bgm.play();
+            
+            // FadeIn
+            const target = { volume: 0 };
+            gsap.to(target, {
+                volume: vol,
+                duration: fadeDuration,
+                onUpdate: () => {
+                    bgm.setVolume(target.volume);
+                }
+            });
+            console.log(`[MusicSystem] 🎵 Đang chuyển sang BGM: ${key} (Vol: ${vol})`);
+        }
     }
 
     /**

@@ -40,6 +40,11 @@ export class Enemy {
 
         this.targetZ = -15 - Math.random() * 20;
 
+        // Phát âm thanh khi Boss xuất hiện
+        if (this.musicSystem && this.type && this.type.startsWith('BOSS')) {
+            this.musicSystem.playSound('NHAC_NEN_INTRO_MAT_TIN_HIEU_2');
+        }
+
         this.loadModel();
     }
 

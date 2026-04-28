@@ -32,12 +32,6 @@ export const CONFIG = {
       ITEM_Sung2: "/textures/sung_2.png",
       ITEM_Sung3: "/textures/sung_3.png",
     },
-    SOUNDS: {
-      BGM_INTRO: "/sounds/mysterious_space.mp3",
-      BGM_BATTLE: "/sounds/battle_theme.mp3",
-      SFX_LASER: "/sounds/laser_shoot.wav",
-      SFX_EXPLOSION: "/sounds/explosion.mp3",
-    },
     FONTS: "/assets/fonts/Orbitron_Regular.json",
   },
 
@@ -265,26 +259,43 @@ export const CONFIG = {
   // 🎵 AUDIO SETTINGS
   // ===============================
   AUDIO: {
-    NEN_GAME: 0.5,         // Nhạc nền (nen_game.mp3)
-    LEVEL_UP: 0.5,         // Âm thanh lên cấp (level_up.mp3)
-    VICTORY: 0.6,          // Âm thanh chiến thắng (victory.mp3)
-    GAMEOVER: 0.6,         // Âm thanh thất bại (gameover.mp3)
-    NEXT_LEVEL: 0.5,       // Âm thanh chuyển màn (next_level.mp3)
-    NEXT_LEVEL_UP: 0.5,    // Âm thanh nâng cấp đặc biệt (next_level_up.mp3)
-    HIEU_UNG_START: 1.0,   // Âm thanh khi bấm bắt đầu
-    NEN_INTRO: 0.7,        // Nhạc nền intro lúc tụ hạt (nen_intro.mp3)
+    // --- BGM (Music) ---
+    NEN_INTRO: 0.7,        // Nhạc nền intro lúc tụ hạt
+    NEN_GAME: 0.5,         // Nhạc nền game chính
+    NHAC_NEN_CHIEN_DAU: 0.6,
+    NHAC_NEN_INTRO_MAT_TIN_HIEU_1: 0.6,
+    NHAC_NEN_INTRO_MAT_TIN_HIEU_2: 0.6,
+
+    // --- SFX (Effects) ---
+    PLAYER_BAN: 0.5,       // Âm thanh người chơi bắn
+    HIEU_UNG_LAZE_BAN: 0.5,
+    HIEU_UNG_TAU_TRUNG_DON: 0.6,
+    HIEU_UNG_QUAI_THIEN_THACH_NO: 0.6,
+    HIEU_UNG_BOSS_NO_TUNG: 0.8,
+    HIEU_UNG_NHAT_VAT_PHAM: 0.7,
+    HIEU_UNG_START: 1.0,
+
+    LEVEL_2: 0.5,
+    LEVEL_3: 0.5,
+    CHUYEN_MAN: 0.8,
+    VICTORY: 0.7,
+    GAMEOVER: 0.7,
+
     PATHS: {
       GAMEOVER: '/audio/sound/gameover.mp3',
       HIEU_UNG_START: '/audio/sound/hieu_ung_start.mp3',
       HIEU_UNG_BOSS_NO_TUNG: '/audio/sound/hieu_ung_boss_no_tung.mp3',
       HIEU_UNG_LAZE_BAN: '/audio/sound/hieu_ung_laze_ban.mp3',
+      HIEU_UNG_NHAT_VAT_PHAM: '/audio/sound/hieu_ung_nhat_vat_pham.mp3',
+      CHUYEN_MAN: '/audio/sound/chuyen_man.mp3',
       HIEU_UNG_QUAI_THIEN_THACH_NO: '/audio/sound/hieu_ung_quai_thien_thach_no.mp3',
       HIEU_UNG_TAU_TRUNG_DON: '/audio/sound/hieu_ung_tau_trung_don.mp3',
-      LEVEL_UP: '/audio/sound/level_up.mp3',
+      LEVEL_2: '/audio/sound/level2.mp3',
       NEN_GAME: '/audio/sound/nen_game.mp3',
       NEN_INTRO: '/audio/sound/nen_intro.mp3',
-      NEXT_LEVEL_UP: '/audio/sound/next_level_up.mp3',
+      LEVEL_3: '/audio/sound/level3.mp3',
       NHAC_NEN_CHIEN_DAU: '/audio/sound/nhac_nen_chien_dau.mp3',
+      PLAYER_BAN: '/audio/sound/player_ban.mp3',
       NHAC_NEN_INTRO_MAT_TIN_HIEU_1: '/audio/sound/nhac_nen_intro_mat_tin_hieu_1.mp3',
       NHAC_NEN_INTRO_MAT_TIN_HIEU_2: '/audio/sound/nhac_nen_intro_mat_tin_hieu_2.mp3',
       VICTORY: '/audio/sound/victory.mp3'
