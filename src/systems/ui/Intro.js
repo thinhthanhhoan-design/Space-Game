@@ -19,13 +19,14 @@ export class Intro {
         
         // Cờ đánh dấu màn hình Intro đang chạy, nếu False thì game đã bắt đầu
         this.isIntroActive = true;
+        this.startBtn = null;
     }
 
     // Hàm khởi tạo và dựng hình Intro ban đầu (Chưa chuyển động)
     init(callback) {
         const scene = this.sceneController.scene;
         const camera = this.sceneController.camera;
-        const startBtn = document.getElementById('start-btn');
+        this.startBtn = document.getElementById('start-btn');
         
         // Tạo một vân bề mặt (Texture) hình tròn gradient mờ ảo cho từng điểm hạt thêm lung linh
         const createCircleTexture = () => {
@@ -132,18 +133,18 @@ export class Intro {
             gsap.to(planeMat, { opacity: 1, duration: 2, ease: "power2.inOut" });
             
             // Xử lý hiện nút Start sau khoảng trễ ngắn
-            if(startBtn) {
-                gsap.to(startBtn, { opacity: 1, duration: 1.5, delay: 1.5, onComplete: () => {
-                    startBtn.style.pointerEvents = 'auto'; // Cho phép click
+            if(this.startBtn) {
+                gsap.to(this.startBtn, { opacity: 1, duration: 1.5, delay: 1.5, onComplete: () => {
+                    this.startBtn.style.pointerEvents = 'auto'; // Cho phép click
                 }});
             }
         });
 
         // Bắt sự kiện người dùng Click Start
-        if(startBtn) {
-            startBtn.addEventListener('click', () => {
+        if(this.startBtn) {
+            this.startBtn.addEventListener('click', () => {
                 // Xóa sổ ngay lập tức giao diện UI và ảnh Plane Mesh ảo
-                gsap.to(startBtn, { opacity: 0, scale: 0.8, duration: 0.4, onComplete: () => startBtn.style.display = 'none' });
+                gsap.to(this.startBtn, { opacity: 0, scale: 0.8, duration: 0.4, onComplete: () => this.startBtn.style.display = 'none' });
                 if (!this.particlesGeometry || !this.logoMesh) return;
                 scene.remove(this.logoMesh);
                 
@@ -156,7 +157,7 @@ export class Intro {
                 const animObj = { progress: 0 };
 
                 // Kế thừa PHẦN 1 & PHẦN 2 từ luồng làm việc mới của chúng ta
-                this.introTL = gsap.timeline({
+                const introTL = gsap.timeline({
                     onComplete: () => {
                         this.isIntroActive = false;
                         if (callback) callback(this.particleSystem); // Gửi cờ gọi Phần 3 (GSA Hội tụ)
@@ -165,7 +166,7 @@ export class Intro {
 
                 // PHẦN 1: KÍCH NỔ LOGO UET
                 // Sử dụng thời lượng từ CONFIG (ví dụ INTRO_DURATION hoặc giá trị mặc định)
-                this.introTL.to(animObj, {
+                introTL.to(animObj, {
                     progress: 1, 
                     duration: 8.0, 
                     ease: "power3.out",
@@ -179,7 +180,7 @@ export class Intro {
 
                 // PHẦN 2: LIA CAMERA TỪ NGOÀI VÀO TRONG (Đến tọa độ Gameplay từ CONFIG)
                 const camOffset = CONFIG.CAMERA.OFFSET;
-                this.introTL.to(camera.position, {
+                introTL.to(camera.position, {
                     x: camOffset.x, y: camOffset.y, z: camOffset.z, 
                     duration: 2.0, 
                     ease: "power2.inOut"
@@ -197,6 +198,22 @@ export class Intro {
         if (this.particleSystem) { this.particleSystem.position.y = floatY; this.particleSystem.rotation.y = floatRotY; }
     }
 
+    abort() {
+        this.isIntroActive = false;
+        const scene = this.sceneController.scene;
+        if (this.logoMesh) scene.remove(this.logoMesh);
+        if (this.particleSystem) scene.remove(this.particleSystem);
+        
+        if (this.startBtn) {
+            this.startBtn.style.display = 'none';
+            this.startBtn.style.opacity = '0';
+        }
+        
+        // Kill any GSAP animations on intro objects
+        gsap.killTweensOf([this.logoMesh, this.particleSystem, this.startBtn]);
+        if (this.logoMesh && this.logoMesh.material) gsap.killTweensOf(this.logoMesh.material);
+    }
+
     // PHẦN 3: HIỆU ỨNG GSA (GEOMETRY SAMPLE & ANIMATE) -> Tụ Hạt vào lưới Tàu
     startTransition(logoParticles, playerModel, cam, onComplete) {
         if (!logoParticles || !playerModel) {
@@ -208,61 +225,22 @@ export class Intro {
         // Quét siêu phân luồng mảng điểm Mesh của Tàu. Yêu cầu lấy đủ 100 ngàn điểm Target
         const targetPoints = GSA.getModelPoints(playerModel);
         
-        this.gsaTL = gsap.timeline();
+        const tl = gsap.timeline();
         
         // Gọi lệnh GPU Shader, gồng hạt bụi 4.1 giây cho tới khi gắn thẳng mặt boong tàu
-        this.gsaTL.add(GSA.animateToTarget(gsap, logoParticles, targetPoints, {
+        tl.add(GSA.animateToTarget(gsap, logoParticles, targetPoints, {
             duration: 3.5, 
             ease: "power2.out", 
         }), 0);
 
         // Đứng im tại trục Gameplay ngắm sự thành công 2 giây
-        this.gsaTL.to({}, { duration: 2.0 });
+        tl.to({}, { duration: 2.0 });
 
-        this.gsaTL.call(() => {
+        tl.call(() => {
             // Đóng ánh sáng 3D ảo và thay bằng lưới Polygon xịn của phi thuyền
             logoParticles.visible = false;
             playerModel.visible = true;
             if (onComplete) onComplete();
         });
-    }
-
-    // Hàm huỷ bỏ Intro ngay lập tức (Skip)
-    abort() {
-        this.isIntroActive = false;
-        
-        // Kill specifically the timelines for the intro
-        if (this.introTL) this.introTL.kill();
-        if (this.gsaTL) this.gsaTL.kill();
-        
-        // Kill all tweens running on this object and camera just in case
-        gsap.killTweensOf(this);
-        if (this.sceneController && this.sceneController.camera) {
-            gsap.killTweensOf(this.sceneController.camera.position);
-            // Snap camera back to gameplay position immediately
-            const camOffset = CONFIG.CAMERA.OFFSET;
-            if (camOffset) {
-                this.sceneController.camera.position.set(camOffset.x, camOffset.y, camOffset.z);
-            }
-        }
-        
-        // Cực kỳ quan trọng: Kill toàn bộ các tác vụ của gsap đang delay
-        gsap.globalTimeline.clear();
-
-        // Ẩn các thực thể 3D của Intro
-        if (this.logoMesh) {
-            this.logoMesh.visible = false;
-            this.sceneController.scene.remove(this.logoMesh);
-        }
-        if (this.particleSystem) {
-            this.particleSystem.visible = false;
-            this.sceneController.scene.remove(this.particleSystem);
-        }
-
-        // Ẩn nút Start nếu còn tồn tại
-        const startBtn = document.getElementById('start-btn');
-        if (startBtn) startBtn.style.display = 'none';
-
-        console.log("Intro aborted and all background tasks stopped.");
     }
 }
