@@ -8,10 +8,10 @@ export class GameLoop {
         // Polyfill cho tương lai (Three.js bản r163+ đưa Timer vào core)
         if (THREE.Timer) {
             this.timer = new THREE.Timer();
-            console.log("🛠️ GameLoop: Đang sử dụng THREE.Timer (Stable Core) để đồng bộ thời gian.");
+            console.log("GameLoop: Using THREE.Timer");
         } else {
             this.clock = new THREE.Clock();
-            console.log("🛠️ GameLoop: Đang sử dụng THREE.Clock (Legacy).");
+            console.log("GameLoop: Using THREE.Clock");
         }
     }
 

@@ -19,7 +19,7 @@ export class ModelCache {
      * Nạp toàn bộ tài nguyên: Âm thanh trước, Model sau
      */
     async preloadAll(onProgress) {
-        console.log("🚀 [ModelCache] Bắt đầu nạp tài nguyên...");
+        console.log("[ModelCache] Bắt đầu nạp tài nguyên...");
 
         // BƯỚC 1: Nạp ÂM THANH (Ưu tiên số 1)
         await this.preloadAudio((p) => {
@@ -32,7 +32,7 @@ export class ModelCache {
         });
 
         this.isReady = true;
-        console.log("✅ [ModelCache] Toàn bộ tài nguyên đã sẵn sàng và được Cache!");
+        console.log("[ModelCache] Toàn bộ tài nguyên đã sẵn sàng và được Cache!");
     }
 
     async preloadAudio(onProgress) {
@@ -50,7 +50,7 @@ export class ModelCache {
                     if (onProgress) onProgress(loaded / total);
                     resolve();
                 }, undefined, (err) => {
-                    console.error(`❌ Lỗi nạp âm thanh ${key}:`, err);
+                    console.error(`[ModelCache] Lỗi nạp âm thanh ${key}:`, err);
                     resolve();
                 });
             });
@@ -82,7 +82,7 @@ export class ModelCache {
                     if (onProgress) onProgress(loaded / total);
                     resolve();
                 }, undefined, (err) => {
-                    console.warn(`⚠️ Lỗi nạp model ${name}:`, err);
+                    console.warn(`[ModelCache] Lỗi nạp model ${name}:`, err);
                     resolve();
                 });
             });

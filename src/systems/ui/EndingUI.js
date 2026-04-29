@@ -26,12 +26,12 @@ export class EndingUI {
         });
     }
 
+    // Lấy danh sách điểm cao từ localStorage
     getTopScores() {
         const saved = localStorage.getItem('space_game_top_scores_v3');
         if (saved) {
             return JSON.parse(saved);
         }
-        // Trả về mảng mặc định toàn 0 nếu chưa có dữ liệu
         return [
             { score: 0, time: 0, type: 'GAME_OVER' },
             { score: 0, time: 0, type: 'GAME_OVER' },
@@ -41,16 +41,14 @@ export class EndingUI {
         ];
     }
 
+    // Lưu điểm số mới vào danh sách kỷ lục
     saveScore(score, time, type) {
         let scores = this.getTopScores();
-        // Chỉ lưu nếu điểm lớn hơn 0
         if (score > 0) {
             scores.push({ score, time, type });
-            // Sắp xếp giảm dần theo điểm
             scores.sort((a, b) => b.score - a.score);
             scores = scores.slice(0, 5);
             localStorage.setItem('space_game_top_scores_v3', JSON.stringify(scores));
-            console.log("💾 Đã lưu kỷ lục mới:", scores);
         }
         return scores;
     }
@@ -61,14 +59,13 @@ export class EndingUI {
         return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
 
+    // Hiển thị màn hình kết thúc game
     show(type = 'GAME_OVER', score = 0, time = 0) {
         const isWin = type === 'WIN';
         const title = isWin ? "HAPPY ENDING" : "GAME OVER";
         
-        // Cập nhật và lấy danh sách điểm mới
         const topScores = this.saveScore(score, time, type);
 
-        // Nội dung ending
         const message = isWin 
             ? "Tàu UETE-3637 thoát khỏi Vùng Tối, bạn nhận ra tín hiệu cầu cứu chính là do bạn trong tương lai gửi." 
             : "Tàu UETE-3637 bị mắc kẹt vĩnh viễn, trở thành “Tín hiệu ma” dụ các tàu khác tiến vào Vùng Tối...";

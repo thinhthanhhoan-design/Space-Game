@@ -1,14 +1,13 @@
-import { GameManager } from './systems/core/GameManager.js'; // Nhập lớp GameManager từ đường dẫn tương ứng để quản lý trò chơi
+import { GameManager } from './systems/core/GameManager.js';
 
-// Khởi chạy toàn bộ hệ thống
-// Khởi chạy toàn diện hệ thống UET Space Escape
+// Khởi chạy hệ thống
 window.onload = async () => {
-    console.log("🚀 UET-3637: Hệ thống đã sẵn sàng. Đang kích hoạt GSA (Geometry Sample & Animation)...");
+    console.log("[System] Hệ thống đã sẵn sàng. Đang kích hoạt GSA (Geometry Sample & Animation)...");
     
     // Khởi tạo trình quản lý game
     const game = new GameManager(); 
     await game.init(); 
 
-    // Tiếp cận game instance từ console để debug hiệu ứng tụ điểm nếu cần
+    // Tiếp cận game instance từ console để gỡ lỗi
     window.UET_GAME = game;
-}; // Kết thúc hàm khởi tạo
+};

@@ -15,7 +15,7 @@ export class Combat {
 
         const playerPos = player.mesh.position;
 
-        // 1. Va chạm Người chơi vs Kẻ địch
+        // 1. Xử lý va chạm: Người chơi vs Kẻ địch
         for (let i = 0; i < enemies.length; i++) {
             const enemy = enemies[i];
             if (enemy.mesh && !enemy.isDead && !enemy.userData?.markedForDeletion) {
@@ -47,7 +47,7 @@ export class Combat {
             }
         }
 
-        // 2. Va chạm Người chơi vs Thiên thạch
+        // 2. Xử lý va chạm: Người chơi vs Thiên thạch
         for (let i = 0; i < asteroids.length; i++) {
             const ast = asteroids[i];
             if (ast && !ast.userData?.markedForDeletion) {
@@ -68,7 +68,7 @@ export class Combat {
             }
         }
 
-        // 3. Đạn của Player trúng mục tiêu
+        // 3. Xử lý va chạm: Đạn của người chơi
         if (player.weapon && player.weapon.bullets) {
             const bullets = player.weapon.bullets;
             for (let i = 0; i < bullets.length; i++) {
@@ -149,7 +149,7 @@ export class Combat {
 
                 if (hit) continue;
 
-                // 3.3 Đạn trúng Item
+                // 3.3 Đạn trúng Vật phẩm
                 if (player.itemSystem && player.itemSystem.activeItems) {
                     const items = player.itemSystem.activeItems;
                     for (let l = 0; l < items.length; l++) {
@@ -192,7 +192,7 @@ export class Combat {
             }
         }
 
-        // 4. Va chạm Người chơi vs Vật phẩm (Nhặt đồ)
+        // 4. Xử lý va chạm: Người chơi vs Vật phẩm (Nhặt đồ trực tiếp)
         if (player.itemSystem && player.itemSystem.activeItems) {
             const items = player.itemSystem.activeItems;
             for (let i = items.length - 1; i >= 0; i--) {

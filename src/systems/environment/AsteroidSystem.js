@@ -69,7 +69,7 @@ export class AsteroidSystem {
         const scale = 0.15 + Math.random() * 0.3;
         asteroid.scale.set(scale, scale, scale);
 
-        // ⭐ Tính toán đường kính thực tế của Model
+        // Tính toán kích thước model để xử lý va chạm và hiệu ứng
         const box = new THREE.Box3().setFromObject(asteroid);
         const size = new THREE.Vector3();
         box.getSize(size);
@@ -83,11 +83,11 @@ export class AsteroidSystem {
         asteroid.userData.damage = this.baseDamage;
         asteroid.userData.bubbleTimer = Math.random() * 2;
 
-        // ⭐ Quyết định loại thiên thạch: Vàng (thường) hoặc Xanh (độc)
+        // Xác định loại thiên thạch dựa trên cấp độ (Level 2/3 có thiên thạch độc)
         if (this.currentLevelKey === 'LEVEL_2') {
             asteroid.userData.isToxic = true;
         } else if (this.currentLevelKey === 'LEVEL_3') {
-            asteroid.userData.isToxic = Math.random() > 0.5; // 50/50 ở Level 3
+            asteroid.userData.isToxic = Math.random() > 0.5;
         } else {
             asteroid.userData.isToxic = false;
         }
@@ -105,7 +105,7 @@ export class AsteroidSystem {
         const isToxic = asteroid.userData.isToxic;
         const color = isToxic ? 0x39ff14 : 0xffaa33;
 
-        const count = 1000; // Giảm từ 7000 xuống 1000 để tăng FPS
+        const count = 1000; // Tối ưu số lượng hạt để đảm bảo hiệu năng
         const geometry = new THREE.BufferGeometry();
         const positions = new Float32Array(count * 3);
 
@@ -135,13 +135,12 @@ export class AsteroidSystem {
     }
 
     createTrail(asteroid) {
-        const count = 150; // Giảm lượng tia lửa xuống rất thấp để bớt rườm rà
+        const count = 150; 
         const trailGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(count * 3);
         const colors = new Float32Array(count * 3);
         const particleData = [];
 
-        // Độ rộng của đuôi khít với thiên thạch
         const diameter = asteroid.userData.diameter || 2;
 
         for (let i = 0; i < count; i++) {
@@ -153,10 +152,10 @@ export class AsteroidSystem {
                 velocity: new THREE.Vector3(
                     (Math.random() - 0.5) * 0.1,
                     (Math.random() - 0.5) * 0.1,
-                    -2 // Giảm tốc độ trôi để đuôi tụ lại
+                    -2 
                 ),
                 life: Math.random() * 10,
-                maxLife: 4 + Math.random() * 3 // Đuôi cực kỳ ngắn
+                maxLife: 4 + Math.random() * 3 
             });
         }
 
@@ -164,7 +163,7 @@ export class AsteroidSystem {
         trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
         const material = new THREE.PointsMaterial({
-            size: diameter * 0.4, // Kích thước hạt nhỏ lại để đỡ chói
+            size: diameter * 0.4,
             map: this.fireTexture,
             blending: THREE.AdditiveBlending,
             transparent: true,
@@ -193,7 +192,6 @@ export class AsteroidSystem {
             const a = this.asteroids[i];
             if (!a) continue;
 
-            // Lưu vị trí cũ để nội suy
             const oldZ = a.position.z;
             a.position.z += delta * asteroidSpeedZ;
             const distTraveled = a.position.z - oldZ;
@@ -211,19 +209,17 @@ export class AsteroidSystem {
 
                 for (let j = 0; j < particleCount; j++) {
                     let pd = particleData[j];
-                    pd.life += delta * 400; // Già hóa rất nhanh để biến mất sớm
+                    pd.life += delta * 400; 
 
                     let idx = j * 3;
 
-                    // Di chuyển hạt
                     positions[idx] += pd.velocity.x;
                     positions[idx + 1] += pd.velocity.y;
                     positions[idx + 2] += pd.velocity.z * delta * 50;
 
-                    // Nếu hết vòng đời -> Reset về vị trí thiên thạch
                     if (pd.life >= pd.maxLife) {
                         pd.life = 0;
-                        // ⭐ Gốc đuôi bao phủ: Thêm độ lệch ngẫu nhiên dựa trên đường kính
+                        // Reset vị trí hạt về thiên thạch với độ lệch ngẫu nhiên
                         const lerpZ = Math.random() * distTraveled;
                         const radius = diameter * 0.45;
                         const angle = Math.random() * Math.PI * 2;
@@ -234,7 +230,6 @@ export class AsteroidSystem {
                         positions[idx + 1] = a.position.y + offY;
                         positions[idx + 2] = a.position.z - lerpZ;
 
-                        // Reset velocity ngẫu nhiên nhẹ
                         pd.velocity.x = (Math.random() - 0.5) * (diameter * 0.1);
                         pd.velocity.y = (Math.random() - 0.5) * (diameter * 0.1);
                     }
@@ -243,9 +238,8 @@ export class AsteroidSystem {
                     const invRatio = 1 - ratio;
                     const fade = invRatio * invRatio;
 
-                    // Hiệu ứng hình nón: Độ rộng giảm dần về cuối đuôi
+                    // Hiệu ứng hình nón thu hẹp dần về cuối đuôi
                     const coneFactor = (1 - ratio);
-                    // Giữ cho các hạt không bay quá xa khỏi trục thiên thạch
                     positions[idx] = THREE.MathUtils.lerp(positions[idx], a.position.x, 0.05);
                     positions[idx + 1] = THREE.MathUtils.lerp(positions[idx + 1], a.position.y, 0.05);
 
@@ -273,7 +267,6 @@ export class AsteroidSystem {
             }
         }
 
-        // BUBBLES logic remains same
         for (let i = this.bubbles.length - 1; i >= 0; i--) {
             const b = this.bubbles[i];
             b.position.z += delta * 20;

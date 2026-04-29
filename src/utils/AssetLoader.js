@@ -6,16 +6,16 @@ import { CONFIG } from './CONFIG.JS';
 class AssetLoader {
     constructor() {
         this.isLoaded = false;
-        // Global cache for assets accessible anywhere
+        // Cache toàn cục cho các tài nguyên
         window.GameAssets = {
             models: {}
         };
-        // Initialize LoadingManager and GLTFLoader with manager for centralized tracking
+        // Khởi tạo LoadingManager và GLTFLoader
         this.manager = new THREE.LoadingManager();
         this.loader = new GLTFLoader(this.manager);
-        // Generic error handler for loading resources
+        
         this.manager.onError = (url) => {
-            console.error(`❌ [AssetLoader] Error loading resource: ${url}`);
+            console.error(`[AssetLoader] Lỗi khi nạp tài nguyên: ${url}`);
         };
     }
 
@@ -28,24 +28,24 @@ class AssetLoader {
             'boss_3': CONFIG.ASSETS.MODELS.BOSS_3,
             'asteroid': CONFIG.ASSETS.MODELS.ASTEROID
         };
-        // Filter out procedural or undefined models
+        
         const entries = Object.entries(modelsToLoad).filter(([name, path]) => path && path !== "PROCEDURAL");
-        // Use LoadingManager to detect when all models are loaded
+        
         this.manager.onLoad = () => {
             this.isLoaded = true;
-            console.log("🚀 [AssetLoader] All models loaded and ready!");
+            console.log("[AssetLoader] Hoàn tất nạp toàn bộ mô hình!");
             if (onCompleteCallback) onCompleteCallback();
         };
-        // Load each model silently
+
         entries.forEach(([name, path]) => {
             this.loader.load(path, (gltf) => {
                 window.GameAssets.models[name] = gltf.scene;
-                console.log(`📦 [AssetLoader] Loaded: ${name}`);
+                console.log(`[AssetLoader] Đã nạp: ${name}`);
             }, undefined, (err) => {
-                console.warn(`⚠️ Failed to load model ${name}, continuing...`);
+                console.warn(`[AssetLoader] Không thể nạp mô hình ${name}, đang tiếp tục...`);
             });
         });
-        // If there are no models to load, trigger the onLoad manually
+
         if (entries.length === 0) {
             this.manager.onLoad();
         }
@@ -56,7 +56,6 @@ class AssetLoader {
      * @param {string} modelName - Tên model trong GameAssets
      */
     cloneModel(modelName) {
-        // Kiểm tra xem model này có được cấu hình là PROCEDURAL hay không
         const configPath = CONFIG.ASSETS.MODELS[modelName.toUpperCase()] || 
                            CONFIG.ASSETS.MODELS[modelName];
                            
@@ -64,7 +63,7 @@ class AssetLoader {
 
         const source = window.GameAssets.models[modelName];
         if (!source) {
-            console.warn(`[AssetLoader] Không tìm thấy model ${modelName} trong cache.`);
+            console.warn(`[AssetLoader] Không tìm thấy mô hình ${modelName} trong cache.`);
             return null;
         }
         return SkeletonUtils.clone(source);

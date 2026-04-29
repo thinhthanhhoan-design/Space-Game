@@ -160,16 +160,15 @@ export class Intro {
                 const currentPositions = positionsAttribute.array;
                 const animObj = { progress: 0 };
 
-                // Kế thừa PHẦN 1 & PHẦN 2 từ luồng làm việc mới của chúng ta
+                // Animation timeline
                 const introTL = gsap.timeline({
                     onComplete: () => {
                         this.isIntroActive = false;
-                        if (callback) callback(this.particleSystem); // Gửi cờ gọi Phần 3 (GSA Hội tụ)
+                        if (callback) callback(this.particleSystem);
                     }
                 });
 
-                // PHẦN 1: KÍCH NỔ LOGO UET
-                // Sử dụng thời lượng từ CONFIG (ví dụ INTRO_DURATION hoặc giá trị mặc định)
+                // Phase 1: Logo explosion
                 introTL.to(animObj, {
                     progress: 1,
                     duration: 8.0,
@@ -182,7 +181,7 @@ export class Intro {
                     }
                 });
 
-                // PHẦN 2: LIA CAMERA TỪ NGOÀI VÀO TRONG (Đến tọa độ Gameplay từ CONFIG)
+                // Phase 2: Camera movement
                 const camOffset = CONFIG.CAMERA.OFFSET;
                 introTL.to(camera.position, {
                     x: camOffset.x, y: camOffset.y, z: camOffset.z,
@@ -193,10 +192,9 @@ export class Intro {
         }
     }
 
-    // Vòng lặp cập nhật Game Loop Intro để logo nổi nhấp nhô
     update(elapsedTime) {
         if (!this.isIntroActive) return;
-        const floatY = Math.sin(elapsedTime * 0.5) * 5; // Tính quỹ đạo bù Y hình sin
+        const floatY = Math.sin(elapsedTime * 0.5) * 5;
         const floatRotY = Math.sin(elapsedTime * 0.2) * 0.1;
         if (this.logoMesh) { this.logoMesh.position.y = floatY; this.logoMesh.rotation.y = floatRotY; }
         if (this.particleSystem) { this.particleSystem.position.y = floatY; this.particleSystem.rotation.y = floatRotY; }
@@ -213,35 +211,30 @@ export class Intro {
             this.startBtn.style.opacity = '0';
         }
 
-        // Kill any GSAP animations on intro objects
         gsap.killTweensOf([this.logoMesh, this.particleSystem, this.startBtn]);
         if (this.logoMesh && this.logoMesh.material) gsap.killTweensOf(this.logoMesh.material);
     }
 
-    // PHẦN 3: HIỆU ỨNG GSA (GEOMETRY SAMPLE & ANIMATE) -> Tụ Hạt vào lưới Tàu
+    // Phase 3: Transition to player model
     startTransition(logoParticles, playerModel, cam, musicSystem, onComplete) {
         if (!logoParticles || !playerModel) {
             if (onComplete) onComplete();
-            return; // Lỗi thiếu hệ hạt trươc khi chạy
+            return;
         }
 
         playerModel.updateMatrixWorld(true);
-        // Quét siêu phân luồng mảng điểm Mesh của Tàu. Yêu cầu lấy đủ 100 ngàn điểm Target
         const targetPoints = GSA.getModelPoints(playerModel);
 
         const tl = gsap.timeline();
 
-        // Gọi lệnh GPU Shader, gồng hạt bụi 4.1 giây cho tới khi gắn thẳng mặt boong tàu
         tl.add(GSA.animateToTarget(gsap, logoParticles, targetPoints, {
             duration: 3.5,
             ease: "power2.out",
         }), 0);
 
-        // Đứng im tại trục Gameplay ngắm sự thành công 2 giây
         tl.to({}, { duration: 2.0 });
 
         tl.call(() => {
-            // Đóng ánh sáng 3D ảo và thay bằng lưới Polygon xịn của phi thuyền
             logoParticles.visible = false;
             playerModel.visible = true;
             if (onComplete) onComplete();

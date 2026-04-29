@@ -58,7 +58,7 @@ export const CONFIG = {
         id: "shot2",
         start: 3,
         end: 6,
-        text: "Tàu UETệ-3637 tiến vào Vùng Tối...",
+        text: "Tàu UETệ tiến vào Vùng Tối...",
         camera: {
           pos: [3, 2, 10],
           lookAt: [0, 0, -3],
@@ -130,7 +130,7 @@ export const CONFIG = {
   PLAYER: {
     INITIAL_HP: 300,
     MODELS: {
-      V1: { hp_limit: 300, name: "Minh Kiên đzai", next_model: null },
+      V1: { hp_limit: 300, name: "UETệ", next_model: null },
     },
     WEAPONS: {
       GUN_1: { damage: 25, ammo: 200, fireRate: 0.4, ammo_per_shot: 1, bullet_speed: 1.5 },
@@ -167,7 +167,7 @@ export const CONFIG = {
       POINTS: 10000
     },
     BOSS_3: {
-      HP: 10000, // Tăng từ 1200 lên 10000
+      HP: 8000, // Tăng từ 1200 lên 10000
       DODGE: 0.4,
       //SHOCK_TRIGGER: 300,
       SHOCKWAVE_COOLDOWN: 8,
@@ -270,7 +270,7 @@ export const CONFIG = {
     HIEU_UNG_LAZE_BAN: 0.5,
     HIEU_UNG_TAU_TRUNG_DON: 0.6,
     HIEU_UNG_QUAI_THIEN_THACH_NO: 0.6,
-    HIEU_UNG_BOSS_NO_TUNG: 0.8,
+    HIEU_UNG_BOSS_NO_TUNG: 1.0,
     HIEU_UNG_NHAT_VAT_PHAM: 0.7,
     HIEU_UNG_START: 1.0,
     SFX_CLICK: 0.8,        // Âm thanh bấm nút
@@ -281,9 +281,9 @@ export const CONFIG = {
 
     LEVEL_2: 0.5,
     LEVEL_3: 0.5,
-    CHUYEN_MAN: 0.8,
-    VICTORY: 0.7,
-    GAMEOVER: 0.7,
+    CHUYEN_MAN: 1.0,
+    VICTORY: 1.0,
+    GAMEOVER: 1.0,
 
     PATHS: {
       GAMEOVER: '/audio/sound/gameover.mp3',
@@ -372,7 +372,7 @@ export const CONFIG = {
       "Hệ thống quét cho thấy không gian đang dần ổn định.",
       "Tín hiệu lạ đã biến mất.",
       "Chúc mừng phi hành đoàn, bạn đã sống sót!",
-      "Tàu UETE-3637 đang trở về căn cứ...",
+      "Tàu UETệ đang trở về căn cứ...",
     ]
   },
 

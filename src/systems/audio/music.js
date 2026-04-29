@@ -8,15 +8,13 @@ export class MusicSystem {
         this.listener = new THREE.AudioListener();
         camera.add(this.listener);
 
-        // Chứa tất cả các đối tượng Audio nạp từ CONFIG
         this.sounds = {};
-
         this.isLoaded = false;
         this.playQueue = false;
     }
 
+    // Khởi tạo và nạp âm thanh từ modelCache
     init() {
-        console.log('📦 [MusicSystem] Bắt đầu kết nối bộ nhớ đệm âm thanh...');
         const paths = CONFIG.AUDIO.PATHS;
         for (const key of Object.keys(paths)) {
             const buffer = modelCache.getAudioBuffer(key);
@@ -24,7 +22,7 @@ export class MusicSystem {
                 const audio = new THREE.Audio(this.listener);
                 audio.setBuffer(buffer);
                 
-                if (key === 'NEN_GAME' || key === 'NEN_INTRO' || key === 'LEVEL_2' || key === 'LEVEL_3') {
+                if (['NEN_GAME', 'NEN_INTRO', 'LEVEL_2', 'LEVEL_3'].includes(key)) {
                     audio.setLoop(true);
                 }
 
@@ -32,9 +30,6 @@ export class MusicSystem {
                 audio.setVolume(vol);
                 
                 this.sounds[key] = audio;
-                console.log(`✅ [MusicSystem] Loaded sound: ${key} (Vol: ${vol})`);
-            } else {
-                console.warn(`⚠️ [MusicSystem] Missing buffer for: ${key}`);
             }
         }
         this.isLoaded = true;
@@ -42,25 +37,18 @@ export class MusicSystem {
     }
 
     /**
-     * Phát một âm thanh bất kỳ dựa trên Key trong CONFIG
+     * Phát âm thanh theo key trong CONFIG
      */
     async playSound(key, forceRestart = true) {
-        console.log(`🔍 [MusicSystem] Requesting play: ${key}`);
-        
-        // ĐÁNH THỨC AUDIOCONTEXT
         if (this.listener.context.state === 'suspended') {
-            console.log('💤 [MusicSystem] AudioContext is suspended, resuming...');
             await this.listener.context.resume();
         }
-        console.log(`🔊 [MusicSystem] AudioContext state: ${this.listener.context.state}`);
 
         const audio = this.sounds[key];
         if (!audio || !audio.buffer) {
-            console.error(`❌ [MusicSystem] Không thể phát: ${key}. Buffer: ${audio ? 'Exists' : 'Missing'}`);
+            console.error(`MusicSystem: Không tìm thấy buffer cho ${key}`);
             return;
         }
-
-        console.log(`🎵 [MusicSystem] Buffer duration for ${key}: ${audio.buffer.duration}s`);
 
         const vol = CONFIG.AUDIO[key] !== undefined ? Number(CONFIG.AUDIO[key]) : 0.5;
         audio.setVolume(vol);
@@ -70,39 +58,29 @@ export class MusicSystem {
         }
 
         if (!audio.isPlaying) {
-            console.log(`▶️ [MusicSystem] Calling audio.play() for ${key} at volume ${vol}`);
             audio.play();
         }
     }
 
     /**
-     * Logic phát nhạc nền (Hỗ trợ hàng chờ)
+     * Phát nhạc nền chính
      */
     play() {
         const bgm = this.sounds['NEN_GAME'];
-        if (!bgm) return;
+        if (!bgm || bgm.isPlaying) return;
 
-        // Nếu nhạc nền chính đang phát rồi thì thôi, không dừng/phát lại làm gì
-        if (bgm.isPlaying) return;
+        this.fadeOut('NEN_INTRO', 1.5);
 
-        this.fadeOut('NEN_INTRO', 1.5); // Làm nhỏ dần nhạc Intro (nếu đang phát) trước khi vào Game
-
-        // ĐÁNH THỨC AUDIOCONTEXT một cách an toàn
         if (this.listener.context.state === 'suspended') {
-            // Chỉ cố gắng resume nếu đã có tương tác người dùng, tránh gây lỗi Console
-            this.listener.context.resume().catch(() => {
-                // Im lặng nếu bị trình duyệt chặn, sẽ thử lại ở lần click sau
-            });
+            this.listener.context.resume().catch(() => {});
         }
 
-        // Cập nhật volume real-time
         const vol = Number(CONFIG.AUDIO.NEN_GAME) || 0.2;
         bgm.setVolume(vol);
 
         if (this.isLoaded) {
             if (!bgm.isPlaying) {
                 bgm.play();
-                console.log(`[MusicSystem] 🔊 Đang phát BGM: Vol ${vol}`);
             }
         } else {
             this.playQueue = true;
@@ -110,7 +88,7 @@ export class MusicSystem {
     }
 
     /**
-     * Dừng các bản nhạc nền (không dừng hiệu ứng âm thanh)
+     * Dừng toàn bộ nhạc nền
      */
     stop() {
         const musicKeys = ['NEN_GAME', 'NEN_INTRO', 'LEVEL_2', 'LEVEL_3'];
@@ -120,19 +98,14 @@ export class MusicSystem {
                 audio.stop();
             }
         });
-        console.log('[MusicSystem] 🔇 Đã dừng các bản nhạc nền.');
     }
 
     /**
-     * Phát nhạc nền chính hoặc nhạc màn chơi (Hỗ trợ chuyển đổi mượt mà)
+     * Chuyển đổi nhạc nền có hiệu ứng fade
      */
     playBGM(key, fadeDuration = 1.5) {
-        if (!this.sounds[key]) {
-            console.warn(`⚠️ [MusicSystem] BGM not found: ${key}`);
-            return;
-        }
+        if (!this.sounds[key]) return;
 
-        // 1. Dừng/FadeOut tất cả các nhạc nền hiện tại KHÁC với key đang chọn
         const musicKeys = ['NEN_GAME', 'NEN_INTRO', 'LEVEL_2', 'LEVEL_3'];
         musicKeys.forEach(mKey => {
             if (mKey !== key) {
@@ -140,14 +113,12 @@ export class MusicSystem {
             }
         });
 
-        // 2. Phát nhạc nền mới (nếu chưa phát)
         const bgm = this.sounds[key];
         if (!bgm.isPlaying) {
             const vol = CONFIG.AUDIO[key] !== undefined ? Number(CONFIG.AUDIO[key]) : 0.5;
-            bgm.setVolume(0); // Bắt đầu từ 0 để fadeIn
+            bgm.setVolume(0);
             bgm.play();
             
-            // FadeIn
             const target = { volume: 0 };
             gsap.to(target, {
                 volume: vol,
@@ -156,17 +127,15 @@ export class MusicSystem {
                     bgm.setVolume(target.volume);
                 }
             });
-            console.log(`[MusicSystem] 🎵 Đang chuyển sang BGM: ${key} (Vol: ${vol})`);
         }
     }
 
     /**
-     * Làm nhỏ dần âm lượng của một bản nhạc rồi dừng hẳn
+     * Giảm âm lượng nhạc và dừng
      */
     fadeOut(key, duration = 1.5) {
         const audio = this.sounds[key];
         if (audio && audio.isPlaying) {
-            // Lấy âm lượng hiện tại bằng hàm chuẩn của Three.js
             const target = { volume: audio.getVolume() }; 
             
             gsap.to(target, {
@@ -177,7 +146,6 @@ export class MusicSystem {
                 },
                 onComplete: () => {
                     audio.stop();
-                    // Reset lại volume chuẩn trong CONFIG sau khi dừng để lần sau phát lại ko bị 0
                     const originalVol = CONFIG.AUDIO[key] !== undefined ? Number(CONFIG.AUDIO[key]) : 0.5;
                     audio.setVolume(originalVol);
                 }
@@ -186,20 +154,14 @@ export class MusicSystem {
     }
 
     /**
-     * Phát nhạc nền Intro (Khi logo vỡ ra hoặc tụ lại)
+     * Phát nhạc nền Intro
      */
     async playIntroMusic() {
-        console.log('🎬 [MusicSystem] Starting Intro Music: NEN_INTRO');
-        
-        // Đảm bảo dừng hẳn các nhạc cũ trước khi nhạc mới bùng nổ
         this.stop(); 
-        
         await this.playSound('NEN_INTRO');
     }
 
-    // --- CÁC HÀM TƯƠNG THÍCH NGƯỢC (LEGACY METHODS) ---
-    // Giúp các file khác không bị lỗi khi gọi tên hàm cũ
-
+    // --- Legacy methods ---
     playLevelUpSound() {
         this.playSound('CHUYEN_MAN');
     }

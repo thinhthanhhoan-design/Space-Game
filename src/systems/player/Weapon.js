@@ -94,12 +94,12 @@ export class Weapon {
             let vz = -this.bulletSpeed;
 
             if (this.currentGun === 'GUN_2') {
-                // SÚNG 2: Bắn SONG SONG
+                // GUN 2: Parallel shots
                 const offset = (i - (bulletCount - 1) / 2) * (this.config.parallel_offset || 2.0); 
                 bullet.position.x += offset;
                 bullet.material.color.setHex(0x00ff00); 
             } else if (this.currentGun === 'GUN_3') {
-                // SÚNG 3: Tia bắn SONG SONG
+                // GUN 3: Parallel rays
                 const offset = (i - (bulletCount - 1) / 2) * (this.config.parallel_offset || 2.8); 
                 bullet.position.x += offset;
                 bullet.material.color.setHex(0xff4500); 

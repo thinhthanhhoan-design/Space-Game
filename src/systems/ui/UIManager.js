@@ -1,18 +1,15 @@
 import { CONFIG } from '../../utils/CONFIG.JS';
 
-console.log("UIManager loaded");
 export class UIManager {
   constructor() {
     this.isVisible = false;
-
-    // ===== HIỆU ỨNG WARNING LV2 -> LV3 =====
     this.warningActive = false;
     this.warningTime = 0;
     this.warningDuration = 0;
 
-    this.createWarningOverlay(); // Gọi hàm tạo DOM 
+    this.createWarningOverlay();
 
-    // ===== CONTAINER =====
+    // Container chính cho HUD
     this.container = document.createElement("div");
     this.container.id = "hud";
     this.container.style.position = "fixed";
@@ -23,8 +20,6 @@ export class UIManager {
     this.container.style.zIndex = "999";
     this.container.style.display = "none";
 
-
-    // ===== STYLE CHUNG =====
     const baseStyle = (el) => {
       el.style.marginBottom = "6px";
       el.style.padding = "6px 10px";
@@ -34,13 +29,12 @@ export class UIManager {
       el.style.boxShadow = "0 0 8px rgba(255,255,255,0.2)";
     };
 
-
-    // ===== HP =====  // Máu
+    // Hiển thị chỉ số HP
     this.hpContainer = document.createElement("div");
     baseStyle(this.hpContainer);
     
     this.hpText = document.createElement("div");
-    this.hpText.style.color = "#00ffcc"; // xanh
+    this.hpText.style.color = "#00ffcc";
     this.hpText.style.textShadow = "0 0 8px #00ffcc";
     this.hpText.style.marginBottom = "5px";
     this.hpText.style.fontWeight = "bold";
@@ -84,15 +78,13 @@ export class UIManager {
     this.currentHP = 0;
     this.maxHP = 0;
 
-
-    // ===== AMMO =====  // Đạn
+    // Hiển thị đạn (Ammo)
     this.ammoText = document.createElement("div");
     baseStyle(this.ammoText);
-    this.ammoText.style.color = "#ffd633"; // vàng
+    this.ammoText.style.color = "#ffd633";
     this.ammoText.style.textShadow = "0 0 8px #ffaa00";
 
-
-    // ===== LEVEL & SHIP INFO ====
+    // Thông tin màn chơi và tàu
     this.infoContainer = document.createElement("div");
     baseStyle(this.infoContainer);
     this.infoContainer.style.color = "#00ccff";
@@ -110,25 +102,24 @@ export class UIManager {
     this.infoContainer.appendChild(this.levelText);
     this.infoContainer.appendChild(this.modelText);
     
-    // ===== SCORE ===== // Điểm số
+    // Điểm số (Score)
     this.scoreText = document.createElement("div");
     baseStyle(this.scoreText);
     this.scoreText.style.color = "#ffffff";
     this.scoreText.style.fontSize = "22px";
     this.scoreText.style.fontWeight = "bold";
     this.scoreText.style.textShadow = "0 0 10px rgba(255,255,255,0.5)";
-    this.scoreText.innerText = "SCORE: 0";
+    this.scoreText.innerText = "✨ SCORE: 0";
 
-    // Thêm các thành phần vào container chính
     this.container.appendChild(this.hpContainer);
     this.container.appendChild(this.ammoText);
     this.container.appendChild(this.scoreText);
     this.container.appendChild(this.infoContainer);
 
-    // ===== BOSS HP BAR (GÓC PHẢI) =====
+    // Thanh máu Boss
     this.bossHpContainer = document.createElement("div");
     this.bossHpContainer.style.position = "fixed";
-    this.bossHpContainer.style.top = "70px"; // Đặt dưới FPS
+    this.bossHpContainer.style.top = "70px";
     this.bossHpContainer.style.right = "20px";
     this.bossHpContainer.style.width = "300px";
     this.bossHpContainer.style.background = "rgba(0,0,0,0.6)";
@@ -136,7 +127,7 @@ export class UIManager {
     this.bossHpContainer.style.borderRadius = "10px";
     this.bossHpContainer.style.border = "1px solid #ff3333";
     this.bossHpContainer.style.backdropFilter = "blur(10px)";
-    this.bossHpContainer.style.display = "none"; // Ẩn mặc định
+    this.bossHpContainer.style.display = "none";
     this.bossHpContainer.style.zIndex = "1000";
 
     this.bossNameText = document.createElement("div");
@@ -157,7 +148,6 @@ export class UIManager {
     this.bossHpBarWrapper.style.position = "relative";
     this.bossHpBarWrapper.style.overflow = "hidden";
 
-    // Thanh bóng mờ (tụt chậm)
     this.bossHpDamageBar = document.createElement("div");
     this.bossHpDamageBar.style.position = "absolute";
     this.bossHpDamageBar.style.top = "0";
@@ -182,7 +172,7 @@ export class UIManager {
     this.bossHpContainer.appendChild(this.bossNameText);
     this.bossHpContainer.appendChild(this.bossHpBarWrapper);
     
-    // ===== FPS COUNTER (GÓC PHẢI) =====
+    // FPS Counter
     this.fpsText = document.createElement("div");
     this.fpsText.id = "fps-counter";
     this.fpsText.style.position = "fixed";
@@ -198,7 +188,7 @@ export class UIManager {
     this.fpsText.style.zIndex = "1001";
     this.fpsText.innerText = "FPS: --";
 
-    // ===== MESSAGE NOTIFICATION =====
+    // Vùng hiển thị thông báo (Message Notification)
     this.messageContainer = document.createElement("div");
     this.messageContainer.style.position = "fixed";
     this.messageContainer.style.top = "50%";
@@ -221,8 +211,8 @@ export class UIManager {
     document.body.appendChild(this.messageContainer);
   }
 
-  // Tạo lớp nền đỏ ẩn dưới HUD
-createWarningOverlay() {
+  // Tạo lớp phủ cảnh báo nguy hiểm (màu đỏ nhấp nháy)
+  createWarningOverlay() {
     this.warningDOM = document.createElement("div");
     this.warningDOM.id = "flash-red-overlay";
     Object.assign(this.warningDOM.style, {
@@ -235,21 +225,18 @@ createWarningOverlay() {
         zIndex: 10
     });
     document.body.appendChild(this.warningDOM);
-}
+  }
 
-// Hàm để GameManager gọi khi bắt đầu Story
-startWarning(duration = 2.5) {
+  startWarning(duration = 2.5) {
     this.warningActive = true;
     this.warningTime = 0;
     this.warningDuration = duration;
-}
+  }
 
-// Hàm tính toán logic nhấp nháy
-updateWarning(delta) {
+  updateWarning(delta) {
     if (!this.warningActive || !this.warningDOM) return;
 
     this.warningTime += delta;
-    // Nhấp nháy theo hàm Sin
     const flash = Math.abs(Math.sin(this.warningTime * 12)); 
     this.warningDOM.style.opacity = (flash * 0.7).toString();
 
@@ -257,9 +244,9 @@ updateWarning(delta) {
         this.warningActive = false;
         this.warningDOM.style.opacity = "0";
     }
-}
+  }
 
-  // Hiển thị thông báo trên màn hình
+  // Hiển thị thông báo văn bản giữa màn hình
   showMessage(text, color = "#ffffff", duration = 2000) {
     this.messageContainer.innerText = text;
     this.messageContainer.style.color = color;
@@ -274,24 +261,21 @@ updateWarning(delta) {
     }, duration);
   }
 
-
   show() {
     this.container.style.display = "block";
     this.isVisible = true;
   }
-
 
   hide() {
     this.container.style.display = "none";
     this.isVisible = false;
   }
 
-
+  // Cập nhật toàn bộ các thành phần trên HUD
   update(player, levelKey = 'LEVEL_1', delta = 0, score = 0) {
     if (delta > 0) this.updateWarning(delta);
     if (!this.isVisible || !player) return;
 
-    // HP
     if (this.maxHP === 0 && player.hp > 0) {
         this.maxHP = player.hp;
         this.currentHP = player.hp;
@@ -300,13 +284,11 @@ updateWarning(delta) {
     this.hpText.innerText = `❤️ HP: ${displayHP} / ${this.maxHP}`;
     const hpPercent = Math.max(0, player.hp / this.maxHP);
     
-    // Cập nhật thanh máu đồ họa
     this.hpBar.style.width = (hpPercent * 100) + '%';
     setTimeout(() => {
         if (this.hpDamageBar) this.hpDamageBar.style.width = (hpPercent * 100) + '%';
     }, 200);
 
-    // Đổi màu khi máu thấp
     if (hpPercent < 0.3) {
         this.hpText.style.color = "#ff3333";
         this.hpBar.style.background = "linear-gradient(90deg, #cc0000, #ff3333)";
@@ -319,26 +301,20 @@ updateWarning(delta) {
 
     this.currentHP = player.hp;  
     
-    // AMMO
     const ammo = (player.weapon && player.weapon.ammo !== undefined) ? player.weapon.ammo : player.ammo;
-    this.ammoText.innerText = `🔫 Số đạn: ${ammo}`;
+    this.ammoText.innerText = `🔫 Ammo: ${ammo}`;
 
-    // SCORE
     this.scoreText.innerText = `✨ SCORE: ${score.toLocaleString()}`;
 
-    // INFO (Level & Ship)
-    this.levelText.innerText = `📍 Màn: ${levelKey}`;
+    this.levelText.innerText = `📍 Level: ${levelKey.replace(/_/g, ' ')}`;
     
-    // Lấy tên mô hình từ CONFIG dựa trên key của player (ví dụ: PLAYER_V1 -> V1 -> UETE-3637)
     const modelKey = player.modelKey || 'PLAYER_V1';
-    const vKey = modelKey.replace('PLAYER_', ''); // Lấy 'V1'
+    const vKey = modelKey.replace('PLAYER_', '');
     const shipName = CONFIG.PLAYER.MODELS[vKey]?.name || modelKey;
     
-    this.modelText.innerText = `🚀 Tàu: ${shipName}`;
+    this.modelText.innerText = `🚀 Ship: ${shipName}`;
   }
 
-
-  // ===== BOSS UI CONTROL =====
   showBossHP(name = "TRÙM CUỐI") {
     this.bossHpContainer.style.display = "block";
     this.bossNameText.innerText = `⚠️ BOSS: ${name}`;
@@ -349,44 +325,38 @@ updateWarning(delta) {
     const percent = Math.max(0, (current / max) * 100);
     this.bossHpBar.style.width = percent + "%";
     
-    // Hiệu ứng thanh ảo (damage trail) tụt chậm hơn thanh thật
     setTimeout(() => {
         if (this.bossHpDamageBar) {
             this.bossHpDamageBar.style.width = percent + "%";
         }
-    }, 300); // Trễ 0.3 giây
+    }, 300);
   }
 
   hideBossHP() {
     this.bossHpContainer.style.display = "none";
   }
 
-  // ===== FPS UPDATE =====
+  // Cập nhật và hiển thị chỉ số FPS
   updateFPS(delta) {
     if (!this.fpsText || delta <= 0) return;
     
-    // Khởi tạo mảng lưu mẫu nếu chưa có
     if (!this.fpsSamples) this.fpsSamples = [];
     this.fpsSamples.push(delta);
 
-    // Giới hạn bộ nhớ: Lưu tối đa 600 mẫu (tương đương ~10 giây ở 60 FPS)
     if (this.fpsSamples.length > 600) {
       this.fpsSamples.shift();
     }
 
-    // Chỉ cập nhật hiển thị lên UI sau mỗi 30 khung hình (~0.5 giây) để tránh loạn mắt
     this.fpsUpdateTimer = (this.fpsUpdateTimer || 0) + 1;
     if (this.fpsUpdateTimer >= 30) {
       this.fpsUpdateTimer = 0;
       
-      // Tính trung bình cộng (Mean) của các mẫu delta
       const sumDelta = this.fpsSamples.reduce((a, b) => a + b, 0);
       const avgDelta = sumDelta / this.fpsSamples.length;
       const fps = Math.round(1 / avgDelta);
       
       this.fpsText.innerText = `FPS: ${fps}`;
       
-      // Đổi màu dựa trên hiệu năng trung bình
       if (fps < 30) this.fpsText.style.color = "#ff3333";
       else if (fps < 50) this.fpsText.style.color = "#ffff33";
       else this.fpsText.style.color = "#00ff00";
