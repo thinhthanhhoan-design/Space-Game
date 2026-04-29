@@ -1,13 +1,12 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { CONFIG } from '../../utils/CONFIG.JS';
 import { Enemy } from './Enemy.js';
-import { assetLoader } from '../../utils/AssetLoader.js';
+import { modelCache } from '../../utils/ModelCache.js';
 import gsap from 'gsap';
 
 export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Enemy
-    constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1') {
-        super(scene, projectileSystem, itemSystem, type);
+    constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1', musicSystem = null) {
+        super(scene, projectileSystem, itemSystem, type, null, musicSystem);
         this.hp = CONFIG.ENEMIES[type]?.HP || 500;
         this.maxHP = this.hp;
         this.moveDirection = 1; // Hướng di chuyển ngang (1 là sang phải, -1 là sang trái)
@@ -22,10 +21,12 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         this.shootCount = 0;
         this.hasRetreated = false; // Đánh dấu đã từng bỏ chạy chưa
         this.onRetreatComplete = null; // Callback khi Boss chạy trốn thành công
+        this.isAimingLaser = false; // Cờ đánh dấu đang ngắm bắn (di chuyển tới player)
+        this.aimingTimer = 0; // Thời gian truy đuổi trước khi bắn
     }
 
     loadModel() { // Hàm để tải hình ảnh 3D cho Boss
-        const cachedModel = assetLoader.cloneModel('boss_1');
+        const cachedModel = modelCache.getModel('boss_1');
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(13, 13, 13);
@@ -65,6 +66,22 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
         }
 
         if (this.state === 'HIDDEN') return; // Đang ẩn thì bỏ qua
+
+        // --- KIỂM TRA TRẠNG THÁI NGẮM BẮN (TRUY ĐUỔI) ---
+        if (this.isAimingLaser) {
+            this.aimingTimer -= delta;
+            // Di chuyển cực nhanh tới tọa độ X, Y của người chơi
+            this.mesh.position.x = THREE.MathUtils.lerp(this.mesh.position.x, playerPos.x, 0.1);
+            this.mesh.position.y = THREE.MathUtils.lerp(this.mesh.position.y, playerPos.y, 0.1);
+
+            if (this.aimingTimer <= 0) {
+                this.isAimingLaser = false;
+                this.isCastingLaser = true;
+                this.laserCastTimer = 3.0; // Đứng yên gồng chiêu
+                this.shootLaser(playerPos);
+            }
+            return; // KHÔNG DI CHUYỂN TỰ DO KHI ĐANG NGẮM
+        }
 
         // --- KIỂM TRA TRẠNG THÁI BẮN LASER (ĐỨNG YÊN) ---
         if (this.isCastingLaser) {
@@ -118,12 +135,11 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
 
         // --- LOGIC BẮN LASER ---
         this.laserTimer += delta;
-        if (this.laserTimer >= 6.0) { // Mỗi 10s bắn laser thẳng
+        if (this.laserTimer >= 6.0 && !this.isAimingLaser && !this.isCastingLaser) {
+            this.isAimingLaser = true;
+            this.aimingTimer = 1.2; // Truy đuổi trong 1.2s trước khi bắn
             this.laserTimer = 0;
-            this.isCastingLaser = true;
-            this.laserCastTimer = 3.5; // Đứng yên trong 3.5s để xuất chiêu
-            this.shootLaser(playerPos);
-            return; // Dừng các hành động khác
+            if (this.uiManager) this.uiManager.showMessage("⚠️ BOSS: ĐANG KHÓA MỤC TIÊU!", "#ffcc00", 1000);
         }
 
         // --- LOGIC RÚT LUI KHI MÁU <= 50% ---
@@ -151,6 +167,10 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
 
     shootLaser(playerPos) { // Hàm bắn Laser
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
+        
+        // Phát âm thanh bắn Laser
+        if (this.musicSystem) this.musicSystem.playSound('HIEU_UNG_LAZE_BAN');
+
         // Bắt buộc hướng tia Laser phải luôn chĩa thẳng tắp xuống màn hình (Trục Z) 
         // để khi gắn vào Boss trông không bị lệch 
         const direction = new THREE.Vector3(0, 0, 1);
@@ -169,8 +189,8 @@ export class Boss extends Enemy { // Tạo lớp Boss kế thừa từ lớp Ene
 }
 
 export class Boss2 extends Enemy {
-    constructor(scene, projectileSystem, itemSystem, enemyManager) {
-        super(scene, projectileSystem, itemSystem, 'BOSS_2');
+    constructor(scene, projectileSystem, itemSystem, enemyManager, musicSystem = null) {
+        super(scene, projectileSystem, itemSystem, 'BOSS_2', null, musicSystem);
         this.hp = CONFIG.ENEMIES.BOSS_2?.HP || 800;
         this.maxHP = this.hp;
         this.moveDirection = 1;
@@ -186,7 +206,7 @@ export class Boss2 extends Enemy {
     }
 
     loadModel() {
-        const cachedModel = assetLoader.cloneModel('boss_2');
+        const cachedModel = modelCache.getModel('boss_2');
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(1.5, 1.5, 1.5);
@@ -315,8 +335,8 @@ export class Boss2 extends Enemy {
 }
 
 export class Boss3 extends Enemy {
-    constructor(scene, projectileSystem, itemSystem, player) {
-        super(scene, projectileSystem, itemSystem, 'BOSS_3');
+    constructor(scene, projectileSystem, itemSystem, player, musicSystem = null) {
+        super(scene, projectileSystem, itemSystem, 'BOSS_3', null, musicSystem);
         this.player = player; // Lưu tham chiếu đến người chơi để làm chậm
         this.hp = CONFIG.ENEMIES.BOSS_3?.HP || 1200;
         this.maxHP = this.hp;
@@ -337,7 +357,7 @@ export class Boss3 extends Enemy {
     }
 
     loadModel() {
-        const cachedModel = assetLoader.cloneModel('boss_3');
+        const cachedModel = modelCache.getModel('boss_3');
         if (cachedModel) {
             this.mesh = cachedModel;
             this.mesh.scale.set(7, 7, 7); // Boss 3 nhỏ gọn, khó bắn hơn

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { CONFIG } from '../../utils/CONFIG.JS';
-import { assetLoader } from '../../utils/AssetLoader.js';
+import { modelCache } from '../../utils/ModelCache.js';
 
 export class AsteroidSystem {
     constructor(scene, particleSystem, player, camera) {
@@ -24,7 +24,7 @@ export class AsteroidSystem {
         canvas.width = 64;
         canvas.height = 64;
         const context = canvas.getContext('2d');
-        
+
         const gradient = context.createRadialGradient(32, 32, 0, 32, 32, 32);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
         gradient.addColorStop(0.2, 'rgba(255, 200, 0, 1)');
@@ -50,7 +50,7 @@ export class AsteroidSystem {
     }
 
     spawn() {
-        const cachedModel = assetLoader.cloneModel('asteroid');
+        const cachedModel = modelCache.getModel('asteroid');
 
         let asteroid = cachedModel || new THREE.Mesh(
             new THREE.IcosahedronGeometry(1, 0),
@@ -92,7 +92,7 @@ export class AsteroidSystem {
             asteroid.userData.isToxic = false;
         }
 
-        asteroid.userData.particleData = []; 
+        asteroid.userData.particleData = [];
 
         this.createAura(asteroid);
         this.createTrail(asteroid);
@@ -135,7 +135,7 @@ export class AsteroidSystem {
     }
 
     createTrail(asteroid) {
-        const count = 600; // Giảm từ 1500 xuống 600 để tối ưu hiệu suất
+        const count = 150; // Giảm lượng tia lửa xuống rất thấp để bớt rườm rà
         const trailGeometry = new THREE.BufferGeometry();
         const positions = new Float32Array(count * 3);
         const colors = new Float32Array(count * 3);
@@ -156,7 +156,7 @@ export class AsteroidSystem {
                     -2 // Giảm tốc độ trôi để đuôi tụ lại
                 ),
                 life: Math.random() * 10,
-                maxLife: 8 + Math.random() * 5 // Đuôi siêu ngắn (chỉ bằng khoảng 1 lần thiên thạch)
+                maxLife: 4 + Math.random() * 3 // Đuôi cực kỳ ngắn
             });
         }
 
@@ -164,7 +164,7 @@ export class AsteroidSystem {
         trailGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
         const material = new THREE.PointsMaterial({
-            size: diameter * 0.8, // Kích thước hạt nhỏ lại cho gọn
+            size: diameter * 0.4, // Kích thước hạt nhỏ lại để đỡ chói
             map: this.fireTexture,
             blending: THREE.AdditiveBlending,
             transparent: true,
@@ -173,7 +173,7 @@ export class AsteroidSystem {
         });
 
         const trail = new THREE.Points(trailGeometry, material);
-        this.scene.add(trail); 
+        this.scene.add(trail);
         asteroid.userData.trail = trail;
         asteroid.userData.particleData = particleData;
     }
@@ -211,10 +211,10 @@ export class AsteroidSystem {
 
                 for (let j = 0; j < particleCount; j++) {
                     let pd = particleData[j];
-                    pd.life += delta * 250; // Tăng tốc độ già hóa để đuôi ngắn hơn
+                    pd.life += delta * 400; // Già hóa rất nhanh để biến mất sớm
 
-                    let idx = j * 3; 
-                    
+                    let idx = j * 3;
+
                     // Di chuyển hạt
                     positions[idx] += pd.velocity.x;
                     positions[idx + 1] += pd.velocity.y;
@@ -225,7 +225,7 @@ export class AsteroidSystem {
                         pd.life = 0;
                         // ⭐ Gốc đuôi bao phủ: Thêm độ lệch ngẫu nhiên dựa trên đường kính
                         const lerpZ = Math.random() * distTraveled;
-                        const radius = diameter * 0.45; 
+                        const radius = diameter * 0.45;
                         const angle = Math.random() * Math.PI * 2;
                         const offX = Math.cos(angle) * Math.random() * radius;
                         const offY = Math.sin(angle) * Math.random() * radius;
@@ -241,7 +241,7 @@ export class AsteroidSystem {
 
                     const ratio = pd.life / pd.maxLife;
                     const invRatio = 1 - ratio;
-                    const fade = invRatio * invRatio; 
+                    const fade = invRatio * invRatio;
 
                     // Hiệu ứng hình nón: Độ rộng giảm dần về cuối đuôi
                     const coneFactor = (1 - ratio);

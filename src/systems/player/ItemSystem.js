@@ -9,6 +9,7 @@ export class ItemSystem {
         this.scene = scene;
         this.inventory = [];
         this.activeItems = []; 
+        this.onCollectScore = null; // Callback để cập nhật điểm số
 
         this.textureLoader = new THREE.TextureLoader();
         
@@ -53,6 +54,14 @@ export class ItemSystem {
 
     setAsteroidSystem(asteroidSystem) {
         this.asteroidSystem = asteroidSystem;
+    }
+
+    setScoreCallback(callback) {
+        this.onCollectScore = callback;
+    }
+
+    setMusicSystem(musicSystem) {
+        this.musicSystem = musicSystem;
     }
 
     spawnItem(type = null, position = null) {
@@ -173,6 +182,22 @@ export class ItemSystem {
         const itemConfig = CONFIG.ITEMS.TYPES[type];
         if (!itemConfig) return;
 
+        // Phát âm thanh nhặt đồ
+        if (this.musicSystem) {
+            this.musicSystem.playSound('HIEU_UNG_NHAT_VAT_PHAM');
+        }
+
+        // Cộng hoặc trừ điểm dựa trên CONFIG
+        if (this.onCollectScore) {
+            let pts = itemConfig.POINTS;
+            if (pts === undefined) {
+                // Fallback nếu không định nghĩa POINTS riêng cho từng loại
+                const isBad = type === 'WEAPON_LOCK' || type === 'ASTEROID_ITEM';
+                pts = isBad ? CONFIG.SCORING.ITEM_BAD : CONFIG.SCORING.ITEM_GOOD;
+            }
+            this.onCollectScore(pts);
+        }
+
         switch (type) {
             case 'HEALTH':
                 const healVal = itemConfig.value || 100;
@@ -197,6 +222,10 @@ export class ItemSystem {
             case 'WEAPON_3':
                 if (this.uiManager) this.uiManager.showMessage(`🔫 NEW WEAPON: ${itemConfig.gun_key}`, "#00ff00", 2000);
                 if (this.player.weapon) this.player.weapon.setGun(itemConfig.gun_key);
+                
+                // Nạp thêm 30% đạn khi đổi súng mới
+                const refillAmt = Math.floor(this.player.maxAmmo * 0.3);
+                this.player.ammo = Math.min(this.player.ammo + refillAmt, this.player.maxAmmo);
                 break;
             case 'WEAPON_LOCK':
                 if (this.uiManager) this.uiManager.showMessage("⚠️ WEAPON LOCKED!", "#ff0000", 3000);

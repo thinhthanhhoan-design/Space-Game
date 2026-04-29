@@ -10,7 +10,7 @@ export class Combat {
         this.bulletHitboxRadiusSq = 12.0;
     }
 
-    update(player, enemies = [], asteroids = [], explosionSystem = null, particleSystem = null, sceneController = null) {
+    update(player, enemies = [], asteroids = [], explosionSystem = null, particleSystem = null, sceneController = null, musicSystem = null, addScore = null) {
         if (!player.mesh) return;
 
         const playerPos = player.mesh.position;
@@ -34,11 +34,14 @@ export class Combat {
                 if (isCrash) {
                     if (!player.hasShield) {
                         player.takeDamage(enemy.damage || 15);
+                        if (musicSystem) musicSystem.playSound('HIEU_UNG_TAU_TRUNG_DON');
                         if (explosionSystem) explosionSystem.startWarning(0.4);
                         if (sceneController) sceneController.triggerShake(0.4, 0.2);
                         if (window.GameAudio) window.GameAudio.playSound('SFX_HIT', true);
                     }
                     if (explosionSystem) explosionSystem.spawnShipImpact(playerPos);
+                    const pts = CONFIG.ENEMIES[enemy.type]?.POINTS || CONFIG.SCORING.ENEMY_DEFAULT;
+                    if (addScore) addScore(pts);
                     enemy.die();
                 }
             }
@@ -51,11 +54,14 @@ export class Combat {
                 if (MathUtils.checkSphereCollisionSq(playerPos, ast.position, this.playerHitboxRadiusSq, this.asteroidHitboxRadiusSq)) {
                     if (!player.hasShield) {
                         player.takeDamage(ast.userData?.damage || 10);
+                        if (musicSystem) musicSystem.playSound('HIEU_UNG_TAU_TRUNG_DON');
                         if (explosionSystem) explosionSystem.startWarning(0.4);
                         if (sceneController) sceneController.triggerShake(0.4, 0.2);
                         if (window.GameAudio) window.GameAudio.playSound('SFX_HIT', true);
                     }
                     if (explosionSystem) explosionSystem.spawnAsteroidImpact(ast.position);
+                    if (musicSystem) musicSystem.playSound('HIEU_UNG_QUAI_THIEN_THACH_NO');
+                    if (addScore && CONFIG.SCORING.ASTEROID > 0) addScore(CONFIG.SCORING.ASTEROID);
                     ast.userData.markedForDeletion = true;
                     ast.position.z = 100;
                 }
@@ -94,8 +100,15 @@ export class Combat {
                                 explosionSystem.spawnShipImpact(bulletPos);
                             }
                             if (typeof enemy.takeDamage === 'function') {
+                                const oldHP = enemy.hp;
                                 enemy.takeDamage(bullet.userData.damage);
+                                if (enemy.hp <= 0 && oldHP > 0) {
+                                    const pts = CONFIG.ENEMIES[enemy.type]?.POINTS || CONFIG.SCORING.ENEMY_DEFAULT;
+                                    if (addScore) addScore(pts);
+                                }
                             } else {
+                                const pts = CONFIG.ENEMIES[enemy.type]?.POINTS || CONFIG.SCORING.ENEMY_DEFAULT;
+                                if (addScore) addScore(pts);
                                 enemy.die();
                             }
                             if (enemy.isDead) {
@@ -116,7 +129,8 @@ export class Combat {
                     if (ast && !ast.userData?.markedForDeletion) {
                         if (MathUtils.checkSphereCollisionSq(bulletPos, ast.position, this.bulletHitboxRadiusSq, this.asteroidHitboxRadiusSq)) {
                             if (explosionSystem) explosionSystem.spawnAsteroidImpact(ast.position);
-                            if (window.GameAudio) window.GameAudio.playSound('SFX_EXPLOSION', true);
+                            if (musicSystem) musicSystem.playSound('HIEU_UNG_QUAI_THIEN_THACH_NO');
+                            if (addScore && CONFIG.SCORING.ASTEROID > 0) addScore(CONFIG.SCORING.ASTEROID);
                             
                             const dropChance = 0.2;
                             if (player.itemSystem && Math.random() < dropChance) {

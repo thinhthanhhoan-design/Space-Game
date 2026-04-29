@@ -110,9 +110,19 @@ export class UIManager {
     this.infoContainer.appendChild(this.levelText);
     this.infoContainer.appendChild(this.modelText);
     
+    // ===== SCORE ===== // Điểm số
+    this.scoreText = document.createElement("div");
+    baseStyle(this.scoreText);
+    this.scoreText.style.color = "#ffffff";
+    this.scoreText.style.fontSize = "22px";
+    this.scoreText.style.fontWeight = "bold";
+    this.scoreText.style.textShadow = "0 0 10px rgba(255,255,255,0.5)";
+    this.scoreText.innerText = "SCORE: 0";
+
     // Thêm các thành phần vào container chính
     this.container.appendChild(this.hpContainer);
     this.container.appendChild(this.ammoText);
+    this.container.appendChild(this.scoreText);
     this.container.appendChild(this.infoContainer);
 
     // ===== BOSS HP BAR (GÓC PHẢI) =====
@@ -277,7 +287,7 @@ updateWarning(delta) {
   }
 
 
-  update(player, levelKey = 'LEVEL_1', delta = 0) {
+  update(player, levelKey = 'LEVEL_1', delta = 0, score = 0) {
     if (delta > 0) this.updateWarning(delta);
     if (!this.isVisible || !player) return;
 
@@ -312,6 +322,9 @@ updateWarning(delta) {
     // AMMO
     const ammo = (player.weapon && player.weapon.ammo !== undefined) ? player.weapon.ammo : player.ammo;
     this.ammoText.innerText = `🔫 Số đạn: ${ammo}`;
+
+    // SCORE
+    this.scoreText.innerText = `✨ SCORE: ${score.toLocaleString()}`;
 
     // INFO (Level & Ship)
     this.levelText.innerText = `📍 Màn: ${levelKey}`;

@@ -1,3 +1,5 @@
+import { CONFIG } from '../../utils/CONFIG.JS';
+
 export class EndingUI {
     constructor() {
         this.container = document.createElement("div");
@@ -24,10 +26,48 @@ export class EndingUI {
         });
     }
 
-    show(type = 'GAME_OVER', score = 0) {
+    getTopScores() {
+        const saved = localStorage.getItem('space_game_top_scores_v3');
+        if (saved) {
+            return JSON.parse(saved);
+        }
+        // Trả về mảng mặc định toàn 0 nếu chưa có dữ liệu
+        return [
+            { score: 0, time: 0, type: 'GAME_OVER' },
+            { score: 0, time: 0, type: 'GAME_OVER' },
+            { score: 0, time: 0, type: 'GAME_OVER' },
+            { score: 0, time: 0, type: 'GAME_OVER' },
+            { score: 0, time: 0, type: 'GAME_OVER' }
+        ];
+    }
+
+    saveScore(score, time, type) {
+        let scores = this.getTopScores();
+        // Chỉ lưu nếu điểm lớn hơn 0
+        if (score > 0) {
+            scores.push({ score, time, type });
+            // Sắp xếp giảm dần theo điểm
+            scores.sort((a, b) => b.score - a.score);
+            scores = scores.slice(0, 5);
+            localStorage.setItem('space_game_top_scores_v3', JSON.stringify(scores));
+            console.log("💾 Đã lưu kỷ lục mới:", scores);
+        }
+        return scores;
+    }
+
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    show(type = 'GAME_OVER', score = 0, time = 0) {
         const isWin = type === 'WIN';
         const title = isWin ? "HAPPY ENDING" : "GAME OVER";
         
+        // Cập nhật và lấy danh sách điểm mới
+        const topScores = this.saveScore(score, time, type);
+
         // Nội dung ending
         const message = isWin 
             ? "Tàu UETE-3637 thoát khỏi Vùng Tối, bạn nhận ra tín hiệu cầu cứu chính là do bạn trong tương lai gửi." 
@@ -35,9 +75,6 @@ export class EndingUI {
             
         const themeColor = isWin ? "#00ffcc" : "#ff3333";
         const shadowColor = isWin ? "rgba(0, 255, 204, 0.4)" : "rgba(255, 51, 51, 0.4)";
-
-        // Dữ liệu Top 5 giả lập (tạm thôi tại vì chưa làm hệ thống tính điểm)
-        const topScores = [15000, 12400, 9800, 7200, 5000];
 
         this.container.innerHTML = `
             <div id="ending-card" style="
@@ -47,7 +84,7 @@ export class EndingUI {
                 border-radius: 15px;
                 border: 1px solid ${themeColor}66;
                 box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
-                width: 420px;
+                width: 480px;
                 display: flex;
                 flex-direction: column;
                 align-items: center;
@@ -62,24 +99,48 @@ export class EndingUI {
                     ${message}
                 </p>
 
-                <div style="margin-bottom: 20px; text-align: center;">
-                    <div style="color: #ffffff; font-size: 10px; letter-spacing: 2px; opacity: 0.5; margin-bottom: 5px;">YOUR SCORE</div>
-                    <div style="color: #fff; font-size: 32px; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.5);">
-                        ${score.toLocaleString()}
+                <div style="display: flex; gap: 40px; margin-bottom: 20px; text-align: center;">
+                    <div>
+                        <div style="color: #ffffff; font-size: 10px; letter-spacing: 2px; opacity: 0.5; margin-bottom: 5px;">
+                            ${CONFIG.STRINGS.YOUR_SCORE}
+                        </div>
+                        <div style="color: #fff; font-size: 28px; font-weight: bold; text-shadow: 0 0 10px rgba(255,255,255,0.5);">
+                            ${score.toLocaleString()}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="color: #ffffff; font-size: 10px; letter-spacing: 2px; opacity: 0.5; margin-bottom: 5px;">
+                            TIME
+                        </div>
+                        <div style="color: ${themeColor}; font-size: 28px; font-weight: bold; text-shadow: 0 0 10px ${themeColor}44;">
+                            ${this.formatTime(time)}
+                        </div>
                     </div>
                 </div>
 
                 <div style="width: 100%; background: rgba(0, 0, 0, 0.3); padding: 12px 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
-                    <div style="color: ${themeColor}; font-size: 12px; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid ${themeColor}33; padding-bottom: 5px;">
-                        TOP 5 HIGHEST SCORE
+                    <div style="display: flex; justify-content: space-between; color: ${themeColor}; font-size: 12px; letter-spacing: 1px; margin-bottom: 8px; border-bottom: 1px solid ${themeColor}33; padding-bottom: 5px;">
+                        <span>${CONFIG.STRINGS.TOP_SCORES}</span>
+                        <span>STATUS | TIME</span>
                     </div>
                     <div id="leaderboard" style="width: 100%;">
-                        ${topScores.map((s, i) => `
-                            <div style="display: flex; justify-content: space-between; color: #fff; font-size: 13px; margin: 4px 0; opacity: ${i === 0 ? 1 : 0.6}; font-family: monospace;">
-                                <span>#${i + 1}</span>
-                                <span>${s.toLocaleString()}</span>
-                            </div>
-                        `).join('')}
+                        ${topScores.map((s, i) => {
+                            const entryColor = s.type === 'WIN' ? "#00ffcc" : "#ff3333";
+                            const isCurrent = (s.score === score && s.time === time && s.type === type);
+                            
+                            return `
+                                <div style="display: flex; justify-content: space-between; color: ${entryColor}; font-size: 13px; margin: 4px 0; opacity: ${isCurrent ? 1 : 0.7}; font-family: monospace; ${isCurrent ? 'text-shadow: 0 0 5px ' + entryColor : ''}">
+                                    <div style="display: flex; gap: 15px;">
+                                        <span>#${i + 1}</span>
+                                        <span style="color: #fff; font-weight: bold;">${s.score.toLocaleString()}</span>
+                                    </div>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <span style="font-size: 9px; opacity: 0.8;">${s.type === 'WIN' ? '🏆 WIN' : '💀 LOST'}</span>
+                                        <span style="color: #fff; opacity: 0.8;">${s.time > 0 ? this.formatTime(s.time) : '--:--'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
 
@@ -97,7 +158,7 @@ export class EndingUI {
                     box-shadow: 0 0 10px ${shadowColor};
                     text-transform: uppercase;
                 ">
-                    Restart 
+                    ${CONFIG.STRINGS.RESTART_BTN}
                 </button>
             </div>
         `;
@@ -128,3 +189,4 @@ export class EndingUI {
         this.container.style.opacity = "0";
     }
 }
+

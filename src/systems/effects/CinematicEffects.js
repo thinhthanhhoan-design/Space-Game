@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 
 export class CinematicEffects { // Lớp quản lý các hiệu ứng điện ảnh và chuyển cảnh
-    constructor(scene, camera) { // Khởi tạo với scene và camera hiện tại
+    constructor(scene, camera, musicSystem) { // Khởi tạo với scene và camera hiện tại
         this.scene = scene; // Lưu tham chiếu cảnh 3D
         this.camera = camera; // Lưu tham chiếu góc máy quay
+        this.musicSystem = musicSystem; // Lưu hệ thống âm thanh
         this.flash = null; // Biến DOM Div cho hiệu ứng chớp đỏ báo động
         this.whiteFlash = null; // Biến DOM Div cho hiệu ứng chớp trắng loá mắt
         this.textDiv = null; // Biến DOM Div cho hiệu ứng gõ chữ phụ đề kịch bản
@@ -152,6 +153,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
     }
 
     warningEffect() {
+        if (this.musicSystem) this.musicSystem.playSound('NHAC_NEN_INTRO_MAT_TIN_HIEU_2');
         gsap.to(this.flash, { opacity: 0.6, duration: 0.1, yoyo: true, repeat: 5 });
         gsap.to(this.camera.position, { x: "+=0.2", y: "+=0.2", duration: 0.05, repeat: 10, yoyo: true });
     }
@@ -235,6 +237,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
     }
 
     triggerBlackHole(targetMesh, onComplete) {
+        if (this.musicSystem) this.musicSystem.playSound('BLACKHOLE_APPEAR', true);
         this.createBlackHole();
         if (this.filmTimeline) this.filmTimeline.kill();
         const tl = gsap.timeline();
@@ -265,14 +268,26 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
         animateVortex();
 
         // Phóng to hố đen và hút tàu
-        tl.to(this.blackHoleGroup.scale, { x: 10, y: 10, z: 10, duration: 2.5, ease: "power2.out" });
+        tl.to(this.blackHoleGroup.scale, {
+            x: 10, y: 10, z: 10,
+            duration: 2.5,
+            ease: "power2.out",
+            onStart: () => {
+                if (this.musicSystem) this.musicSystem.playSound('BLACKHOLE_DURING', true);
+            }
+        });
+        
+        // Kéo tàu vào trễ hơn một chút (giây thứ 1.5) để khớp với nhịp điệu mới
         tl.to(targetMesh.position, {
             x: this.blackHoleGroup.position.x,
             y: this.blackHoleGroup.position.y,
             z: this.blackHoleGroup.position.z,
-            duration: 2.0, ease: "power3.in"
-        }, "+=0.5");
-        tl.to(targetMesh.scale, { x: 0.0001, y: 0.0001, z: 0.0001, duration: 2.0, ease: "power3.in" }, "<");
+            duration: 2.5, ease: "power2.in",
+            onStart: () => {
+                if (this.musicSystem) this.musicSystem.playSound('BLACKHOLE_SUCK', true);
+            }
+        }, 1.5);
+        tl.to(targetMesh.scale, { x: 0.0001, y: 0.0001, z: 0.0001, duration: 2.5, ease: "power2.in" }, 1.5);
 
         tl.to(this.whiteFlash, { opacity: 1, duration: 0.5 }, "-=0.3");
         tl.call(() => {
@@ -293,10 +308,12 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
             return;
         }
         if (this.filmTimeline) this.filmTimeline.kill();
-        const tl = gsap.timeline({ onComplete: () => { 
-            this.filmTimeline = null;
-            if (onComplete) onComplete(); 
-        } });
+        const tl = gsap.timeline({
+            onComplete: () => {
+                this.filmTimeline = null;
+                if (onComplete) onComplete();
+            }
+        });
         this.filmTimeline = tl;
         shots.forEach((shot) => {
             const duration = shot.end - shot.start;
@@ -311,6 +328,11 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
             tl.call(() => {
                 this.showText(shot.text, duration - 0.5);
                 if (shot.shake) this.warningEffect();
+
+                // Phát nhạc intro đặc biệt khi mất tín hiệu AI (Shot 4)
+                if (shot.id === 'shot4' && this.musicSystem) {
+                    this.musicSystem.playSound('NHAC_NEN_INTRO_MAT_TIN_HIEU_1');
+                }
             }, null, shot.start);
             tl.to({}, { duration: duration }, shot.start);
         });
@@ -322,23 +344,23 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
     }
 
     startSpeedLines() {
-            const lineCount = 3000;
-            const geo = new THREE.BufferGeometry();
-            const posArr = new Float32Array(lineCount * 3);
-            const sizeArr = new Float32Array(lineCount);
-            for (let i = 0; i < lineCount; i++) {
-                posArr[i * 3] = (Math.random() - 0.5) * 80;
-                posArr[i * 3 + 1] = (Math.random() - 0.5) * 80;
-                posArr[i * 3 + 2] = -Math.random() * 300;
-                sizeArr[i] = Math.random() * 2;
-            }
-            geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
-            const mat = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.2, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
-            this.speedLines = new THREE.Points(geo, mat);
-            this.scene.add(this.speedLines);
-            this.isSpeedLinesActive = true;
-            this.animateSpeedLines();
+        const lineCount = 3000;
+        const geo = new THREE.BufferGeometry();
+        const posArr = new Float32Array(lineCount * 3);
+        const sizeArr = new Float32Array(lineCount);
+        for (let i = 0; i < lineCount; i++) {
+            posArr[i * 3] = (Math.random() - 0.5) * 80;
+            posArr[i * 3 + 1] = (Math.random() - 0.5) * 80;
+            posArr[i * 3 + 2] = -Math.random() * 300;
+            sizeArr[i] = Math.random() * 2;
         }
+        geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+        const mat = new THREE.PointsMaterial({ color: 0x00ffff, size: 0.2, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+        this.speedLines = new THREE.Points(geo, mat);
+        this.scene.add(this.speedLines);
+        this.isSpeedLinesActive = true;
+        this.animateSpeedLines();
+    }
 
     animateSpeedLines() {
         if (!this.isSpeedLinesActive || !this.speedLines) return;
@@ -366,6 +388,7 @@ export class CinematicEffects { // Lớp quản lý các hiệu ứng điện �
     }
 
     startTunnelEffect(targetMesh, onComplete) {
+        if (this.musicSystem) this.musicSystem.playSound('WARP_SPEED', true);
         this.isTunnelActive = true;
         this.targetMesh = targetMesh;
         this.tunnelGroup = new THREE.Group();

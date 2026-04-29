@@ -65,7 +65,7 @@ export class Splash {
     launch() {
         if (window.GameAudio) window.GameAudio.playSound('SFX_CLICK', true);
         if (this.onLaunch) this.onLaunch();
-        
+
         gsap.to(this.dom, {
             opacity: 0,
             duration: 1.5,
