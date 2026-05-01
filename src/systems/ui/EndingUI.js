@@ -67,8 +67,8 @@ export class EndingUI {
         const topScores = this.saveScore(score, time, type);
 
         const message = isWin 
-            ? "Tàu UETE-3637 thoát khỏi Vùng Tối, bạn nhận ra tín hiệu cầu cứu chính là do bạn trong tương lai gửi." 
-            : "Tàu UETE-3637 bị mắc kẹt vĩnh viễn, trở thành “Tín hiệu ma” dụ các tàu khác tiến vào Vùng Tối...";
+            ? "Tàu UETệ thoát khỏi Vùng Tối, bạn nhận ra tín hiệu cầu cứu chính là do bạn trong tương lai gửi." 
+            : "Tàu UETệ bị mắc kẹt vĩnh viễn, trở thành “Tín hiệu ma” dụ các tàu khác tiến vào Vùng Tối...";
             
         const themeColor = isWin ? "#00ffcc" : "#ff3333";
         const shadowColor = isWin ? "rgba(0, 255, 204, 0.4)" : "rgba(255, 51, 51, 0.4)";
@@ -186,4 +186,4 @@ export class EndingUI {
         this.container.style.opacity = "0";
     }
 }
-
+
