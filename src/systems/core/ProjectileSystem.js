@@ -29,7 +29,9 @@ function createBossBulletTexture() {
 export class ProjectileSystem {
     constructor(scene) {
         this.scene = scene;
-        this.projectiles = [];
+        this.projectiles = []; // Đạn đang active
+        this.pool = [];        // Đạn nhàn rỗi
+        this.maxPoolSize = 200;
 
         // Khởi tạo hình học cho các loại đạn
         const pts = [];
@@ -60,53 +62,97 @@ export class ProjectileSystem {
             depthWrite: false,
             side: THREE.DoubleSide
         });
+
+        this.initPool();
+    }
+
+    initPool() {
+        for (let i = 0; i < this.maxPoolSize; i++) {
+            const mesh = new THREE.Mesh(this.laserGeo, this.enemyLaserMat);
+            mesh.visible = false;
+            this.scene.add(mesh);
+            
+            this.pool.push({
+                mesh: mesh,
+                velocity: new THREE.Vector3(),
+                direction: new THREE.Vector3(),
+                damage: 0,
+                isEnemy: true,
+                type: 'LASER',
+                attachedTo: null,
+                duration: Infinity,
+                hitTimer: 0
+            });
+        }
+    }
+
+    getFromPool() {
+        if (this.pool.length > 0) return this.pool.pop();
+        
+        // Fallback mở rộng pool nếu cần
+        const mesh = new THREE.Mesh(this.laserGeo, this.enemyLaserMat);
+        mesh.visible = false;
+        this.scene.add(mesh);
+        return {
+            mesh: mesh,
+            velocity: new THREE.Vector3(),
+            direction: new THREE.Vector3(),
+            damage: 0,
+            isEnemy: true,
+            type: 'LASER',
+            attachedTo: null,
+            duration: Infinity,
+            hitTimer: 0
+        };
+    }
+
+    returnToPool(p) {
+        p.mesh.visible = false;
+        p.attachedTo = null;
+        this.pool.push(p);
     }
 
     /**
-     * Tạo đạn mới trong scene
+     * Tạo đạn mới trong scene từ Pool
      */
     spawn(position, direction, speed, damage, isEnemy = true, type = 'LASER', attachedTo = null) {
-        let material, geometry;
+        const p = this.getFromPool();
+
+        // Gán đúng hình học và vật liệu
         if (type === 'LASER') {
-            material = this.enemyLaserMat;
-            geometry = this.laserGeo;
+            p.mesh.material = this.enemyLaserMat;
+            p.mesh.geometry = this.laserGeo;
         } else if (type === 'BOSS_LASER') {
-            material = this.bossLaserMat;
-            geometry = this.bossLaserGeo;
+            p.mesh.material = this.bossLaserMat;
+            p.mesh.geometry = this.bossLaserGeo;
         } else {
-            material = this.bossSphereMat;
-            geometry = this.sphereGeo;
+            p.mesh.material = this.bossSphereMat;
+            p.mesh.geometry = this.sphereGeo;
         }
 
-        const mesh = new THREE.Mesh(geometry, material);
-        mesh.position.copy(position);
+        p.mesh.position.copy(position);
 
         if (type === 'BOSS_LASER') {
             // Đẩy laser ra phía trước boss
-            mesh.position.add(direction.clone().multiplyScalar(38));
+            p.mesh.position.add(direction.clone().multiplyScalar(38));
         } else if (direction.z > 0) {
-            mesh.position.z += 2;
+            p.mesh.position.z += 2;
         }
 
-        const lookTarget = mesh.position.clone().add(direction);
-        mesh.lookAt(lookTarget);
+        const lookTarget = p.mesh.position.clone().add(direction);
+        p.mesh.lookAt(lookTarget);
 
-        const velocity = direction.clone().normalize().multiplyScalar(speed);
+        p.velocity.copy(direction).normalize().multiplyScalar(speed);
+        p.direction.copy(direction);
+        p.damage = damage;
+        p.isEnemy = isEnemy;
+        p.type = type;
+        p.attachedTo = attachedTo;
+        p.duration = type === 'BOSS_LASER' ? 3.5 : Infinity;
+        p.hitTimer = 0;
+        p.mesh.visible = true;
 
-        const projectile = {
-            mesh: mesh,
-            velocity: velocity,
-            direction: direction,
-            damage: damage,
-            isEnemy: isEnemy,
-            type: type,
-            attachedTo: attachedTo,
-            duration: type === 'BOSS_LASER' ? 3.5 : Infinity,
-            hitTimer: 0
-        };
-
-        this.scene.add(mesh);
-        this.projectiles.push(projectile);
+        this.projectiles.push(p);
     }
 
     update(delta) {
@@ -118,7 +164,7 @@ export class ProjectileSystem {
             if (p.duration !== Infinity) {
                 p.duration -= delta;
                 if (p.duration <= 0) {
-                    this.scene.remove(p.mesh);
+                    this.returnToPool(p);
                     this.projectiles.splice(i, 1);
                     continue;
                 }
@@ -133,10 +179,10 @@ export class ProjectileSystem {
                 p.mesh.position.add(p.velocity.clone().multiplyScalar(delta * 60));
             }
 
-            // Xóa đạn khi ra khỏi biên
+            // Thu hồi đạn khi ra khỏi biên
             if (!p.attachedTo && (p.mesh.position.z > 50 || p.mesh.position.z < -200 ||
                 Math.abs(p.mesh.position.x) > 100 || Math.abs(p.mesh.position.y) > 100)) {
-                this.scene.remove(p.mesh);
+                this.returnToPool(p);
                 this.projectiles.splice(i, 1);
             }
         }
@@ -164,7 +210,7 @@ export class ProjectileSystem {
                     }
                 } else {
                     const damage = p.damage;
-                    this.scene.remove(p.mesh);
+                    this.returnToPool(p);
                     this.projectiles.splice(i, 1);
                     return damage;
                 }

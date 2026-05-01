@@ -21,7 +21,9 @@ export class Weapon {
     constructor(scene, player) {
         this.scene = scene;
         this.player = player;
-        this.bullets = [];
+        this.bullets = []; // Chứa đạn đang bay (active)
+        this.pool = [];    // Chứa đạn nhàn rỗi (inactive)
+        this.maxPoolSize = 100;
         
         this.currentGun = 'GUN_1';
         this.updateConfig();
@@ -41,8 +43,46 @@ export class Weapon {
         }); 
 
         this.isLocked = false;
-        this.fireRateMultiplier = 1.0; // Hệ số nhân tốc độ bắn (1.0 là bình thường, >1 là chậm đi)
+        this.fireRateMultiplier = 1.0; 
         this.musicSystem = null;
+
+        this.initPool();
+    }
+
+    // KHỞI TẠO HỒ CHỨA ĐẠN
+    initPool() {
+        for (let i = 0; i < this.maxPoolSize; i++) {
+            const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial.clone());
+            bullet.visible = false;
+            bullet.userData = {
+                damage: 0,
+                vx: 0,
+                vz: 0,
+                markedForDeletion: false
+            };
+            this.scene.add(bullet);
+            this.pool.push(bullet);
+        }
+    }
+
+    // LẤY ĐẠN TỪ HỒ
+    getBulletFromPool() {
+        if (this.pool.length > 0) {
+            return this.pool.pop();
+        }
+        // Fallback nếu bắn quá nhanh, tự nở pool
+        const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial.clone());
+        bullet.visible = false;
+        bullet.userData = { damage: 0, vx: 0, vz: 0, markedForDeletion: false };
+        this.scene.add(bullet);
+        return bullet;
+    }
+
+    // TRẢ ĐẠN VỀ HỒ
+    returnBulletToPool(bullet) {
+        bullet.visible = false;
+        bullet.userData.markedForDeletion = false;
+        this.pool.push(bullet);
     }
 
     setMusicSystem(musicSystem) {
@@ -71,15 +111,11 @@ export class Weapon {
         const actualFireRate = this.fireRate * this.fireRateMultiplier;
         if (now - this.lastFireTime < actualFireRate) return;
 
-        // Kiểm tra đạn
         if (this.player.ammo < this.ammoPerShot) return;
 
         this.lastFireTime = now;
-        
-        // Trừ đạn của người chơi
         this.player.ammo -= this.ammoPerShot;
 
-        // Phát âm thanh bắn
         if (this.musicSystem) {
             this.musicSystem.playSound('PLAYER_BAN');
         }
@@ -87,32 +123,30 @@ export class Weapon {
         const bulletCount = this.config.bullet_count || 1;
         
         for (let i = 0; i < bulletCount; i++) {
-            const bullet = new THREE.Mesh(this.bulletGeometry, this.bulletMaterial.clone());
+            const bullet = this.getBulletFromPool();
             bullet.position.copy(this.player.mesh.position);
+            bullet.visible = true;
             
             let vx = 0;
             let vz = -this.bulletSpeed;
 
             if (this.currentGun === 'GUN_2') {
-                // GUN 2: Parallel shots
                 const offset = (i - (bulletCount - 1) / 2) * (this.config.parallel_offset || 2.0); 
                 bullet.position.x += offset;
                 bullet.material.color.setHex(0x00ff00); 
             } else if (this.currentGun === 'GUN_3') {
-                // GUN 3: Parallel rays
                 const offset = (i - (bulletCount - 1) / 2) * (this.config.parallel_offset || 2.8); 
                 bullet.position.x += offset;
                 bullet.material.color.setHex(0xff4500); 
+            } else {
+                bullet.material.color.setHex(0xffffff); // Default
             }
 
-            bullet.userData = {
-                damage: this.damage,
-                vx: vx,
-                vz: vz,
-                markedForDeletion: false
-            };
+            bullet.userData.damage = this.damage;
+            bullet.userData.vx = vx;
+            bullet.userData.vz = vz;
+            bullet.userData.markedForDeletion = false;
             
-            this.scene.add(bullet);
             this.bullets.push(bullet);
         }
     }
@@ -121,12 +155,12 @@ export class Weapon {
         for (let i = this.bullets.length - 1; i >= 0; i--) {
             const bullet = this.bullets[i];
             
-            // Di chuyển đạn dựa trên vx và vz từ userData
             bullet.position.x += bullet.userData.vx * (delta * 60);
             bullet.position.z += bullet.userData.vz * (delta * 60);
 
             if (bullet.position.z < -200 || bullet.userData.markedForDeletion) {
-                this.scene.remove(bullet);
+                // Thay vì remove, ta ném lại vào pool
+                this.returnBulletToPool(bullet);
                 this.bullets.splice(i, 1);
             }
         }
