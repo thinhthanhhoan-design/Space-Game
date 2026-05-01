@@ -98,8 +98,8 @@ export const CONFIG = {
     TYPE: "FORWARD_PROGRESSION",
     FORWARD_SPEED: 1, // Tăng lên 1 để tàu linh hoạt hơn với hệ thống velocity mới
     FLIGHT_ENVELOPE: {
-      X: 70, // Mở rộng không gian bay ngang ra xa hơn để thoải mái né đạn
-      Y: 30, // Khôn gian bay lên xuống tha hồ lạng lách
+      X: 70, // không gian bay ngang
+      Y: 30, // Không gian bay lên xuống 
     },
     // Thông số cho hiệu ứng nghiêng thế giới
     DYNAMIC_BANKING: {
@@ -108,8 +108,8 @@ export const CONFIG = {
       HORIZON_SHIFT: 0.2              // Camera lệch nhẹ sang ngang khi rẽ
     },
     ROTATION_LIMITS: {
-      ROLL: Math.PI / 4,   // Tàu nghiêng hẳn 45 độ cho máu!
-      PITCH: Math.PI / 8,  // Tăng góc ngóc/chúi lên 22.5 độ (cũ: 15 độ) để nhìn rõ rệt hơn
+      ROLL: Math.PI / 4,   // Tàu nghiêng hẳn 45 độ
+      PITCH: Math.PI / 8,  // Tăng góc ngóc/chúi lên 22.5 độ
       LERP: 0.1
     }
   },
@@ -145,18 +145,16 @@ export const CONFIG = {
   ENEMIES: {
     QUAI_1: { HP: 50, DAMAGE: 15, BULLET_SPEED: 2.5, MOVE_SPEED: 1.5, POINTS: 100 }, // Sẽ lấy từ SCORING.ENEMY_DEFAULT
     BOSS_1: {
-      HP: 2000, // Tăng từ 500 lên 2000
+      HP: 1200, 
       ATTACK_INTERVAL: 5,
       DAMAGE: 30,
-      BULLET_SPEED: 1.5,      // Tốc độ bắn đạn thường/cầu
-      MOVE_SPEED: 3.0,        // Tốc độ di chuyển của boss
-      HOMING_SPEED: 5,      // Tốc độ bắn đạn tự nhắm
+      BULLET_SPEED: 1.5,      
       LIMIT: 1,
       RETREAT_Z: -50,
       POINTS: 5000
     },
     BOSS_2: {
-      HP: 5000, // Tăng từ 800 lên 5000
+      HP: 2000, 
       LASER_DAMAGE: 15,
       //REINFORCE_HP: 250,
       //REINFORCE_DAMAGE: 25,
@@ -167,7 +165,7 @@ export const CONFIG = {
       POINTS: 10000
     },
     BOSS_3: {
-      HP: 8000, // Tăng từ 1200 lên 10000
+      HP: 4000, 
       DODGE: 0.4,
       //SHOCK_TRIGGER: 300,
       SHOCKWAVE_COOLDOWN: 8,

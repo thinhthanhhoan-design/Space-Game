@@ -7,10 +7,10 @@ import gsap from 'gsap';
 export class Boss extends Enemy {
     constructor(scene, projectileSystem, itemSystem, type = 'BOSS_1', musicSystem = null) {
         super(scene, projectileSystem, itemSystem, type, null, musicSystem);
-        this.hp = CONFIG.ENEMIES[type]?.HP || 500;
+        this.hp = CONFIG.ENEMIES[type]?.HP || 2000;
         this.maxHP = this.hp;
         this.moveDirection = 1;
-        this.moveSpeed = 0.1;
+        this.moveSpeed = (CONFIG.ENEMIES.BOSS_1?.MOVE_SPEED || 3.0) / 30;
 
         this.state = 'FIGHTING';
         this.shootTimer = 0;
@@ -118,7 +118,7 @@ export class Boss extends Enemy {
 
         // Tấn công thường
         this.shootTimer += delta;
-        if (this.shootTimer >= 2.0) {
+        if (this.shootTimer >= (CONFIG.ENEMIES.BOSS_1?.ATTACK_INTERVAL || 2.0)) {
             this.shootTimer = 0;
             this.shootSphere(playerPos);
             this.shootCount++;
@@ -151,7 +151,7 @@ export class Boss extends Enemy {
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
         const direction = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
         const speed = CONFIG.ENEMIES.BOSS_1?.HOMING_SPEED || 0.6;
-        this.projectileSystem.spawn(this.mesh.position, direction, speed, 20, true);
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, this.damage * 0.8, true);
     }
 
     shootLaser(playerPos) {
@@ -159,21 +159,21 @@ export class Boss extends Enemy {
         if (this.musicSystem) this.musicSystem.playSound('HIEU_UNG_LAZE_BAN');
         const direction = new THREE.Vector3(0, 0, 1);
         const speed = 0;
-        this.projectileSystem.spawn(this.mesh.position, direction, speed, 35, true, 'BOSS_LASER', this.mesh);
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, this.damage * 1.2, true, 'BOSS_LASER', this.mesh);
     }
 
     shootSphere(playerPos) {
         if (!playerPos || !this.mesh || !this.projectileSystem) return;
         const direction = new THREE.Vector3().subVectors(playerPos, this.mesh.position).normalize();
         const speed = CONFIG.ENEMIES.BOSS_1?.BULLET_SPEED || 0.4;
-        this.projectileSystem.spawn(this.mesh.position, direction, speed, 30, true, 'SPHERE');
+        this.projectileSystem.spawn(this.mesh.position, direction, speed, this.damage, true, 'SPHERE');
     }
 }
 
 export class Boss2 extends Enemy {
     constructor(scene, projectileSystem, itemSystem, enemyManager, musicSystem = null) {
         super(scene, projectileSystem, itemSystem, 'BOSS_2', null, musicSystem);
-        this.hp = CONFIG.ENEMIES.BOSS_2?.HP || 800;
+        this.hp = CONFIG.ENEMIES.BOSS_2?.HP || 5000;
         this.maxHP = this.hp;
         this.moveDirection = 1;
         this.moveSpeed = 0.15;
@@ -235,7 +235,7 @@ export class Boss2 extends Enemy {
         this.mesh.position.y += Math.sin(Date.now() * 0.002) * 0.08;
 
         this.spreadTimer += delta;
-        if (this.spreadTimer >= 3.5) {
+        if (this.spreadTimer >= (CONFIG.ENEMIES.BOSS_2?.ATTACK_INTERVAL || 3.5)) {
             this.spreadTimer = 0;
             this.shootSpread(playerPos);
         }
@@ -271,8 +271,8 @@ export class Boss2 extends Enemy {
         minion.onLoadComplete = () => {
             minion.mesh.position.set(this.mesh.position.x, this.mesh.position.y, this.mesh.position.z + 6);
         };
-        minion.maxHP = 40;
-        minion.hp = 40;
+        minion.maxHP = CONFIG.ENEMIES.QUAI_1?.HP || 50;
+        minion.hp = minion.maxHP;
         minion.isBossMinion = true;
         this.enemyManager.enemies.push(minion);
     }
@@ -293,7 +293,7 @@ export class Boss3 extends Enemy {
     constructor(scene, projectileSystem, itemSystem, player, musicSystem = null) {
         super(scene, projectileSystem, itemSystem, 'BOSS_3', null, musicSystem);
         this.player = player;
-        this.hp = CONFIG.ENEMIES.BOSS_3?.HP || 1200;
+        this.hp = CONFIG.ENEMIES.BOSS_3?.HP || 8000;
         this.maxHP = this.hp;
 
         this.moveDirection = 1;
@@ -363,7 +363,7 @@ export class Boss3 extends Enemy {
         this.mesh.position.y += Math.sin(Date.now() * 0.003) * 0.05;
 
         // Kích hoạt shockwave khi HP thấp
-        if (this.hp <= 840) {
+        if (this.hp <= this.maxHP * 0.7) {
             this.shockwaveTimer += delta;
             const cooldown = CONFIG.ENEMIES.BOSS_3?.SHOCKWAVE_COOLDOWN || 6;
             if (this.shockwaveTimer >= cooldown) {
