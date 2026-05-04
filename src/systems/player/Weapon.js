@@ -130,6 +130,24 @@ export class Weapon {
             let vx = 0;
             let vz = -this.bulletSpeed;
 
+            // --- AUTO AIM ASSIST CHO TỪNG TIA ---
+            // Đọc mục tiêu bị khóa riêng biệt cho viên đạn thứ i
+            const lockedTarget = (this.player.crosshair && this.player.crosshair.lockedTargets) ? this.player.crosshair.lockedTargets[i] : null;
+
+            if (lockedTarget && lockedTarget.mesh) {
+                const targetPos = lockedTarget.mesh.position;
+                const dx = targetPos.x - bullet.position.x;
+                const dz = targetPos.z - bullet.position.z;
+                
+                // Chuẩn hóa vector bay hướng tới quái
+                const dist = Math.sqrt(dx*dx + dz*dz);
+                if (dist > 0) {
+                    vx = (dx / dist) * this.bulletSpeed;
+                    // Vẫn giữ tốc độ Z tối thiểu để đạn không bị bay ngược hoặc quá chậm
+                    vz = Math.min((dz / dist) * this.bulletSpeed, -this.bulletSpeed * 0.5);
+                }
+            }
+
             if (this.currentGun === 'GUN_2') {
                 const offset = (i - (bulletCount - 1) / 2) * (this.config.parallel_offset || 2.0); 
                 bullet.position.x += offset;

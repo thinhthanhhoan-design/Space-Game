@@ -4,10 +4,17 @@ import { CONFIG } from '../../utils/CONFIG.JS';
 
 export class Combat {
     constructor() {
-        this.playerHitboxRadiusSq = 1.0;
-        this.enemyHitboxRadiusSq = 1.5;
-        this.asteroidHitboxRadiusSq = 2.0;
-        this.bulletHitboxRadiusSq = 12.0;
+        // Khai báo bán kính Hitbox trực tiếp thay vì bình phương
+        this.playerRadius = 1.0;
+        this.enemyRadius = 1.22;
+        this.asteroidRadius = 1.41;
+        this.bulletRadius = 3.46;
+        
+        // Bình phương bán kính để dùng cho các hàm Sq
+        this.playerHitboxRadiusSq = this.playerRadius * this.playerRadius;
+        this.bulletHitboxRadiusSq = this.bulletRadius * this.bulletRadius;
+        this.asteroidHitboxRadiusSq = this.asteroidRadius * this.asteroidRadius;
+        this.itemBulletRadius = 5.0; // Bán kính ưu tiên khi đạn bắn trúng vật phẩm
     }
 
     update(player, enemies = [], asteroids = [], explosionSystem = null, particleSystem = null, sceneController = null, musicSystem = null, addScore = null) {
@@ -26,7 +33,9 @@ export class Combat {
                     const bossBox = new THREE.Box3().setFromObject(enemy.mesh);
                     if (bossBox.containsPoint(playerPos)) isCrash = true;
                 } else {
-                    if (MathUtils.checkSphereCollisionSq(playerPos, enemy.mesh.position, this.playerHitboxRadiusSq, 2.25)) {
+                    // TỐI ƯU HÓA: Sử dụng collisionSphere để tránh gọi Math.sqrt()
+                    // 1.5 ở đây là bán kính thực của Enemy (trước đó dùng 2.25 là bình phương)
+                    if (MathUtils.collisionSphere(playerPos, this.playerRadius, enemy.mesh.position, 1.5)) {
                         isCrash = true;
                     }
                 }
@@ -51,7 +60,7 @@ export class Combat {
         for (let i = 0; i < asteroids.length; i++) {
             const ast = asteroids[i];
             if (ast && !ast.userData?.markedForDeletion) {
-                if (MathUtils.checkSphereCollisionSq(playerPos, ast.position, this.playerHitboxRadiusSq, this.asteroidHitboxRadiusSq)) {
+                if (MathUtils.collisionSphere(playerPos, this.playerRadius, ast.position, this.asteroidRadius)) {
                     if (!player.hasShield) {
                         player.takeDamage(ast.userData?.damage || 10);
                         if (musicSystem) musicSystem.playSound('HIEU_UNG_TAU_TRUNG_DON');
@@ -89,7 +98,7 @@ export class Combat {
                             const bossBox = new THREE.Box3().setFromObject(enemy.mesh);
                             if (bossBox.containsPoint(bulletPos)) isHit = true;
                         } else {
-                            if (MathUtils.checkSphereCollisionSq(bulletPos, enemy.mesh.position, this.bulletHitboxRadiusSq, 2.25)) {
+                            if (MathUtils.collisionSphere(bulletPos, this.bulletRadius, enemy.mesh.position, 1.5)) {
                                 isHit = true;
                             }
                         }
@@ -156,7 +165,9 @@ export class Combat {
                         const item = items[l];
                         if (item.userData.isCollected) continue;
 
-                        if (MathUtils.checkSphereCollisionSq(bulletPos, item.position, this.bulletHitboxRadiusSq, 6.0)) {
+                        // TỐI ƯU HÓA: Sử dụng collisionSphere với bán kính lớn hơn (itemBulletRadius) 
+                        // để đạn dễ dàng kích hoạt vật phẩm hơn
+                        if (MathUtils.collisionSphere(bulletPos, this.bulletRadius, item.position, this.itemBulletRadius)) {
                             item.userData.isCollected = true;
                             const isBuff = ['HEALTH', 'AMMO', 'SHIELD', 'WEAPON_2', 'WEAPON_3'].includes(item.userData.type);
 

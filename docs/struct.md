@@ -1,101 +1,82 @@
-# Cấu trúc dự án – Space Game
+# Cấu trúc Hệ thống Dự án – UET Space Escape
 
-Tài liệu này mô tả cấu trúc thư mục và vai trò của từng file trong dự án **Space‑Game**.
+Tài liệu này mô tả chi tiết cây thư mục vật lý và vai trò kỹ thuật cốt lõi của từng module trong dự án **UET Space Escape**. Hệ thống được xây dựng theo **Kiến trúc Hướng Module (Modular Architecture)** kết hợp với mô hình **Định tuyến Vòng lặp (Game Loop Pattern)**.
 
-```
+```text
 Space-Game/
-├─ public/                     # Tài nguyên tĩnh
-│   ├─ audio/                  # Âm thanh (SFX và nhạc nền)
-│   │   └─ sound/              # Các file .mp3 cho hiệu ứng và nhạc
-│   ├─ models/                 # Mô hình 3D (.glb)
-│   │   ├─ uete_3637.glb       # Mô hình tàu người chơi chính
-│   │   ├─ Monster 1.glb       # Mô hình quái thường
-│   │   ├─ Boss_1/2/3.glb      # Các mô hình Boss qua từng màn
-│   │   └─ meteorite.glb       # Mô hình thiên thạch
-│   ├─ textures/               # Hình ảnh texture và UI
-│   │   ├─ HP.png, dan.png...  # Icon các vật phẩm (Items)
-│   │   ├─ Logo.webp           # Logo trò chơi
-│   │   └─ nebula_dark.jpg     # Texture nền không gian
+├─ public/                     # Tài nguyên tĩnh (Static Assets)
+│   ├─ audio/                  # Âm thanh định dạng nén (SFX, BGM)
+│   ├─ models/                 # Mô hình 3D (.glb) tối ưu cho WebGL
+│   ├─ textures/               # Vật liệu bề mặt (Diffuse, Emission Maps) và Icon
 │   └─ favicon.ico             # Biểu tượng trang web
 │
-├─ src/                        # Mã nguồn chính
-│   ├─ utils/                  # Tiện ích và cấu hình
-│   │   ├─ CONFIG.JS            # Cấu hình trung tâm (thông số game, đường dẫn)
-│   │   ├─ AssetLoader.js      # Tải và quản lý tài nguyên (models, textures)
-│   │   ├─ ModelCache.js        # Hệ thống cache mô hình 3D
-│   │   └─ Math.js              # Thư viện toán học, xử lý va chạm và quỹ đạo
+├─ src/                        # Không gian mã nguồn chính (Source Code)
+│   ├─ styles/                 # Tệp định dạng CSS
+│   │   └─ main.css            # Định dạng UI Overlay phẳng (2D) đè lên WebGL
 │   │
-│   ├─ systems/                # Các hệ thống logic
-│   │   ├─ core/                # Lõi điều khiển game
-│   │   │   ├─ GameManager.js    # Quản lý vòng đời game, Wave, Boss và sự kiện
-│   │   │   ├─ GameLoop.js       # Vòng lặp cập nhật chính (60 FPS)
-│   │   │   ├─ ProjectileSystem.js # Quản lý đạn và laser toàn cục
-│   │   │   ├─ SceneController.js  # Quản lý Three.js Scene, Camera, Ánh sáng
-│   │   │   └─ StateManager.js     # Chuyển đổi trạng thái (Intro, Play, End)
-│   │   │
-│   │   ├─ player/             # Logic người chơi
-│   │   │   ├─ Player.js         # Khởi tạo và điều khiển tàu người chơi
-│   │   │   ├─ Combat.js         # Xử lý va chạm và sát thương của người chơi
-│   │   │   ├─ Weapon.js         # Logic bắn súng, nâng cấp vũ khí
-│   │   │   ├─ ItemSystem.js     # Quản lý các vật phẩm rơi ra và nhặt được
-│   │   │   └─ Score.js          # Hệ thống tính điểm và lưu kỷ lục
-│   │   │
-│   │   ├─ enemy/              # Logic kẻ địch
-│   │   │   ├─ Enemy.js          # Lớp cơ sở cho quái thường
-│   │   │   ├─ Boss.js           # Logic AI phức tạp cho các Boss
-│   │   │   ├─ SwarmMovement.js # Điều khiển di chuyển theo bầy đàn
-│   │   │   └─ Patterns.js       # Các quỹ đạo di chuyển định sẵn
-│   │   │
-│   │   ├─ ui/                 # Giao diện người dùng (HTML/CSS in JS)
-│   │   │   ├─ UIManager.js      # Quản lý HUD (HP, Ammo, Score, Boss HP)
-│   │   │   ├─ Intro.js          # Màn hình giới thiệu và chọn tàu
-│   │   │   ├─ Story.js          # Hệ thống dẫn truyện và hội thoại
-│   │   │   ├─ Splash.js         # Màn hình khởi động tương tác
-│   │   │   ├─ EndingUI.js       # Giao diện kết thúc (Win/Loss)
-│   │   │   └─ Crosshair.js      # Tâm ngắm tương tác
-│   │   │
-│   │   ├─ effects/            # Hiệu ứng hình ảnh
-│   │   │   ├─ Explosion.js      # Hiệu ứng nổ hạt (Particle)
-│   │   │   ├─ ParticleSystem.js # Hệ thống hạt dùng chung
-│   │   │   ├─ CameraEffects.js  # Rung màn hình, hiệu ứng ống kính
-│   │   │   ├─ CinematicEffects.js # Các đoạn cắt cảnh kỹ thuật số
-│   │   │   └─ GSA.js            # Hiệu ứng đồ họa đặc biệt
-│   │   │
-│   │   ├─ environment/        # Môi trường game
-│   │   │   ├─ Background.js     # Nền sao, thiên hà, nebula
-│   │   │   └─ AsteroidSystem.js # Hệ thống thiên thạch trôi nổi
-│   │   │
-│   │   └─ audio/              # Hệ thống âm thanh
-│   │       └─ music.js          # Quản lý nhạc nền và hiệu ứng âm thanh (SFX)
+│   ├─ utils/                  # Tiện ích bổ trợ và Cấu hình toàn cục
+│   │   ├─ CONFIG.JS           # Nơi thiết lập mọi chỉ số cân bằng (Speed, HP, Paths)
+│   │   └─ AssetLoader.js      # Hệ thống tải tài nguyên bất đồng bộ (Promises) kết hợp SkeletonUtils
 │   │
-│   └─ main.js                 # Điểm khởi đầu, kết nối các hệ thống chính
+│   ├─ systems/                # Khối điều khiển hệ thống (Hệ thống phân lớp)
+│   │   ├─ core/               # LỚP 1: HỆ THỐNG LÕI (Core Infrastructure)
+│   │   │   ├─ GameLoop.js       # Vòng lặp tính toán DeltaTime (requestAnimationFrame)
+│   │   │   ├─ GameManager.js    # Bộ não điều phối toàn bộ trò chơi
+│   │   │   ├─ ProjectileSystem.js # Quản lý đạn bắn bằng kiến trúc Object Pooling
+│   │   │   ├─ SceneController.js  # Khởi tạo Three.js Scene, Camera và Nguồn sáng
+│   │   │   └─ StateManager.js     # Chuyển đổi trạng thái máy ảo (Intro -> Play -> End)
+│   │   │
+│   │   ├─ player/             # LỚP 2: TƯƠNG TÁC NGƯỜI CHƠI (Player Layer)
+│   │   │   ├─ Player.js         # Nội suy tọa độ và xử lý Input di chuyển tàu
+│   │   │   ├─ Weapon.js         # Logic khai hỏa và bẻ cong quỹ đạo đạn (Homing Vector)
+│   │   │   ├─ Combat.js         # Hệ thống xét va chạm và chịu sát thương
+│   │   │   ├─ ItemSystem.js     # Thuật toán sinh tồn động (Bơm máu/đạn khẩn cấp)
+│   │   │   └─ Score.js          # Giao tiếp với LocalStorage lưu kỷ lục
+│   │   │
+│   │   ├─ enemy/              # LỚP 3: TRÍ TUỆ NHÂN TẠO (AI & Enemy Layer)
+│   │   │   ├─ Boss.js           # Cỗ máy trạng thái (State-Machine) điều khiển Boss V1, V2, V3
+│   │   │   ├─ Enemy.js          # Hệ thống quái vật tịnh tiến cơ bản
+│   │   │   ├─ SwarmMovement.js  # Thuật toán bầy đàn bám đuổi (Boids/Swarm)
+│   │   │   └─ Patterns.js       # Các quỹ đạo tấn công định sẵn (Paths)
+│   │   │
+│   │   ├─ environment/        # LỚP 4: MÔI TRƯỜNG VÀ VẬT LÝ
+│   │   │   ├─ AsteroidSystem.js # Hệ thống sinh thiên thạch ngẫu nhiên
+│   │   │   └─ Background.js     # Xử lý cuộn phông nền đa tầng (Parallax Scrolling)
+│   │   │
+│   │   ├─ effects/            # LỚP 5: KỸ XẢO ĐỒ HỌA (VFX Layer)
+│   │   │   ├─ CinematicEffects.js # Lập trình phân cảnh điện ảnh bằng thuật toán (Hố đen/Warp Tunnel)
+│   │   │   ├─ GSA.js            # Khai thác GLSL Custom Shaders điều khiển điểm hạt cấp GPU
+│   │   │   ├─ Explosion.js      # Hệ thống kích nổ và mảnh vỡ
+│   │   │   ├─ CameraEffects.js  # Hiệu ứng rung chấn máy quay (Camera Shake)
+│   │   │   └─ ParticleSystem.js # Trình xuất hạt (Particles) sử dụng Object Pool
+│   │   │
+│   │   ├─ ui/                 # LỚP 6: GIAO DIỆN & CỐT TRUYỆN (UX/UI Layer)
+│   │   │   ├─ Crosshair.js      # Radar tâm ngắm sử dụng thuật toán chiếu tia (Raycasting)
+│   │   │   ├─ UIManager.js      # Kết nối dữ liệu Game thao tác thẳng vào cây DOM HTML
+│   │   │   ├─ Intro.js          # Xử lý luồng dữ liệu mở màn
+│   │   │   ├─ Splash.js         # Màn hình chờ tương tác (Tăng Immersion)
+│   │   │   ├─ Story.js          # Hệ thống rẽ nhánh hội thoại / cốt truyện
+│   │   │   └─ EndingUI.js       # Tổng hợp kết quả và màn hình Game Over/Win
+│   │   │
+│   │   └─ audio/              # LỚP 7: ÂM THANH
+│   │       └─ music.js          # Quản trị luồng âm thanh không gian (Spatial Audio)
+│   │
+│   └─ main.js                 # CỬA NGÕ KHỞI ĐỘNG (Entry Point)
 │
-├─ docs/                       # Tài liệu dự án
-│   ├─ struct.md               # File này (Cấu trúc dự án)
-│   └─ thuat_toan.md           # Tài liệu về các thuật toán trong game
+├─ docs/                       # Thư mục lưu trữ văn bản học thuật
+│   ├─ struct.md               # Sơ đồ Cấu trúc Dự án (File đang xem)
+│   ├─ thuat_toan.md           # Báo cáo thuật toán lõi
+│   └─ phan_tich_gioi_thieu.md # Luận văn phân tích chuyên sâu lý do chọn đề tài
 │
-├─ index.html                 # File HTML chính
-├─ package.json               # Cấu hình dự án và dependencies (Vite)
-└─ vite.config.js             # Cấu hình cho trình đóng gói Vite
+├─ index.html                  # Gốc hiển thị của trình duyệt Web
+├─ package.json                # Liệt kê phụ thuộc (Three.js, GSAP)
+└─ vite.config.js              # Cấu hình biên dịch của nền tảng Vite
 ```
 
-## Vai trò chi tiết các thành phần chính
+## Giải phẫu vai trò theo mô hình phân lớp
 
-- **Lớp Dữ liệu & Tiện ích (utils/):**
-  - `CONFIG.JS`: "Trái tim" của game. Mọi thông số từ tốc độ, sát thương đến đường dẫn file đều được cấu hình tại đây.
-  - `Math.js`: Cung cấp các hàm toán học vector, kiểm tra va chạm hình cầu/hộp, và các thuật toán nội suy di chuyển.
+Bằng việc phân tách rõ ràng 7 Lớp (Layer) bên trong thư mục `systems/`, kiến trúc của trò chơi đạt được tính **Đóng gói (Encapsulation)** vô cùng chuẩn mực:
 
-- **Hệ thống Lõi (core/):**
-  - `GameManager.js`: Đóng vai trò "đạo diễn", quyết định khi nào sinh quái, khi nào Boss xuất hiện và chuyển màn.
-  - `ProjectileSystem.js`: Tối ưu hóa việc xử lý hàng ngàn viên đạn cùng lúc bằng cách tái sử dụng object (Object Pooling).
-
-- **Giao diện người dùng (ui/):**
-  - Các tệp trong này tạo ra giao diện bằng cách can thiệp trực tiếp vào DOM. `UIManager.js` cập nhật liên tục các thông số theo thời gian thực từ `Player` và `GameManager`.
-
-- **Hiệu ứng (effects/):**
-  - Sử dụng hệ thống hạt (Particles) để tạo ra các vụ nổ và hiệu ứng hình ảnh sống động mà không làm giảm hiệu suất quá nhiều.
-
-- **Môi trường (environment/):**
-  - `Background.js` tạo ra cảm giác chiều sâu không gian (parallax) bằng cách di chuyển các lớp texture nền với tốc độ khác nhau.
-
-> **Lưu ý:** Khi thêm file mới hoặc thay đổi chức năng lớn, hãy cập nhật file này để các thành viên khác dễ dàng nắm bắt cấu trúc dự án.
+1. **Nhóm Định tuyến (Core & Main):** File `main.js` và thư mục `core` đóng vai trò là xương sống. Chúng tạo ra vòng lặp vô tận (Game Loop) và phân bổ quyền lực xuống các lớp bên dưới. Cơ chế **Object Pooling** tại `ProjectileSystem` là lá chắn bảo vệ CPU khỏi việc giật lag.
+2. **Nhóm Hiển thị (Effects & Environment):** Nơi phô diễn các kỹ thuật đồ họa máy tính đỉnh cao nhất. Đưa các tính toán tọa độ cực nặng xuống cấp độ Card đồ họa (GPU) thông qua **GLSL** và tạo ảo giác không gian sâu bằng **Parallax**.
+3. **Nhóm Logic Tương tác (Player & Enemy & UI):** Nơi chứa đựng các thuật toán trí tuệ nhân tạo (AI). Ứng dụng **State Machine** để Boss đổi pha và **Raycaster** để giúp Player ngắm bắn mục tiêu 3D trên màn hình 2D phẳng. Giao diện (UI) được tách hoàn toàn thành một mảng riêng để chỉnh sửa DOM mà không gây cản trở tiến trình kết xuất của WebGL.

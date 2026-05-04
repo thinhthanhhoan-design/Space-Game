@@ -209,8 +209,16 @@ export class ItemSystem {
             case 'WEAPON_2':
             case 'WEAPON_3':
                 if (this.uiManager) this.uiManager.showMessage(`🔫 NEW WEAPON: ${itemConfig.gun_key}`, "#00ff00", 2000);
-                if (this.player.weapon) this.player.weapon.setGun(itemConfig.gun_key);
-                
+                if (this.player.weapon) {
+                    const previousGun = this.player.weapon.currentGun;
+                    this.player.weapon.setGun(itemConfig.gun_key);
+                    setTimeout(() => {
+                        if (this.player.weapon && this.player.weapon.currentGun === itemConfig.gun_key) {
+                            this.player.weapon.setGun(previousGun);
+                            if (this.uiManager) this.uiManager.showMessage(`🔫 REVERT TO ${previousGun}`, "#ffff00", 1500);
+                        }
+                    }, (itemConfig.duration || 10) * 1000);
+                }
                 const refillAmt = Math.floor(this.player.maxAmmo * 0.3);
                 this.player.ammo = Math.min(this.player.ammo + refillAmt, this.player.maxAmmo);
                 break;

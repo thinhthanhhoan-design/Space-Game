@@ -6,7 +6,7 @@
 
 export const CONFIG = {
   // ===============================
-  // 📂 ASSETS PATHS
+  // ASSETS PATHS
   // ===============================
   ASSETS: {
     MODELS: {
@@ -145,7 +145,7 @@ export const CONFIG = {
   ENEMIES: {
     QUAI_1: { HP: 50, DAMAGE: 15, BULLET_SPEED: 2.5, MOVE_SPEED: 1.5, POINTS: 100 }, // Sẽ lấy từ SCORING.ENEMY_DEFAULT
     BOSS_1: {
-      HP: 1200, 
+      HP: 2500, 
       ATTACK_INTERVAL: 5,
       DAMAGE: 30,
       BULLET_SPEED: 1.5,      
@@ -154,10 +154,8 @@ export const CONFIG = {
       POINTS: 5000
     },
     BOSS_2: {
-      HP: 2000, 
+      HP: 3000, 
       LASER_DAMAGE: 15,
-      //REINFORCE_HP: 250,
-      //REINFORCE_DAMAGE: 25,
       BULLET_SPEED: 0.6,
       SPREAD_DAMAGE: 20,
       SPAWN_QUAI_COUNT: 3,
@@ -167,7 +165,6 @@ export const CONFIG = {
     BOSS_3: {
       HP: 4000, 
       DODGE: 0.4,
-      //SHOCK_TRIGGER: 300,
       SHOCKWAVE_COOLDOWN: 8,
       SLOW: 0.5,
       DAMAGE_PER_HIT: 45,
@@ -176,7 +173,7 @@ export const CONFIG = {
   },
 
   // ===============================
-  // ☄️ WORLD & ENVIRONMENT
+  // WORLD & ENVIRONMENT
   // ===============================
   WORLD: {
     SPAWN_DISTANCE_Z: -150,
@@ -205,7 +202,7 @@ export const CONFIG = {
   },
 
   // ===============================
-  // 📈 SCORING SYSTEM (Hệ thống tính điểm)
+  //  SCORING SYSTEM (Hệ thống tính điểm)
   // ===============================
   SCORING: {
     ASTEROID: 0,           // Điểm khi phá hủy thiên thạch (đã bỏ theo yêu cầu)
@@ -218,18 +215,17 @@ export const CONFIG = {
   },
 
   // ===============================
-  // 🎁 ITEMS & POWERUPS
+  // ITEMS & POWERUPS
   // ===============================
   ITEMS: {
-    SPAWN_INTERVAL: 4.5,      // Cứ 4.5s spawn 1 item ngẫu nhiên (Giảm thêm để súng xuất hiện nhanh hơn)
-    SPEED_FACTOR: 0.5,        // Tốc độ bay (0.5 = chậm hơn thiên thạch 1 nửa)
-    SCALE_BASE: 3.0,          // Tăng gấp đôi kích thước cơ bản (cũ: 1.5)
-    GLOW_OPACITY: 0.6,        // Giảm độ chói (cũ: 1.0)
-    EDGE_GLOW_OPACITY: 0.4,   // Giảm độ sáng viền (cũ: 0.8)
-    LIGHT_INTENSITY: 5,       // Giảm cường độ ánh sáng (cũ: 10)
-    LIGHT_RANGE: 25,          // Tầm chiếu sáng (cũ: 10)
-    COLLECTION_RADIUS: 4,   // Bán kính va chạm nhặt đồ (Tăng lên 3.5 để nhặt đồ dễ hơn)
-
+    SPAWN_INTERVAL: 4.5,      // Cứ 4.5s spawn 1 item ngẫu nhiên
+    SPEED_FACTOR: 0.75,        // Tốc độ bay 
+    SCALE_BASE: 3.0,          
+    GLOW_OPACITY: 0.8,        //độ chói
+    EDGE_GLOW_OPACITY: 0.4,   //độ sáng viền
+    LIGHT_INTENSITY: 5,       // cường độ ánh sáng
+    LIGHT_RANGE: 25,          // Tầm chiếu sáng
+    COLLECTION_RADIUS: 4,   // Bán kính va chạm nhặt đồ
     // --- Định nghĩa các loại Item ---
     TYPES: {
       HEALTH: { value: 100, texture: "ITEM_HP", chance: 0.3, POINTS: 50 },
@@ -237,7 +233,7 @@ export const CONFIG = {
       SHIELD: { duration: 10000, texture: "ITEM_SECURITY", chance: 0.1, POINTS: 50 },
       // --- Vật phẩm nâng cấp Vũ khí ---
       WEAPON_2: { gun_key: "GUN_2", texture: "ITEM_Sung2", min_level: "LEVEL_2", duration: 10, POINTS: 50 },
-      WEAPON_3: { gun_key: "GUN_3", texture: "ITEM_Sung3", min_level: "LEVEL_3", duration: 13, POINTS: 50 },
+      WEAPON_3: { gun_key: "GUN_3", texture: "ITEM_Sung3", min_level: "LEVEL_3", duration: 15, POINTS: 50 },
       WEAPON_LOCK: { duration: 7000, texture: "ITEM_KHOA_VK", chance: 0.05, POINTS: -60 },
       ASTEROID_ITEM: { duration: 10000, texture: "ITEM_THIEN_THACH", SPEED_MULT: 2.5, DENSITY_MULT: 5.0, chance: 0.1, POINTS: -60 }
     },
@@ -250,24 +246,24 @@ export const CONFIG = {
       BUFF: 0x00ff00, // Màu xanh cho buff items
       DEBUFF: 0xff2200, // Màu đỏ cho debuff items
       NEUTRAL: 0xaaaaaa // Màu trung tính khi đạn chạm item
-    } // End of COLORS config
-  }, // End of ITEMS config
+    } 
+  }, 
 
   // ===============================
-  // 🎵 AUDIO SETTINGS
+  // AUDIO SETTINGS
   // ===============================
   AUDIO: {
     // --- BGM (Music) ---
     NEN_INTRO: 0.7,        // Nhạc nền intro lúc tụ hạt
-    NEN_GAME: 0.5,         // Nhạc nền game chính
-    NHAC_NEN_INTRO_MAT_TIN_HIEU_1: 0.6,
-    NHAC_NEN_INTRO_MAT_TIN_HIEU_2: 0.6,
+    NEN_GAME: 0.7,         // Nhạc nền game chính
+    NHAC_NEN_INTRO_MAT_TIN_HIEU_1: 0.7,
+    NHAC_NEN_INTRO_MAT_TIN_HIEU_2: 0.7,
 
     // --- SFX (Effects) ---
     PLAYER_BAN: 0.5,       // Âm thanh người chơi bắn
     HIEU_UNG_LAZE_BAN: 0.5,
-    HIEU_UNG_TAU_TRUNG_DON: 0.6,
-    HIEU_UNG_QUAI_THIEN_THACH_NO: 0.6,
+    HIEU_UNG_TAU_TRUNG_DON: 0.7,
+    HIEU_UNG_QUAI_THIEN_THACH_NO: 0.7,
     HIEU_UNG_BOSS_NO_TUNG: 1.0,
     HIEU_UNG_NHAT_VAT_PHAM: 0.7,
     HIEU_UNG_START: 1.0,
@@ -277,8 +273,8 @@ export const CONFIG = {
     BLACKHOLE_SUCK: 1.5,
     WARP_SPEED: 0.8,
 
-    LEVEL_2: 0.5,
-    LEVEL_3: 0.5,
+    LEVEL_2: 0.7,
+    LEVEL_3: 0.7,
     CHUYEN_MAN: 1.0,
     VICTORY: 1.0,
     GAMEOVER: 1.0,
@@ -309,7 +305,7 @@ export const CONFIG = {
   },
 
   // ===============================
-  // 💬 GAME STRINGS (Lưu trữ toàn bộ văn bản trong game)
+  // GAME STRINGS (Lưu trữ toàn bộ văn bản trong game)
   // ===============================
   STRINGS: {
     WARNING_BLACKHOLE: "CẢNH BÁO: Phát hiện lỗ hổng không gian khổng lồ!",
@@ -321,7 +317,7 @@ export const CONFIG = {
   },
 
   // ===============================
-  // 🗺️ LEVELS & WAVES CONFIG (Cấu hình màn chơi và độ khó)
+  // LEVELS & WAVES CONFIG (Cấu hình màn chơi và độ khó)
   // ===============================
   LEVELS: {
     1: {
@@ -345,7 +341,7 @@ export const CONFIG = {
   },
 
   // ===============================
-  // 📖 STORY & CUTSCENES
+  // STORY & CUTSCENES
   // ===============================
   STORY: {
     LV1_INTRO: [
@@ -375,7 +371,7 @@ export const CONFIG = {
   },
 
   // ===============================
-  // 🎮 GAME STATES
+  // GAME STATES
   // ===============================
   STATE: {
     MENU: "START_MENU",

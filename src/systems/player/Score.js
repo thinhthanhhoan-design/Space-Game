@@ -62,3 +62,4 @@ export class ScoreSystem {
         this.onScoreChange = callback;
     }
 }
+

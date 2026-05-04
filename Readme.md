@@ -9,7 +9,7 @@ Chao mung phi cong den voi tau chien UETê. Day la huong dan chi tiet ve cach ch
 1. DIEU KHIEN
 
 - Di chuyen: Su dung cac phim WASD hoac cac phim Mui ten tren ban phim de dieu khien tau len, xuong, trai, phai.
-- Ban sung: Nhan phim Space (Dau cach) hoac click Chuot trai de ban.
+- Ban sung: Nhan phim Space (Dau cach) de ban.
 - Bo qua nhanh: Nhan phim K de skip nhanh cac doan hoi thoai hoac chuyen wave quai.
 
 2. CHI SO SINH TON

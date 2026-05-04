@@ -106,6 +106,34 @@ export class ModelCache {
     getAudioBuffer(key) {
         return this.audioBuffers.get(key);
     }
+
+    /**
+     * Giải phóng toàn bộ bộ nhớ GPU (VRAM) của các Model trong Cache.
+     * Cần thiết để thực hiện Manual Garbage Collection như trong báo cáo.
+     */
+    clearCache() {
+        console.log("[ModelCache] Bắt đầu giải phóng bộ nhớ GPU...");
+        this.models.forEach((model, name) => {
+            model.traverse((child) => {
+                if (child.isMesh) {
+                    // Giải phóng Geometry
+                    if (child.geometry) child.geometry.dispose();
+                    
+                    // Giải phóng Material (xử lý cả trường hợp mảng vật liệu)
+                    if (child.material) {
+                        if (Array.isArray(child.material)) {
+                            child.material.forEach(m => m.dispose());
+                        } else {
+                            child.material.dispose();
+                        }
+                    }
+                }
+            });
+            console.log(`[ModelCache] Đã hủy tài nguyên của: ${name}`);
+        });
+        this.models.clear();
+        this.audioBuffers.clear();
+    }
 }
 
 export const modelCache = new ModelCache();
