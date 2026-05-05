@@ -44,11 +44,13 @@ Loai vien mau do (Vat pham xau):
 5. HE THONG DIEM SO
 
 - Diet quai thuong: 100 diem.
-- Diet Boss 1: 5,000 diem.
-- Diet Boss 2: 10,000 diem.
-- Diet Boss 3: 20,000 diem.
-- Nhat vat pham tot: +50 diem.
-- Nhat vat pham xau: -60 diem.
+- Diet Boss: 5,000 (B1) | 10,000 (B2) | 20,000 (B3).
+- Nhat vat pham: +50 (Tot) | -60 (Xau).
+- CO CHE PHAT THEO THOI GIAN (TIME PENALTY):
+  + DUOI 3 PHUT: Khong bi tru diem (Vung an toan).
+  + TU 3 DEN 5 PHUT: Diem bi khau tru nhanh (dat muc 1/3 tai phut thu 5).
+  + TREN 5 PHUT: Diem tiep tuc bi tru cham (5% moi phut).
+  + DIEM BAO HIEM: Luon giu lai it nhat 10% so diem ban dat duoc, ban se khong bao gio bi ve 0 diem du choi lau den dau.
 
 6. MOT SO MEO NHO
 
