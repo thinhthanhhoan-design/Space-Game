@@ -61,6 +61,9 @@ export class GameManager {
         this._victoryTriggered = false;
         this.hasPlayedStoryLV2 = false;
         
+        this.tutorialState = null;
+        this.tutorialKeys = { w: false, a: false, s: false, d: false };
+
         this.scoreSystem = new ScoreSystem();
 
         this.itemSpawnTimer = 0;
@@ -116,7 +119,7 @@ export class GameManager {
                                             if (this.stateManager.isGameStarted) return;
                                             this.stateManager.setGameStarted(true);
                                             this.uiManager.show();
-                                            this.enemyManager.startWaveSystem(1);
+                                            this.startTutorial();
                                             if (this.musicSystem) this.musicSystem.play();
                                         });
                                     });
@@ -132,6 +135,16 @@ export class GameManager {
                 this.musicSystem.play();
             }
         });
+    }
+
+    // Khởi động phần hướng dẫn
+    startTutorial() {
+        this.gamePlayState = 'TUTORIAL';
+        this.tutorialState = 'WAITING_WASD';
+        this.tutorialKeys = { w: false, a: false, s: false, d: false };
+        this.player.isInvincible = true; // Bất tử trong lúc hướng dẫn
+        this.uiManager.showCinematicBars();
+        this.uiManager.showTutorialWASD();
     }
 
     // Xử lý bỏ qua (Skip) phim/intro
@@ -311,6 +324,7 @@ export class GameManager {
             this.projectileSystem.update(delta);
             this.asteroidSystem.update(delta);
             this.explosionSystem.update(delta);
+            this.particleSystem.update(delta);
 
             // Kiểm tra va chạm đạn với người chơi
             const dmg = this.projectileSystem.checkCollision(this.player.mesh, 1.2);
@@ -338,7 +352,48 @@ export class GameManager {
             }
 
             // Logic chính theo trạng thái game
-            if (this.gamePlayState === 'WAVES') {
+            if (this.gamePlayState === 'TUTORIAL') {
+                const slowDelta = delta * 0.1; // Bullet time
+                this.enemyManager.update(slowDelta, this.player.mesh.position);
+                this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem, this.sceneController, this.musicSystem, (amt) => this.scoreSystem.addScore(amt));
+                
+                this.sceneController.update(slowDelta, this.player.mesh);
+                this.background.update(slowDelta, this.player.mesh.position);
+
+                if (this.tutorialState === 'WAITING_WASD') {
+                    if (this.player.keys.w && !this.tutorialKeys.w) { this.tutorialKeys.w = true; this.uiManager.updateTutorialKey('w'); }
+                    if (this.player.keys.a && !this.tutorialKeys.a) { this.tutorialKeys.a = true; this.uiManager.updateTutorialKey('a'); }
+                    if (this.player.keys.s && !this.tutorialKeys.s) { this.tutorialKeys.s = true; this.uiManager.updateTutorialKey('s'); }
+                    if (this.player.keys.d && !this.tutorialKeys.d) { this.tutorialKeys.d = true; this.uiManager.updateTutorialKey('d'); }
+
+                    if (this.tutorialKeys.w && this.tutorialKeys.a && this.tutorialKeys.s && this.tutorialKeys.d) {
+                        this.uiManager.hideTutorialWASD();
+                        this.tutorialState = 'WAITING_SPACE';
+                        this.uiManager.showTutorialSpace();
+                    }
+                } else if (this.tutorialState === 'WAITING_SPACE') {
+                    if (this.player.keys.Space) {
+                        this.uiManager.hideTutorialSpace();
+                        this.uiManager.hideCinematicBars();
+                        
+                        this.gamePlayState = 'TRANSITION';
+                        
+                        const story = new Story();
+                        story.play('TUTORIAL_END', () => {
+                            this.sceneController.triggerShake(0.5, 0.3); // Rung màn hình khai hỏa
+                            
+                            this.gamePlayState = 'WAVES';
+                            this.player.isInvincible = false; // Tắt bất tử
+                            
+                            // Hiện thông báo cảnh báo mất máu
+                            this.uiManager.showMessage("LEVEL 1 - CHÚ Ý THANH MÁU!", "#ff3333", 3000);
+                            if (this.musicSystem) this.musicSystem.playSound('HIEU_UNG_TAU_BAN');
+                            
+                            this.enemyManager.waveInProgress = true; // Bật lại hệ thống wave
+                        });
+                    }
+                }
+            } else if (this.gamePlayState === 'WAVES') {
                 this.enemyManager.update(delta, this.player.mesh.position);
                 this.combat.update(this.player, this.enemyManager.enemies, this.asteroidSystem.asteroids, this.explosionSystem, this.particleSystem, this.sceneController, this.musicSystem, (amt) => this.scoreSystem.addScore(amt));
 
@@ -405,10 +460,14 @@ export class GameManager {
         }
 
         if (this.stateManager.isGameStarted && this.player && this.player.mesh) {
-            this.sceneController.update(delta, this.player.mesh);
-            this.background.update(delta, this.player.mesh.position);
+            if (this.gamePlayState !== 'TUTORIAL') {
+                this.sceneController.update(delta, this.player.mesh);
+                this.background.update(delta, this.player.mesh.position);
+            }
         } else {
-            this.background.update(delta);
+            if (this.gamePlayState !== 'TUTORIAL') {
+                this.background.update(delta);
+            }
         }
     }
 }

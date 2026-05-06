@@ -227,6 +227,37 @@ export class EnemyManager {
         this.spawnWave(1);
     }
 
+    spawnTutorialEnemies() {
+        this.isSpawning = true;
+        this.waveInProgress = false; // Tắt tự động spawn wave trong lúc hướng dẫn
+        this.currentLevel = 1;
+        this.maxWaves = this._getMaxWaves(1);
+        this.currentWave = 0;
+        
+        for (let i = 0; i < 3; i++) {
+            const enemy = new Enemy(this.scene, this.projectileSystem, this.itemSystem, 'QUAI_1', null, this.musicSystem);
+            // Ngăn quái vật tự động bắn
+            enemy._shootCooldown = 99999;
+            enemy.isTutorial = true;
+            
+            const setPosition = () => {
+                enemy.mesh.position.copy(Patterns.FORMATION_WAVE_1(i, 3));
+                // Đặt xa hơn một chút để bay vào
+                enemy.mesh.position.z = -150; 
+            };
+
+            if (enemy.isLoaded) {
+                setPosition();
+            } else {
+                enemy.onLoadComplete = setPosition;
+            }
+
+            this.enemies.push(enemy);
+            // Tạm thời chưa đăng ký vào swarm để tự điều khiển chuyển động bay vào
+        }
+        this.isSpawning = false;
+    }
+
     resetAndStartWaveSystem(levelId = 1) {
         if (this.activeInterval) { clearInterval(this.activeInterval); this.activeInterval = null; }
         this.isSpawning = false;

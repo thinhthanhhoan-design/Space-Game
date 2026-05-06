@@ -209,6 +209,105 @@ export class UIManager {
     document.body.appendChild(this.bossHpContainer);
     document.body.appendChild(this.fpsText);
     document.body.appendChild(this.messageContainer);
+
+    // === CINEMATIC BARS ===
+    this.topBar = document.createElement("div");
+    this.bottomBar = document.createElement("div");
+    [this.topBar, this.bottomBar].forEach(bar => {
+        bar.style.position = "fixed";
+        bar.style.left = "0";
+        bar.style.width = "100%";
+        bar.style.height = "12vh";
+        bar.style.background = "#000";
+        bar.style.zIndex = "1500";
+        bar.style.transition = "transform 0.8s cubic-bezier(0.25, 1, 0.5, 1)";
+    });
+    this.topBar.style.top = "0";
+    this.topBar.style.transform = "translateY(-100%)";
+    this.bottomBar.style.bottom = "0";
+    this.bottomBar.style.transform = "translateY(100%)";
+    document.body.appendChild(this.topBar);
+    document.body.appendChild(this.bottomBar);
+
+    // === TUTORIAL KEYBOARD UI ===
+    this.tutorialContainer = document.createElement("div");
+    this.tutorialContainer.style.position = "fixed";
+    this.tutorialContainer.style.top = "65%";
+    this.tutorialContainer.style.left = "50%";
+    this.tutorialContainer.style.transform = "translate(-50%, -50%)";
+    this.tutorialContainer.style.zIndex = "1600";
+    this.tutorialContainer.style.display = "flex";
+    this.tutorialContainer.style.flexDirection = "column";
+    this.tutorialContainer.style.alignItems = "center";
+    this.tutorialContainer.style.gap = "10px";
+    this.tutorialContainer.style.opacity = "0";
+    this.tutorialContainer.style.transition = "opacity 0.5s, transform 0.5s";
+    this.tutorialContainer.style.pointerEvents = "none";
+    document.body.appendChild(this.tutorialContainer);
+
+    const createKey = (letter) => {
+        const k = document.createElement("div");
+        k.innerText = letter;
+        k.style.width = "60px";
+        k.style.height = "60px";
+        k.style.background = "rgba(0, 0, 0, 0.7)";
+        k.style.border = "2px solid #00ffff";
+        k.style.borderRadius = "8px";
+        k.style.color = "#00ffff";
+        k.style.fontFamily = "Orbitron, sans-serif";
+        k.style.fontSize = "24px";
+        k.style.fontWeight = "bold";
+        k.style.display = "flex";
+        k.style.justifyContent = "center";
+        k.style.alignItems = "center";
+        k.style.boxShadow = "0 0 10px rgba(0, 255, 255, 0.5)";
+        k.style.transition = "all 0.2s";
+        return k;
+    };
+
+    const row1 = document.createElement("div");
+    this.keyW = createKey("W");
+    row1.appendChild(this.keyW);
+
+    const row2 = document.createElement("div");
+    row2.style.display = "flex";
+    row2.style.gap = "10px";
+    this.keyA = createKey("A");
+    this.keyS = createKey("S");
+    this.keyD = createKey("D");
+    row2.appendChild(this.keyA);
+    row2.appendChild(this.keyS);
+    row2.appendChild(this.keyD);
+
+    this.tutorialContainer.appendChild(row1);
+    this.tutorialContainer.appendChild(row2);
+
+    // Space Key
+    this.spaceKeyContainer = document.createElement("div");
+    this.spaceKeyContainer.style.position = "fixed";
+    this.spaceKeyContainer.style.top = "65%";
+    this.spaceKeyContainer.style.left = "50%";
+    this.spaceKeyContainer.style.transform = "translate(-50%, -50%) scale(0.8)";
+    this.spaceKeyContainer.style.zIndex = "1600";
+    this.spaceKeyContainer.style.opacity = "0";
+    this.spaceKeyContainer.style.transition = "all 0.3s";
+    this.spaceKeyContainer.style.pointerEvents = "none";
+    
+    this.keySpace = document.createElement("div");
+    this.keySpace.innerText = "[ SPACE ] - KHAI HOẢ";
+    this.keySpace.style.padding = "15px 40px";
+    this.keySpace.style.background = "rgba(0, 204, 255, 0.2)";
+    this.keySpace.style.border = "2px solid #00ccff";
+    this.keySpace.style.borderRadius = "8px";
+    this.keySpace.style.color = "#00ccff";
+    this.keySpace.style.fontFamily = "Orbitron, sans-serif";
+    this.keySpace.style.fontSize = "20px";
+    this.keySpace.style.fontWeight = "bold";
+    this.keySpace.style.textShadow = "0 0 10px #00ccff";
+    this.keySpace.style.boxShadow = "0 0 15px #00ccff";
+    
+    this.spaceKeyContainer.appendChild(this.keySpace);
+    document.body.appendChild(this.spaceKeyContainer);
   }
 
   // Tạo lớp phủ cảnh báo nguy hiểm (màu đỏ nhấp nháy)
@@ -255,10 +354,95 @@ export class UIManager {
     this.messageContainer.style.transform = "translate(-50%, -50%) scale(1.1)";
 
     if (this.messageTimeout) clearTimeout(this.messageTimeout);
-    this.messageTimeout = setTimeout(() => {
-        this.messageContainer.style.opacity = "0";
-        this.messageContainer.style.transform = "translate(-50%, -50%) scale(1)";
-    }, duration);
+    if (duration > 0) {
+        this.messageTimeout = setTimeout(() => {
+            this.hideMessage();
+        }, duration);
+    }
+  }
+
+  hideMessage() {
+    this.messageContainer.style.opacity = "0";
+    this.messageContainer.style.transform = "translate(-50%, -50%) scale(1)";
+  }
+
+  showCinematicBars() {
+    this.topBar.style.transform = "translateY(0)";
+    this.bottomBar.style.transform = "translateY(0)";
+    this.container.style.opacity = "0";
+    this.container.style.pointerEvents = "none";
+  }
+
+  hideCinematicBars() {
+    this.topBar.style.transform = "translateY(-100%)";
+    this.bottomBar.style.transform = "translateY(100%)";
+    this.container.style.opacity = "1";
+    this.container.style.pointerEvents = "auto";
+    this.container.style.transition = "opacity 0.5s";
+  }
+
+  showTutorialWASD() {
+    // Reset key styles
+    [this.keyW, this.keyA, this.keyS, this.keyD].forEach(k => {
+        k.style.background = "rgba(0, 0, 0, 0.7)";
+        k.style.borderColor = "#00ffff";
+        k.style.color = "#00ffff";
+        k.style.boxShadow = "0 0 10px rgba(0, 255, 255, 0.5)";
+        k.style.transform = "scale(1)";
+    });
+    this.tutorialContainer.style.opacity = "1";
+    this.tutorialContainer.style.transform = "translate(-50%, -50%) scale(1)";
+  }
+
+  updateTutorialKey(keyStr) {
+    const activeStyle = (el) => {
+        if (el.style.borderColor === "rgb(0, 255, 0)" || el.style.borderColor === "#00ff00") return;
+        el.style.background = "rgba(0, 255, 0, 0.3)";
+        el.style.borderColor = "#00ff00";
+        el.style.color = "#00ff00";
+        el.style.boxShadow = "0 0 20px #00ff00";
+        el.style.transform = "scale(0.9)";
+        setTimeout(() => el.style.transform = "scale(1)", 150);
+    };
+    if (keyStr === 'w') activeStyle(this.keyW);
+    if (keyStr === 'a') activeStyle(this.keyA);
+    if (keyStr === 's') activeStyle(this.keyS);
+    if (keyStr === 'd') activeStyle(this.keyD);
+  }
+
+  hideTutorialWASD() {
+    this.tutorialContainer.style.opacity = "0";
+    this.tutorialContainer.style.transform = "translate(-50%, -50%) scale(1.2)";
+  }
+
+  showTutorialSpace() {
+    this.spaceKeyContainer.style.opacity = "1";
+    this.spaceKeyContainer.style.transform = "translate(-50%, -50%) scale(1)";
+    
+    if (!this._pulseInterval) {
+        this._pulseInterval = setInterval(() => {
+            const s = this.keySpace.style;
+            if (s.transform === "scale(1.1)") {
+                s.transform = "scale(1)";
+                s.boxShadow = "0 0 15px #00ccff";
+                s.background = "rgba(0, 204, 255, 0.2)";
+            } else {
+                s.transform = "scale(1.1)";
+                s.boxShadow = "0 0 30px #00ccff";
+                s.background = "rgba(0, 204, 255, 0.4)";
+            }
+            s.transition = "all 0.2s";
+        }, 300);
+    }
+  }
+
+  hideTutorialSpace() {
+    if (this._pulseInterval) {
+        clearInterval(this._pulseInterval);
+        this._pulseInterval = null;
+    }
+    this.spaceKeyContainer.style.opacity = "0";
+    this.spaceKeyContainer.style.transform = "translate(-50%, -50%) scale(1.5)";
   }
 
   show() {

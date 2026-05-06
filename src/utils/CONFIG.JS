@@ -145,16 +145,16 @@ export const CONFIG = {
   ENEMIES: {
     QUAI_1: { HP: 50, DAMAGE: 15, BULLET_SPEED: 2.5, MOVE_SPEED: 1.5, POINTS: 100 }, // Sẽ lấy từ SCORING.ENEMY_DEFAULT
     BOSS_1: {
-      HP: 2500, 
+      HP: 2500,
       ATTACK_INTERVAL: 5,
       DAMAGE: 30,
-      BULLET_SPEED: 1.5,      
+      BULLET_SPEED: 1.5,
       LIMIT: 1,
       RETREAT_Z: -50,
       POINTS: 5000
     },
     BOSS_2: {
-      HP: 3000, 
+      HP: 3000,
       LASER_DAMAGE: 15,
       BULLET_SPEED: 0.6,
       SPREAD_DAMAGE: 20,
@@ -163,7 +163,7 @@ export const CONFIG = {
       POINTS: 10000
     },
     BOSS_3: {
-      HP: 4000, 
+      HP: 4000,
       DODGE: 0.4,
       SHOCKWAVE_COOLDOWN: 8,
       SLOW: 0.5,
@@ -220,7 +220,7 @@ export const CONFIG = {
   ITEMS: {
     SPAWN_INTERVAL: 4.5,      // Cứ 4.5s spawn 1 item ngẫu nhiên
     SPEED_FACTOR: 0.75,        // Tốc độ bay 
-    SCALE_BASE: 3.0,          
+    SCALE_BASE: 3.0,
     GLOW_OPACITY: 0.8,        //độ chói
     EDGE_GLOW_OPACITY: 0.4,   //độ sáng viền
     LIGHT_INTENSITY: 5,       // cường độ ánh sáng
@@ -246,8 +246,8 @@ export const CONFIG = {
       BUFF: 0x00ff00, // Màu xanh cho buff items
       DEBUFF: 0xff2200, // Màu đỏ cho debuff items
       NEUTRAL: 0xaaaaaa // Màu trung tính khi đạn chạm item
-    } 
-  }, 
+    }
+  },
 
   // ===============================
   // AUDIO SETTINGS
@@ -344,6 +344,12 @@ export const CONFIG = {
   // STORY & CUTSCENES
   // ===============================
   STORY: {
+    TUTORIAL_END: [
+      "Cảnh báo! Phát hiện quần thể sinh vật lạ đang tiến tới.",
+      "Kiểm tra hệ thống hoàn tất...",
+      "Vũ khí đã được kích hoạt.",
+      "Phi công, hãy sẵn sàng chiến đấu!"
+    ],
     LV1_INTRO: [
       "Boss: KẺ HỦY DIỆT - V1 đã bị tiêu diệt...",
       "Nhưng vẫn tồn tại tín hiệu dị thường trong không gian.",

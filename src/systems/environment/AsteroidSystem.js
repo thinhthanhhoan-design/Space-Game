@@ -10,7 +10,6 @@ export class AsteroidSystem {
         this.camera = camera;
 
         this.asteroids = [];
-        this.bubbles = [];
 
         this.spawnTimer = 0;
         this.currentLevelKey = 'LEVEL_1';
@@ -85,16 +84,6 @@ export class AsteroidSystem {
         };
 
         asteroid.userData.damage = this.baseDamage;
-        asteroid.userData.bubbleTimer = Math.random() * 2;
-
-        // Xác định loại thiên thạch dựa trên cấp độ (Level 2/3 có thiên thạch độc)
-        if (this.currentLevelKey === 'LEVEL_2') {
-            asteroid.userData.isToxic = true;
-        } else if (this.currentLevelKey === 'LEVEL_3') {
-            asteroid.userData.isToxic = Math.random() > 0.5;
-        } else {
-            asteroid.userData.isToxic = false;
-        }
 
         asteroid.userData.particleData = [];
 
@@ -106,8 +95,7 @@ export class AsteroidSystem {
     }
 
     createAura(asteroid) {
-        const isToxic = asteroid.userData.isToxic;
-        const color = isToxic ? 0x39ff14 : 0xffaa33;
+        const color = 0xffaa33; // Non-toxic orange aura
 
         const count = 1000; // Tối ưu số lượng hạt để đảm bảo hiệu năng
         const geometry = new THREE.BufferGeometry();
@@ -127,8 +115,8 @@ export class AsteroidSystem {
 
         const material = new THREE.PointsMaterial({
             color,
-            size: isToxic ? 0.15 : 0.08,
-            opacity: isToxic ? 0.8 : 0.6,
+            size: 0.08,
+            opacity: 0.6,
             transparent: true,
             blending: THREE.AdditiveBlending,
             depthWrite: false
@@ -259,46 +247,11 @@ export class AsteroidSystem {
                 trailGeometry.attributes.color.needsUpdate = true;
             }
 
-            if (a.userData.isToxic) {
-                a.userData.bubbleTimer -= delta;
-                if (a.userData.bubbleTimer <= 0) {
-                    this.spawnBubble(a.position);
-                    a.userData.bubbleTimer = 2 + Math.random();
-                }
-            }
-
             if (a.position.z > CONFIG.WORLD.DESPAWN_DISTANCE_Z || a.userData.markedForDeletion) {
                 if (a.userData.trail) this.scene.remove(a.userData.trail);
                 this.scene.remove(a);
                 this.asteroids.splice(i, 1);
             }
         }
-
-        for (let i = this.bubbles.length - 1; i >= 0; i--) {
-            const b = this.bubbles[i];
-            b.position.z += delta * 20;
-            if (this.player && this.player.mesh) {
-                const dist = b.position.distanceTo(this.player.mesh.position);
-                if (dist < 1.2) {
-                    this.player.takeDamage(20);
-                    this.particleSystem.explodeAt(b.position, 0x00ffcc, 80, 2);
-                    this.scene.remove(b);
-                    this.bubbles.splice(i, 1);
-                }
-            }
-            if (b.position.z > 50) {
-                this.scene.remove(b);
-                this.bubbles.splice(i, 1);
-            }
-        }
-    }
-
-    spawnBubble(position) {
-        const geo = new THREE.SphereGeometry(0.3, 8, 8);
-        const mat = new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.6 });
-        const bubble = new THREE.Mesh(geo, mat);
-        bubble.position.copy(position);
-        this.scene.add(bubble);
-        this.bubbles.push(bubble);
     }
 }

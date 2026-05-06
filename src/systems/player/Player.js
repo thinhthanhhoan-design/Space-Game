@@ -165,7 +165,7 @@ export class Player {
     }
 
     takeDamage(amount) {
-        if (this.isShieldActive) return;
+        if (this.isShieldActive || this.isInvincible) return;
         this.hp -= amount;
 
         // Giảm cấp vũ khí khi trúng đạn

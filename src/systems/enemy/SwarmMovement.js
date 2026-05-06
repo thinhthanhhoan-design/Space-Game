@@ -62,7 +62,7 @@ export class SwarmMovement {
     const centroid = MathUtils.computeCentroid(enemyList);
     
     enemyList.forEach(enemy => {
-      if (enemy.isOrbitalShield) return;
+      if (enemy.isOrbitalShield || enemy.isTutorial) return;
       
       if (!enemy.swarmVelocity) enemy.swarmVelocity = new THREE.Vector3();
       const vel = enemy.swarmVelocity;
