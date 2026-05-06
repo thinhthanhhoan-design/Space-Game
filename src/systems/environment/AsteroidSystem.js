@@ -17,6 +17,10 @@ export class AsteroidSystem {
 
         this.updateConfig();
         this.fireTexture = this.createFireTexture();
+
+        // Multipliers cho hiệu ứng từ Items (Debuff)
+        this.speedMultiplier = 1.0;
+        this.densityMultiplier = 1.0;
     }
 
     createFireTexture() {
@@ -179,14 +183,17 @@ export class AsteroidSystem {
 
     update(delta) {
         this.spawnTimer += delta;
-        const spawnInterval = 1 / this.baseDensity;
+        // Áp dụng densityMultiplier vào mật độ sinh thiên thạch
+        const currentDensity = this.baseDensity * this.densityMultiplier;
+        const spawnInterval = 1 / currentDensity;
 
         if (this.spawnTimer > spawnInterval) {
             this.spawn();
             this.spawnTimer = 0;
         }
 
-        const asteroidSpeedZ = this.baseSpeed * 4000;
+        // Áp dụng speedMultiplier vào tốc độ bay
+        const asteroidSpeedZ = (this.baseSpeed * this.speedMultiplier) * 4000;
 
         for (let i = this.asteroids.length - 1; i >= 0; i--) {
             const a = this.asteroids[i];
