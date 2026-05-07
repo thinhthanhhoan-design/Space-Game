@@ -260,7 +260,8 @@ export const CONFIG = {
     NHAC_NEN_INTRO_MAT_TIN_HIEU_2: 0.7,
 
     // --- SFX (Effects) ---
-    PLAYER_BAN: 0.5,       // Âm thanh người chơi bắn
+    PLAYER_BAN: 0.5,
+    HIEU_UNG_TAU_BAN: 0.5,
     HIEU_UNG_LAZE_BAN: 0.5,
     HIEU_UNG_TAU_TRUNG_DON: 0.7,
     HIEU_UNG_QUAI_THIEN_THACH_NO: 0.7,
@@ -293,6 +294,7 @@ export const CONFIG = {
       NEN_INTRO: '/audio/sound/nen_intro.mp3',
       LEVEL_3: '/audio/sound/level3.mp3',
       PLAYER_BAN: '/audio/sound/player_ban.mp3',
+      HIEU_UNG_TAU_BAN: '/audio/sound/player_ban.mp3',
       NHAC_NEN_INTRO_MAT_TIN_HIEU_1: '/audio/sound/nhac_nen_intro_mat_tin_hieu_1.mp3',
       NHAC_NEN_INTRO_MAT_TIN_HIEU_2: '/audio/sound/nhac_nen_intro_mat_tin_hieu_2.mp3',
       VICTORY: '/audio/sound/victory.mp3',

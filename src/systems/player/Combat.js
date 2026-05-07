@@ -46,7 +46,6 @@ export class Combat {
                         if (musicSystem) musicSystem.playSound('HIEU_UNG_TAU_TRUNG_DON');
                         if (explosionSystem) explosionSystem.startWarning(0.4);
                         if (sceneController) sceneController.triggerShake(0.4, 0.2);
-                        if (window.GameAudio) window.GameAudio.playSound('SFX_HIT', true);
                     }
                     if (explosionSystem) explosionSystem.spawnShipImpact(playerPos);
                     const pts = CONFIG.ENEMIES[enemy.type]?.POINTS || CONFIG.SCORING.ENEMY_DEFAULT;
@@ -66,7 +65,6 @@ export class Combat {
                         if (musicSystem) musicSystem.playSound('HIEU_UNG_TAU_TRUNG_DON');
                         if (explosionSystem) explosionSystem.startWarning(0.4);
                         if (sceneController) sceneController.triggerShake(0.4, 0.2);
-                        if (window.GameAudio) window.GameAudio.playSound('SFX_HIT', true);
                     }
                     if (explosionSystem) explosionSystem.spawnAsteroidImpact(ast.position);
                     if (musicSystem) musicSystem.playSound('HIEU_UNG_QUAI_THIEN_THACH_NO');
@@ -119,9 +117,6 @@ export class Combat {
                                 const pts = CONFIG.ENEMIES[enemy.type]?.POINTS || CONFIG.SCORING.ENEMY_DEFAULT;
                                 if (addScore) addScore(pts);
                                 enemy.die();
-                            }
-                            if (enemy.isDead) {
-                                if (window.GameAudio) window.GameAudio.playSound('SFX_EXPLOSION', true);
                             }
                             bullet.userData.markedForDeletion = true;
                             hit = true;

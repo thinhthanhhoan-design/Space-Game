@@ -35,6 +35,7 @@ export class GameManager {
         this.background = new Background();
 
         this.musicSystem = new MusicSystem(this.sceneController.camera);
+        window.GameAudio = this.musicSystem;
         
         this.cinematicEffects = new CinematicEffects(this.sceneController.scene, this.sceneController.camera, this.musicSystem);
         this.projectileSystem = new ProjectileSystem(this.sceneController.scene);
@@ -387,7 +388,7 @@ export class GameManager {
                             
                             // Hiện thông báo cảnh báo mất máu
                             this.uiManager.showMessage("LEVEL 1 - CHÚ Ý THANH MÁU!", "#ff3333", 3000);
-                            if (this.musicSystem) this.musicSystem.playSound('HIEU_UNG_TAU_BAN');
+                            if (this.musicSystem) this.musicSystem.playSound('PLAYER_BAN');
                             
                             this.enemyManager.waveInProgress = true; // Bật lại hệ thống wave
                         });
