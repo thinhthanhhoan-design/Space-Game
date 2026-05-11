@@ -167,7 +167,11 @@ export class GameManager {
             this.player.itemSystem.setLevel(this.currentLevelKey);
             this.gamePlayState = 'WAVES';
             this.enemyManager.startWaveSystem(1);
-            if (this.musicSystem) this.musicSystem.play();
+            // Stop any intro music and start background music
+            if (this.musicSystem) {
+                this.musicSystem.stop();
+                this.musicSystem.play();
+            }
             return;
         }
 

@@ -321,15 +321,31 @@ export class EnemyManager {
     }
 
     clearAllEnemies(skipAll = false) {
-        if (this.activeInterval) { clearInterval(this.activeInterval); this.activeInterval = null; }
+        // Stop any ongoing wave spawn interval
+        if (this.activeInterval) {
+            clearInterval(this.activeInterval);
+            this.activeInterval = null;
+        }
 
-        this.enemies.forEach(e => { this.swarm.unregister(e); e.die(true); });
+        // Remove all existing enemies and unregister them from the swarm
+        this.enemies.forEach(e => {
+            this.swarm.unregister(e);
+            e.die(true);
+        });
         this.enemies = [];
 
+        // Reset spawning flags
         this.isSpawning = false;
         this._waitingNextWave = false;
-        this.waveInProgress = true;
 
+        // After clearing enemies, keep wave progression alive for a normal skip
+        if (!skipAll) {
+            this.waveInProgress = true;
+        } else {
+            this.waveInProgress = false;
+        }
+
+        // If skipAll is true, mark all waves as completed
         if (skipAll) {
             this.currentWave = this.maxWaves;
             this.isAllWavesCleared = true;
